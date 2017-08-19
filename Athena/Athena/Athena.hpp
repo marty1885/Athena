@@ -6,6 +6,6 @@
 #include <xtensor/xindexview.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 
-namespace Athena
+namespace At
 {
 }

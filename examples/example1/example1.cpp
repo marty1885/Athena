@@ -6,7 +6,7 @@
 #include <algorithm>
 using namespace std;
 
-xt::xarray<float> activate(xt::xarray<float> x, bool diriv = false)
+inline xt::xarray<float> activate(const xt::xarray<float>& x, bool diriv = false)
 {
 	if(diriv)
 		return x*(1-x);
@@ -15,7 +15,7 @@ xt::xarray<float> activate(xt::xarray<float> x, bool diriv = false)
 
 int main()
 {
-	int epoch = 3000;
+	unsigned int epoch = 3000;
 	int inputLayerSize = 2;
 	int hiddenLayerSize = 5;
 	int outputLayerSize = 1;
@@ -27,15 +27,16 @@ int main()
 	xt::xarray<float> Bz = 2.0f * xt::random::rand<float>({outputLayerSize}) - 1;
 
 	xt::xarray<float> X = {{1,0},{0,1},{1,1},{0,0}};
+	unsigned int datasetSize = X.shape()[0];
+
+	//Workarround xtensor issue #389 (https://github.com/QuantStack/xtensor/issues/389)
+	//TODO: Remove this workarround after bug in xtensor fixed
 	xt::xarray<float> tmp = {{1,1,0,0}};
 	auto Y = xt::transpose(tmp);
 
-	xt::xarray<float> errorHistory;
-
 	for(unsigned int i=0;i<epoch;i++)
 	{
-		std::vector<float> epochLoss;
-		int datasetSize = X.shape()[0];
+		float lossSum = 0;
 		for(unsigned int j=0;j<datasetSize;j++)
 		{
 			xt::xarray<float> Xb = xt::view(X,j,xt::all(),xt::all());
@@ -52,10 +53,9 @@ int main()
 			Bz += dZ*learningRate;
 			Bh += dH*learningRate;
 
-			epochLoss.push_back(((xt::xarray<float>)xt::sum(xt::pow(E,2)))[0]);
+			lossSum += ((xt::xarray<float>)xt::sum(xt::pow(E,2)))[0];
 		}
 
-		cout << std::accumulate(epochLoss.begin(), epochLoss.end(), 0.f)
-			/epochLoss.size() << endl;
+		cout << lossSum/datasetSize << endl;
 	}
 }
