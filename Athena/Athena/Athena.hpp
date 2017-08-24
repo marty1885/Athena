@@ -18,6 +18,9 @@ namespace At
 class Layer
 {
 public:
+	Layer()
+	{
+	}
 	Layer(int input, int output):
 		mInputShape({input}), mOutputShape({output})
 	{
@@ -38,10 +41,10 @@ public:
 	std::vector<int> mOutputShape;
 };
 
-class FullyConnected : public Layer
+class FullyConnectedLayer : public Layer
 {
 public:
-	FullyConnected(int input, int output):
+	FullyConnectedLayer(int input, int output):
 		Layer(input, output)
 	{
 		mWeights.push_back(2 * xt::random::rand<float>({input, output}) - 1);
@@ -65,7 +68,7 @@ class SigmoidLayer : public Layer
 public:
 	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
 	{
-		y = 1/(1+xt::exp(x));
+		y = 1/(1+xt::exp(-x));
 	}
 
 	virtual void backword(const xt::xarray<float>& x, xt::xarray<float>& y,
@@ -133,12 +136,27 @@ public:
 
 					dE = tmp;
 				}
-
-				std::cout << E << std::endl;
 			}
-
 		}
 	}
+
+	void predict(const xt::xarray<float>& input, xt::xarray<float>& output)
+	{
+		std::vector<xt::xarray<float>> layerOutputs;
+		layerOutputs.push_back(input);
+
+		for(auto& layer : mLayers)
+		{
+			auto& currentInput = layerOutputs.back();
+			xt::xarray<float> out;
+			layer->forward(currentInput, out);
+			out = activate(out);
+			layerOutputs.push_back(out);
+		}
+
+		output = layerOutputs.back();
+	}
+
 protected:
 	std::vector<Layer*> mLayers;
 };
