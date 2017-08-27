@@ -8,15 +8,15 @@ int main()
 {
 	At::SequentialNetwork net;
 	net.add<At::FullyConnectedLayer>(2,5);
-	// net.add<At::SigmoidLayer>();
+	net.add<At::TanhLayer>();
 	net.add<At::FullyConnectedLayer>(5,1);
-	// net.add<At::SigmoidLayer>();
+	net.add<At::SigmoidLayer>();
 
 	xt::xarray<float> X = {{0,0},{1,0},{0,1},{1,1}};
 	xt::xarray<float> Y = {{0,1,1,0}};
 	Y = xt::transpose(Y);
 
-	int epoch = 30000;
+	int epoch = 1000;
 
 	net.fit(X,Y,epoch);
 
