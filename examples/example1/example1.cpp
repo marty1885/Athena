@@ -23,7 +23,7 @@ int main()
 
 	for(int i=0;i<(int)X.shape()[0];i++)
 	{
-		xt::xarray<float> x = xt::view(X,i,xt::all(),xt::all());
+		xt::xarray<float> x = xt::view(X,i);
 		xt::xarray<float> res;
 		net.predict(x, res);
 		std::cout << "input = " << x << ", result = " << res << std::endl;

@@ -47,7 +47,7 @@ public:
 	virtual void update(xt::xarray<float>& weights, const xt::xarray<float>& grads) = 0;
 };
 
-class SGDOptimizer
+class SGDOptimizer : public Optimizer
 {
 public:
 	SGDOptimizer(float alpha = 0.45) : mAlpha(alpha)
