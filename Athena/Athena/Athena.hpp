@@ -41,6 +41,26 @@ public:
 	std::vector<int> mOutputShape;
 };
 
+class Optimizer
+{
+public:
+	virtual void update(xt::xarray<float>& weights, const xt::xarray<float>& grads) = 0;
+};
+
+class SGDOptimizer
+{
+public:
+	SGDOptimizer(float alpha = 0.45) : mAlpha(alpha)
+	{
+	}
+	virtual void update(xt::xarray<float>& weights, const xt::xarray<float>& grads)
+	{
+		weights += grads*mAlpha;
+	}
+
+	float mAlpha = 0.45f;
+};
+
 class FullyConnectedLayer : public Layer
 {
 public:
@@ -117,7 +137,7 @@ public:
 		mLayers.push_back(new LayerType(args ...));
 	}
 
-	void fit(const xt::xarray<float>& input, const xt::xarray<float>& desireOutput,
+	void fit(Optimizer& optimizer, const xt::xarray<float>& input, const xt::xarray<float>& desireOutput,
 		int batchSize, int epoch)
 	{
 		assert(input.shape()[0]%batchSize == 0);
@@ -161,9 +181,8 @@ public:
 					layer->backword(layerOutputs[k],layerOutputs[k+1], tmp, dE);
 					if(layer->mWeights.size() > 0)
 					{
-						layer->mWeights[0] += xt::linalg::dot(xt::transpose(layerOutputs[k]), dE)
-							*learningRate;
-						layer->mWeights[1] += xt::sum(dE,{0})*learningRate;
+						optimizer.update(layer->mWeights[0], xt::linalg::dot(xt::transpose(layerOutputs[k]), dE));
+						optimizer.update(layer->mWeights[1], xt::sum(dE,{0})*learningRate);
 					}
 
 					dE = tmp;

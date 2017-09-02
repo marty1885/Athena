@@ -18,7 +18,8 @@ int main()
 
 	int epoch = 1000;
 
-	net.fit(X,Y,2,epoch);
+	At::SGDOptimizer opt;
+	net.fit(opt,X,Y,2,epoch);
 
 	for(int i=0;i<(int)X.shape()[0];i++)
 	{
