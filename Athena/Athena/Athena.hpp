@@ -118,21 +118,24 @@ public:
 	}
 
 	void fit(const xt::xarray<float>& input, const xt::xarray<float>& desireOutput,
-		int epoch)
+		int batchSize, int epoch)
 	{
+		assert(input.shape()[0]%batchSize == 0);
 		int datasetSize = input.shape()[0];
 
 		auto inputShape = input.shape();
 		auto outputShape = desireOutput.shape();
-		inputShape[0] = 1;
-		outputShape[0] = 1;
+		inputShape[0] = batchSize;
+		outputShape[0] = batchSize;
+
+		std::vector<float> epochLoss(datasetSize);
 
 		for(int i=0;i<epoch;i++)
 		{
 			for(int j=0;j<datasetSize;j++)
 			{
-				xt::xarray<float> x = xt::view(input,j,xt::all(),xt::all());
-				xt::xarray<float> y = xt::view(desireOutput,j,xt::all(),xt::all());
+				xt::xarray<float> x = xt::view(input,xt::range(j,j+batchSize));
+				xt::xarray<float> y = xt::view(desireOutput,xt::range(j,j+batchSize));
 
 				x.reshape(inputShape);
 				y.reshape(outputShape);
@@ -160,12 +163,15 @@ public:
 					{
 						layer->mWeights[0] += xt::linalg::dot(xt::transpose(layerOutputs[k]), dE)
 							*learningRate;
-						layer->mWeights[1] += dE*learningRate;
+						layer->mWeights[1] += xt::sum(dE,{0})*learningRate;
 					}
 
 					dE = tmp;
 				}
+				epochLoss[j] = ((xt::xarray<float>)xt::sum(xt::pow(E,2)))[0];
 			}
+			std::cout << std::accumulate(epochLoss.begin(), epochLoss.end(), 0.f)
+				/epochLoss.size() << std::endl;
 		}
 	}
 

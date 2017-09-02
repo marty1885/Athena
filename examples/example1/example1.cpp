@@ -8,7 +8,7 @@ int main()
 {
 	At::SequentialNetwork net;
 	net.add<At::FullyConnectedLayer>(2,5);
-	net.add<At::TanhLayer>();
+	net.add<At::SigmoidLayer>();
 	net.add<At::FullyConnectedLayer>(5,1);
 	net.add<At::SigmoidLayer>();
 
@@ -18,13 +18,13 @@ int main()
 
 	int epoch = 1000;
 
-	net.fit(X,Y,epoch);
+	net.fit(X,Y,2,epoch);
 
 	for(int i=0;i<(int)X.shape()[0];i++)
 	{
 		xt::xarray<float> x = xt::view(X,i,xt::all(),xt::all());
 		xt::xarray<float> res;
 		net.predict(x, res);
-		std::cout << "input = " << x << ", result = " << res[0] << std::endl;
+		std::cout << "input = " << x << ", result = " << res << std::endl;
 	}
 }
