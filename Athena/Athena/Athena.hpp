@@ -11,6 +11,8 @@
 
 #include <vector>
 #include <iostream>
+#include <array>
+#include <unordered_map>
 
 namespace At
 {
@@ -44,7 +46,8 @@ public:
 class Optimizer
 {
 public:
-	virtual void update(xt::xarray<float>& weights, const xt::xarray<float>& grads) = 0;
+	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) = 0;
+	virtual void reset(){} //Implement if needed
 };
 
 class SGDOptimizer : public Optimizer
@@ -53,12 +56,51 @@ public:
 	SGDOptimizer(float alpha = 0.45) : mAlpha(alpha)
 	{
 	}
-	virtual void update(xt::xarray<float>& weights, const xt::xarray<float>& grads)
+
+	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
 	{
-		weights += grads*mAlpha;
+		weight += grad*mAlpha;
 	}
 
-	float mAlpha = 0.45f;
+	float mAlpha;
+};
+
+template <int N>
+class StatefulOptimizer : public Optimizer
+{
+public:
+	virtual void reset() override
+	{
+		for(auto& s : mStorage)
+			s.clear();
+	}
+
+protected:
+	template <int Index>
+	xt::xarray<float>& get(xt::xarray<float>& vec)
+	{
+		auto& s = mStorage[Index];
+		auto it = s.find(&vec);
+		if(it == s.end())
+			s[&vec] = xt::zeros<float>(vec.shape());
+
+		return s[&vec];
+	}
+	std::array<std::unordered_map<xt::xarray<float>*, xt::xarray<float>>, N> mStorage;
+};
+
+class MomentumOptimizer : public StatefulOptimizer<1>
+{
+public:
+	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
+	{
+		auto& v = get<0>(weight);
+		v = mMu*v + mAlpha*grad;
+		weight += v;
+	}
+
+	float mAlpha = 0.01;
+	float mMu = 0.9;
 };
 
 class FullyConnectedLayer : public Layer
