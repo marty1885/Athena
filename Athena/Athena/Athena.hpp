@@ -59,7 +59,7 @@ public:
 
 	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
 	{
-		weight += grad*mAlpha;
+		weight -= grad*mAlpha;
 	}
 
 	float mAlpha;
@@ -95,7 +95,7 @@ public:
 	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
 	{
 		auto& v = get<0>(weight);
-		v = mMu*v + mAlpha*grad;
+		v = mMu*v - mAlpha*grad;
 		weight += v;
 	}
 
@@ -213,7 +213,7 @@ public:
 					layerOutputs.push_back(out);
 				}
 
-				xt::xarray<float> E = y - layerOutputs.back();
+				xt::xarray<float> E = layerOutputs.back() - y;
 				xt::xarray<float> dE = E;
 
 				for(int k=mLayers.size()-1;k>=0;k--)
