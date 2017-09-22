@@ -190,11 +190,13 @@ public:
 		inputShape[0] = batchSize;
 		outputShape[0] = batchSize;
 
-		std::vector<float> epochLoss(datasetSize);
+		std::vector<float> epochLoss(datasetSize/batchSize);
+
+		optimizer.reset();
 
 		for(int i=0;i<epoch;i++)
 		{
-			for(int j=0;j<datasetSize;j++)
+			for(int j=0;j<datasetSize;j+=batchSize)
 			{
 				xt::xarray<float> x = xt::view(input,xt::range(j,j+batchSize));
 				xt::xarray<float> y = xt::view(desireOutput,xt::range(j,j+batchSize));
