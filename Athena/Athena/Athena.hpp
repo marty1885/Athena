@@ -103,6 +103,35 @@ public:
 	float mMu = 0.9;
 };
 
+class NestrovOptimizer : public StatefulOptimizer<1>
+{
+public:
+	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
+	{
+		auto& v = get<0>(weight);
+		v *= mMomentum;
+		v -= mAlpha*grad;
+		weight += mMomentum*mMomentum*v;
+		weight -= (1.f+mMomentum)*mAlpha*grad;
+	}
+
+	float mAlpha = 0.01;
+	float mMomentum = 0.9;
+};
+
+class AdaGradOptimizer : public StatefulOptimizer<1>
+{
+public:
+	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
+	{
+		auto& h = get<0>(weight);
+		h += grad*grad;
+		weight -= mAlpha*grad/(xt::sqrt(h)+1e-7f);
+	}
+
+	float mAlpha = 0.01;
+};
+
 class FullyConnectedLayer : public Layer
 {
 public:

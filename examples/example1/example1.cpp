@@ -1,8 +1,6 @@
 #include <Athena/Athena.hpp>
 
 #include <iostream>
-#include <vector>
-#include <algorithm>
 
 int main()
 {
@@ -18,7 +16,7 @@ int main()
 
 	int epoch = 1000;
 
-	At::MomentumOptimizer opt;
+	At::AdaGradOptimizer opt;
 	opt.mAlpha = 0.1;
 	net.fit(opt,X,Y,2,epoch);
 
