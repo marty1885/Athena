@@ -23,8 +23,8 @@ public:
 	Layer()
 	{
 	}
-	Layer(int input, int output):
-		mInputShape({input}), mOutputShape({output})
+	Layer(int input, int output, bool trainable=false):
+		mInputShape({input}), mOutputShape({output}), mTrainable(trainable)
 	{
 	}
 
@@ -37,10 +37,32 @@ public:
 	{
 	}
 
+	bool trainable() const
+	{
+		return mTrainable;
+	}
+
+	void setTrainable(bool val)
+	{
+		mTrainable = val;
+	}
+
+	const std::vector<xt::xarray<float>>& weights() const
+	{
+		return mWeights;
+	}
+
+	std::vector<xt::xarray<float>>& weights()
+	{
+		return const_cast<std::vector<xt::xarray<float>>&>
+			(static_cast<const Layer*>(this)->weights());
+	}
+
 // protected:
 	std::vector<xt::xarray<float>> mWeights;
 	std::vector<int> mInputShape;
 	std::vector<int> mOutputShape;
+	bool mTrainable = false;
 };
 
 class Optimizer
@@ -136,7 +158,7 @@ class FullyConnectedLayer : public Layer
 {
 public:
 	FullyConnectedLayer(int input, int output):
-		Layer(input, output)
+		Layer(input, output, true)
 	{
 		mWeights.push_back(2 * xt::random::rand<float>({input, output}) - 1);
 		mWeights.push_back(2 * xt::random::rand<float>({output}) - 1);
@@ -212,6 +234,7 @@ public:
 		int batchSize, int epoch)
 	{
 		assert(input.shape()[0]%batchSize == 0);
+		assert(input.ahape()[0]<batchSize);
 		int datasetSize = input.shape()[0];
 
 		auto inputShape = input.shape();
@@ -238,7 +261,7 @@ public:
 
 				for(auto& layer : mLayers)
 				{
-					auto& currentInput = layerOutputs.back();
+					const auto& currentInput = layerOutputs.back();
 					xt::xarray<float> out;
 					layer->forward(currentInput, out);
 					layerOutputs.push_back(out);
@@ -252,10 +275,11 @@ public:
 					auto& layer = mLayers[k];
 					xt::xarray<float> tmp;
 					layer->backword(layerOutputs[k],layerOutputs[k+1], tmp, dE);
-					if(layer->mWeights.size() > 0)
+					auto& weights = layer->weights();
+					if(weights.size() > 0 && layer->trainable())
 					{
-						optimizer.update(layer->mWeights[0], xt::linalg::dot(xt::transpose(layerOutputs[k]), dE));
-						optimizer.update(layer->mWeights[1], xt::sum(dE,{0})*learningRate);
+						optimizer.update(weights[0], xt::linalg::dot(xt::transpose(layerOutputs[k]), dE));
+						optimizer.update(weights[1], xt::sum(dE,{0})*learningRate);
 					}
 
 					dE = tmp;

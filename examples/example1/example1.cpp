@@ -16,7 +16,7 @@ int main()
 
 	int epoch = 1000;
 
-	At::AdaGradOptimizer opt;
+	At::NestrovOptimizer opt;
 	opt.mAlpha = 0.1;
 	net.fit(opt,X,Y,2,epoch);
 
