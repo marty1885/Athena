@@ -17,6 +17,8 @@
 namespace At
 {
 
+using Tensor = xt::xarray<float>;
+
 class Layer
 {
 public:
@@ -58,7 +60,7 @@ public:
 			(static_cast<const Layer*>(this)->weights());
 	}
 
-// protected:
+protected:
 	std::vector<xt::xarray<float>> mWeights;
 	std::vector<int> mInputShape;
 	std::vector<int> mOutputShape;
@@ -221,6 +223,52 @@ public:
 	}
 };
 
+class LossFunction
+{
+public:
+	virtual float f(const xt::xarray<float>& y, const xt::xarray<float>& t) = 0;
+
+	virtual void df(const xt::xarray<float>& y, const xt::xarray<float>& t, xt::xarray<float>& d)
+	{
+	}
+};
+
+class MSELoss : public LossFunction
+{
+	virtual float f(const xt::xarray<float>& y, const xt::xarray<float>& t) override
+	{
+		return ((xt::xarray<float>)xt::sum(xt::pow(y-t,2.f)))[0];
+	}
+
+	virtual void df(const xt::xarray<float>& y, const xt::xarray<float>& t, xt::xarray<float>& d) override
+	{
+		d.reshape(t.shape());
+		float factor = 2.f/(float)t.size();
+		d = factor * (y - t);
+	}
+};
+
+using L2Loss = MSELoss;
+
+class AbsoluteLoss : public LossFunction
+{
+	virtual float f(const xt::xarray<float>& y, const xt::xarray<float>& t) override
+	{
+		return ((xt::xarray<float>)xt::sum(xt::abs(y-t)))[0];
+	}
+
+	virtual void df(const xt::xarray<float>& y, const xt::xarray<float>& t, xt::xarray<float>& d) override
+	{
+		d.reshape(t.shape());
+		float factor = 1.f/(float)t.size();
+		auto func = [factor](float x)->float{return x < 0.f? -factor : (x > 0.f ? factor : 0.f);};
+
+		d = xt::vectorize(func)(y-t);
+	}
+};
+
+using L1Loss = AbsoluteLoss;
+
 class SequentialNetwork
 {
 public:
@@ -230,7 +278,7 @@ public:
 		mLayers.push_back(new LayerType(args ...));
 	}
 
-	void fit(Optimizer& optimizer, const xt::xarray<float>& input, const xt::xarray<float>& desireOutput,
+	void fit(Optimizer& optimizer, LossFunction& loss, const xt::xarray<float>& input, const xt::xarray<float>& desireOutput,
 		int batchSize, int epoch)
 	{
 		assert(input.shape()[0]%batchSize == 0);
@@ -268,7 +316,7 @@ public:
 				}
 
 				xt::xarray<float> E = layerOutputs.back() - y;
-				xt::xarray<float> dE = E;
+				xt::xarray<float> dE = E*loss.f(layerOutputs.back(), y);
 
 				for(int k=mLayers.size()-1;k>=0;k--)
 				{
@@ -286,8 +334,6 @@ public:
 				}
 				epochLoss[j] = ((xt::xarray<float>)xt::sum(xt::pow(E,2)))[0];
 			}
-			std::cout << std::accumulate(epochLoss.begin(), epochLoss.end(), 0.f)
-				/epochLoss.size() << std::endl;
 		}
 	}
 
