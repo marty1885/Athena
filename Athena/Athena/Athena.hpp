@@ -17,7 +17,17 @@
 namespace At
 {
 
-using Tensor = xt::xarray<float>;
+class Tensor
+{
+public:
+	Tensor(const xt::xarray<float>& arr) : storage_(arr)
+	{}
+
+	
+
+protected:
+	xt::xarray<float> storage_;
+};
 
 class Layer
 {
@@ -60,11 +70,25 @@ public:
 			(static_cast<const Layer*>(this)->weights());
 	}
 
+	const std::string& type() const
+	{
+		return type_;
+	}
+	
 protected:
+	
+	void setType(const std::string& type)
+	{
+		type_ = type;
+	}
+
+
+
 	std::vector<xt::xarray<float>> mWeights;
 	std::vector<int> mInputShape;
 	std::vector<int> mOutputShape;
 	bool mTrainable = false;
+	std::string type_ = "layer";
 };
 
 class Optimizer
@@ -164,6 +188,8 @@ public:
 	{
 		mWeights.push_back(2 * xt::random::rand<float>({input, output}) - 1);
 		mWeights.push_back(2 * xt::random::rand<float>({output}) - 1);
+		
+		setType("FullyConnectedLayer");
 	}
 
 	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
@@ -181,6 +207,11 @@ public:
 class SigmoidLayer : public Layer
 {
 public:
+	SigmoidLayer()
+	{
+		setType("SigmoidLayer");
+	}
+
 	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
 	{
 		y = 1/(1+xt::exp(-x));
@@ -196,6 +227,10 @@ public:
 class TanhLayer : public Layer
 {
 public:
+	TanhLayer()
+	{
+		setType("TanhLayer");
+	}
 	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
 	{
 		y = xt::tanh(x);
@@ -211,6 +246,10 @@ public:
 class ReluLayer : public Layer
 {
 public:
+	ReluLayer()
+	{
+		setType("ReluLayer");
+	}
 	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
 	{
 		y = xt::vectorize([](float v){return v > 0 ? v : 0.f;})(x);
