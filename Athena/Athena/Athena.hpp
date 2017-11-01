@@ -1,12 +1,5 @@
 #pragma once
 
-#include <xtensor/xarray.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xio.hpp>
-#include <xtensor/xindexview.hpp>
-#include <xtensor/xvectorize.hpp>
-#include <xtensor-blas/xlinalg.hpp>
-
 #include <assert.h>
 
 #include <vector>
@@ -14,20 +7,11 @@
 #include <array>
 #include <unordered_map>
 
+#include <Athena/Backend.hpp>
+#include <Athena/Tensor.hpp>
+
 namespace At
 {
-
-class Tensor
-{
-public:
-	Tensor(const xt::xarray<float>& arr) : storage_(arr)
-	{}
-
-	
-
-protected:
-	xt::xarray<float> storage_;
-};
 
 class Layer
 {
@@ -35,66 +19,58 @@ public:
 	Layer()
 	{
 	}
-	Layer(int input, int output, bool trainable=false):
-		mInputShape({input}), mOutputShape({output}), mTrainable(trainable)
+
+	Layer(Backend* backend) : backend_(backend)
 	{
 	}
 
-	virtual void forward(const xt::xarray<float>& input, xt::xarray<float>& output)
+	Layer(int input, int output, Backend* backend=nullptr, bool trainable=false):
+		inputShape_({input}), mOutputShape({output}), backend_(backend), trainable_(trainable)
 	{
 	}
 
-	virtual void backword(const xt::xarray<float>& x, const xt::xarray<float>& y,
-			xt::xarray<float>& dx, const xt::xarray<float>& dy)
+	virtual void forward(const Tensor& input, Tensor& output)
+	{
+	}
+
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy)
 	{
 	}
 
 	bool trainable() const
 	{
-		return mTrainable;
+		return trainable_;
 	}
 
 	void setTrainable(bool val)
 	{
-		mTrainable = val;
+		trainable_ = val;
 	}
 
-	const std::vector<xt::xarray<float>>& weights() const
+	const std::vector<Tensor>& weights() const
 	{
-		return mWeights;
+		return weights_;
 	}
 
-	std::vector<xt::xarray<float>>& weights()
+	std::vector<Tensor>& weights()
 	{
-		return const_cast<std::vector<xt::xarray<float>>&>
+		return const_cast<std::vector<Tensor>&>
 			(static_cast<const Layer*>(this)->weights());
 	}
 
-	const std::string& type() const
-	{
-		return type_;
-	}
-	
 protected:
-	
-	void setType(const std::string& type)
-	{
-		type_ = type;
-	}
-
-
-
-	std::vector<xt::xarray<float>> mWeights;
-	std::vector<int> mInputShape;
+	std::vector<Tensor> weights_;
+	std::vector<int> inputShape_;
 	std::vector<int> mOutputShape;
-	bool mTrainable = false;
-	std::string type_ = "layer";
+	Backend* backend_;
+	bool trainable_ = false;
 };
 
 class Optimizer
 {
 public:
-	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) = 0;
+	virtual void update(Tensor& weight, const Tensor& grad) = 0;
 	virtual void reset(){} //Implement if needed
 };
 
@@ -105,7 +81,7 @@ public:
 	{
 	}
 
-	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
+	virtual void update(Tensor& weight, const Tensor& grad) override
 	{
 		weight -= grad*mAlpha;
 	}
@@ -117,6 +93,10 @@ template <int N>
 class StatefulOptimizer : public Optimizer
 {
 public:
+	StatefulOptimizer(Backend* backend) : backend_(backend)
+	{
+	}
+
 	virtual void reset() override
 	{
 		for(auto& s : mStorage)
@@ -125,18 +105,19 @@ public:
 
 protected:
 	template <int Index>
-	xt::xarray<float>& get(xt::xarray<float>& vec)
+	Tensor& get(const Tensor& vec)
 	{
 		auto& s = mStorage[Index];
 		auto it = s.find(&vec);
 		if(it == s.end())
-			s[&vec] = xt::zeros<float>(vec.shape());
+			s[&vec] = At::zeros(vec.shape(), backend_);
 
 		return s[&vec];
 	}
-	std::array<std::unordered_map<xt::xarray<float>*, xt::xarray<float>>, N> mStorage;
+	std::array<std::unordered_map<const Tensor*, Tensor>, N> mStorage;
+	Backend* backend_;
 };
-
+/*
 class MomentumOptimizer : public StatefulOptimizer<1>
 {
 public:
@@ -149,24 +130,28 @@ public:
 
 	float mAlpha = 0.01;
 	float mMu = 0.9;
-};
+};*/
 
 class NestrovOptimizer : public StatefulOptimizer<1>
 {
 public:
-	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
+	NestrovOptimizer(Backend* backend) : StatefulOptimizer(backend)
 	{
-		auto& v = get<0>(weight);
-		v *= mMomentum;
-		v -= mAlpha*grad;
-		weight += mMomentum*mMomentum*v;
-		weight -= (1.f+mMomentum)*mAlpha*grad;
+	}
+
+	virtual void update(Tensor& weight, const Tensor& grad) override
+	{
+		auto& v = this->get<0>(weight);
+		v = v * mMomentum;
+		v = v - grad*mAlpha;
+		weight = weight + v*mMomentum*mMomentum;
+		weight = weight - grad*(1.f+mMomentum)*mAlpha;
 	}
 
 	float mAlpha = 0.01;
 	float mMomentum = 0.9;
 };
-
+/*
 class AdaGradOptimizer : public StatefulOptimizer<1>
 {
 public:
@@ -178,59 +163,64 @@ public:
 	}
 
 	float mAlpha = 0.01;
-};
+};*/
 
 class FullyConnectedLayer : public Layer
 {
 public:
-	FullyConnectedLayer(int input, int output):
-		Layer(input, output, true)
+	FullyConnectedLayer(int input, int output, Backend* backend):
+		Layer(input, output, backend, true)
 	{
-		mWeights.push_back(2 * xt::random::rand<float>({input, output}) - 1);
-		mWeights.push_back(2 * xt::random::rand<float>({output}) - 1);
-		
-		setType("FullyConnectedLayer");
+		weights_.push_back(At::rand(-1,1, {input, output}, backend_));
+		weights_.push_back(At::rand(-1,1, {output}, backend_));
+
+		forwardAlgorithm = backend_->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
+		backwardAlgorithm = backend_->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
 	}
 
-	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
+	virtual void forward(const Tensor& x, Tensor& y) override
 	{
-		y = xt::linalg::dot(x, mWeights[0])+mWeights[1];
+		y = forwardAlgorithm(x, weights_[0], weights_[1]);
 	}
 
-	virtual void backword(const xt::xarray<float>& x, const xt::xarray<float>& y,
-			xt::xarray<float>& dx, const xt::xarray<float>& dy) override
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override
 	{
-		dx = xt::linalg::dot(dy,xt::transpose(mWeights[0]));
+		dx = backwardAlgorithm(dy, weights_[0]);
 	}
+
+protected:
+	delegate<FCForwardFunction> forwardAlgorithm;
+	delegate<FCBackwardFunction> backwardAlgorithm;
 };
 
 class SigmoidLayer : public Layer
 {
 public:
-	SigmoidLayer()
+	SigmoidLayer(Backend* backend) : Layer(backend)
 	{
-		setType("SigmoidLayer");
+		forwardAlgorithm = backend_->getAlgorithm<ActivationForward>("sigmoidForward");
+		backwardAlgorithm = backend_->getAlgorithm<ActivationBackward>("sigmoidBackward");
 	}
 
-	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
+	virtual void forward(const Tensor& x, Tensor& y) override
 	{
-		y = 1/(1+xt::exp(-x));
+		y = forwardAlgorithm(x);
 	}
 
-	virtual void backword(const xt::xarray<float>& x, const xt::xarray<float>& y,
-			xt::xarray<float>& dx, const xt::xarray<float>& dy) override
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override
 	{
-		dx = dy * (y * (1 - y));
+		dx = backwardAlgorithm(dy, y);
 	}
+protected:
+	delegate<ActivationForward> forwardAlgorithm;
+	delegate<ActivationBackward> backwardAlgorithm;
 };
-
+/*
 class TanhLayer : public Layer
 {
 public:
-	TanhLayer()
-	{
-		setType("TanhLayer");
-	}
 	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
 	{
 		y = xt::tanh(x);
@@ -246,10 +236,6 @@ public:
 class ReluLayer : public Layer
 {
 public:
-	ReluLayer()
-	{
-		setType("ReluLayer");
-	}
 	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
 	{
 		y = xt::vectorize([](float v){return v > 0 ? v : 0.f;})(x);
@@ -261,7 +247,7 @@ public:
 		dx = dy * xt::vectorize([](float v){return v > 0 ? 1.f : 0.f;})(y);
 	}
 };
-
+*/
 class LossFunction
 {
 public:
@@ -288,7 +274,7 @@ class MSELoss : public LossFunction
 };
 
 using L2Loss = MSELoss;
-
+/*
 class AbsoluteLoss : public LossFunction
 {
 	virtual float f(const xt::xarray<float>& y, const xt::xarray<float>& t) override
@@ -307,7 +293,7 @@ class AbsoluteLoss : public LossFunction
 };
 
 using L1Loss = AbsoluteLoss;
-
+*/
 class SequentialNetwork
 {
 public:
@@ -317,7 +303,7 @@ public:
 		mLayers.push_back(new LayerType(args ...));
 	}
 
-	void fit(Optimizer& optimizer, LossFunction& loss, const xt::xarray<float>& input, const xt::xarray<float>& desireOutput,
+	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
 		int batchSize, int epoch)
 	{
 		assert(input.shape()[0]%batchSize == 0);
@@ -337,54 +323,55 @@ public:
 		{
 			for(int j=0;j<datasetSize;j+=batchSize)
 			{
-				xt::xarray<float> x = xt::view(input,xt::range(j,j+batchSize));
-				xt::xarray<float> y = xt::view(desireOutput,xt::range(j,j+batchSize));
+				Tensor x = input.slice({j},{1});
+				Tensor y = desireOutput.slice({j},{1});
 
 				x.reshape(inputShape);
 				y.reshape(outputShape);
 
-				std::vector<xt::xarray<float>> layerOutputs;
-				layerOutputs.push_back(x);
+				std::vector<Tensor> layerOutputs(mLayers.size()+1);
+				layerOutputs[0] = x;
 
+				int index = 0;
 				for(auto& layer : mLayers)
 				{
-					const auto& currentInput = layerOutputs.back();
-					xt::xarray<float> out;
+					const auto& currentInput = layerOutputs[index];
+					Tensor out;
 					layer->forward(currentInput, out);
-					layerOutputs.push_back(out);
+					layerOutputs[++index] = std::move(out);
 				}
 
-				xt::xarray<float> E = layerOutputs.back() - y;
-				xt::xarray<float> dE = E*loss.f(layerOutputs.back(), y);
+				Tensor E = layerOutputs.back() - y;
+				Tensor dE = E;//*loss.f(layerOutputs.back(), y);
 
 				for(int k=mLayers.size()-1;k>=0;k--)
 				{
 					auto& layer = mLayers[k];
-					xt::xarray<float> tmp;
+					Tensor tmp;
 					layer->backword(layerOutputs[k],layerOutputs[k+1], tmp, dE);
 					auto& weights = layer->weights();
 					if(weights.size() > 0 && layer->trainable())
 					{
-						optimizer.update(weights[0], xt::linalg::dot(xt::transpose(layerOutputs[k]), dE));
-						optimizer.update(weights[1], xt::sum(dE,{0})*learningRate);
+						optimizer.update(weights[0], dot(layerOutputs[k].transpose(), dE));
+						optimizer.update(weights[1], dE);
 					}
 
 					dE = tmp;
 				}
-				epochLoss[j] = ((xt::xarray<float>)xt::sum(xt::pow(E,2)))[0];
+				//epochLoss[j] = ((xt::xarray<float>)xt::sum(xt::pow(E,2)))[0];
 			}
 		}
 	}
 
-	void predict(const xt::xarray<float>& input, xt::xarray<float>& output)
+	void predict(const Tensor& input, Tensor& output)
 	{
-		std::vector<xt::xarray<float>> layerOutputs;
+		std::vector<Tensor> layerOutputs;
 		layerOutputs.push_back(input);
 
 		for(auto& layer : mLayers)
 		{
 			auto& currentInput = layerOutputs.back();
-			xt::xarray<float> out;
+			Tensor out;
 			layer->forward(currentInput, out);
 			layerOutputs.push_back(out);
 		}
@@ -398,7 +385,6 @@ public:
 	}
 
 	std::vector<Layer*> mLayers;
-	float learningRate = 0.45;
 };
 
 }
