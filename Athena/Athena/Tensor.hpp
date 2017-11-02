@@ -11,57 +11,94 @@
 namespace At
 {
 
+class ReferenceCounter
+{
+protected:
+	size_t count_;
+public:
+	ReferenceCounter(size_t initVal = 0)
+		: count_(initVal)
+	{
+	}
+
+	void addRef()
+	{
+		count_++;
+	}
+    
+	int release()
+	{
+	    return --count_;
+	}
+};
+
 class Tensor
 {
 public:
 	Tensor()
 	{
+		referenceCounter_ = new ReferenceCounter(0);
+		referenceCounter_->addRef();
 	}
 
 	Tensor(const std::vector<size_t>& shape, Backend* backend)
+		: Tensor()
 	{
 		backend_ = backend;
 		handle_ = backend->createTensor(shape);
 	}
 	
 	Tensor(size_t handle, Backend* backend)
+		: Tensor()
 	{
 		handle_ = handle;
 		backend_ = backend;
 	}
 
 	Tensor(const std::vector<float>& vec, const std::vector<size_t>& shape, Backend* backend)
-	{
-		
+		: Tensor()
+	{	
 		backend_ = backend;
 		handle_ = backend->createTensor(vec, shape);
 	}
 
 	Tensor(const Tensor& t)
+		:referenceCounter_(t.referenceCounter())
 	{
 		//Workarround someone trying to copy a not initialized Tensor
 		if(t.backend() == nullptr)
 			return;
+
 		backend_ = t.backend();
-		handle_ = backend_->copyTensor(t.internalHandle());
+		handle_ = t.internalHandle();
+		if(referenceCounter_ != nullptr)
+			referenceCounter_->addRef();
 	}
 	
 	Tensor& operator= (const Tensor& other)
 	{
 		if(other.backend() == nullptr)
 			return *this;
-		if(handle_ != 0)
-			backend_->destoryTensor(handle_);
+
 		backend_ = other.backend();
-		handle_ = backend_->copyTensor(other.internalHandle());
+		handle_ = other.internalHandle();
+		referenceCounter_ = other.referenceCounter();
+		if(referenceCounter_ != nullptr)
+			referenceCounter_->addRef();
+
 		return *this;
 	}
 
 	Tensor(Tensor&& t)
 	{
+		if(t.referenceCounter() == nullptr)
+			return;
+
+		referenceCounter_ = t.referenceCounter();
 		backend_ = t.backend();
 		handle_ = t.internalHandle();
 		t.internalHandle() = 0;
+		t.setReferenceCounter(nullptr);
 	}
 
 	Backend* backend() const
@@ -169,15 +206,35 @@ public:
 
 	virtual ~Tensor()
 	{
-		if(handle_ != 0)
-			backend_->destoryTensor(handle_);
+
+		if(referenceCounter_ != nullptr)
+		{
+			if(referenceCounter_->release() == 0)
+			{
+				if(handle_ != 0)
+					backend_->destoryTensor(handle_);
+				delete referenceCounter_;
+			}
+		}
+	
 		handle_ = 0;
 		backend_ = nullptr;
 	}
 
 protected:
+	ReferenceCounter* referenceCounter() const
+	{
+		return referenceCounter_;
+	}
+
+	void setReferenceCounter(ReferenceCounter* ptr)
+	{
+		referenceCounter_ = ptr;
+	}
+
 	Backend* backend_ = nullptr;
 	size_t handle_ = 0;
+	ReferenceCounter* referenceCounter_ = nullptr;
 };
 
 Tensor rand(float lEdge, float rEdge, const std::vector<size_t>& shape, Backend* backend)

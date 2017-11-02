@@ -8,7 +8,7 @@
 #include <unordered_map>
 
 #include <Athena/Backend.hpp>
-#include <Athena/Xtensorbackend.hpp>
+#include <Athena/XtensorBackend.hpp>
 #include <Athena/Tensor.hpp>
 
 namespace At
@@ -252,25 +252,25 @@ public:
 class LossFunction
 {
 public:
-	virtual float f(const xt::xarray<float>& y, const xt::xarray<float>& t) = 0;
+	virtual float f(const Tensor& y, const Tensor& t) = 0;
 
-	virtual void df(const xt::xarray<float>& y, const xt::xarray<float>& t, xt::xarray<float>& d)
+	virtual void df(const Tensor& y, const Tensor& t, Tensor& d)
 	{
 	}
 };
 
 class MSELoss : public LossFunction
 {
-	virtual float f(const xt::xarray<float>& y, const xt::xarray<float>& t) override
+	virtual float f(const Tensor& y, const Tensor& t) override
 	{
-		return ((xt::xarray<float>)xt::sum(xt::pow(y-t,2.f)))[0];
+		return 1.f;//((xt::xarray<float>)xt::sum(xt::pow(y-t,2.f)))[0];
 	}
 
-	virtual void df(const xt::xarray<float>& y, const xt::xarray<float>& t, xt::xarray<float>& d) override
+	virtual void df(const Tensor& y, const Tensor& t, Tensor& d) override
 	{
 		d.reshape(t.shape());
 		float factor = 2.f/(float)t.size();
-		d = factor * (y - t);
+		d = (y - t)*factor;
 	}
 };
 
@@ -322,6 +322,7 @@ public:
 
 		for(int i=0;i<epoch;i++)
 		{
+			std::vector<Tensor> layerOutputs(mLayers.size()+1);
 			for(int j=0;j<datasetSize;j+=batchSize)
 			{
 				Tensor x = input.slice({j}, {1});
@@ -330,7 +331,6 @@ public:
 				x.reshape(inputShape);
 				y.reshape(outputShape);
 
-				std::vector<Tensor> layerOutputs(mLayers.size()+1);
 				layerOutputs[0] = x;
 
 				int index = 0;

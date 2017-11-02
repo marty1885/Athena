@@ -1,6 +1,6 @@
 #include <Athena/Backend.hpp>
 #include <Athena/Tensor.hpp>
-#include <Athena/Xtensorbackend.hpp>
+#include <Athena/XtensorBackend.hpp>
 
 #include <xtensor/xarray.hpp>
 #include <xtensor/xrandom.hpp>
@@ -92,7 +92,10 @@ size_t XtensorBackend::copyTensor(size_t src)
 void XtensorBackend::destoryTensor(size_t handle)
 {
 	if(handle == 0)
+	{
+		std::cout << "Warrning: Please try not to destory tensor with handle 0" << std::endl;
 		return;
+	}
 	storage_[handle] = xt::zeros<float>({1});
 	unusedSpace_.push_back(handle);
 }
@@ -178,6 +181,11 @@ size_t XtensorBackend::slice(size_t handle, const std::vector<size_t>& begin, co
 size_t XtensorBackend::sum(size_t handle, const std::vector<size_t>& axis)
 {
 	return createTensor(xt::sum(get(handle), axis));
+}
+
+size_t XtensorBackend::pow(size_t handle, float e)
+{
+	return createTensor(xt::pow(get(handle), e));
 }
 
 void XtensorBackend::device(size_t handle, const float* ptr)

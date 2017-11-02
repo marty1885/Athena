@@ -42,6 +42,7 @@ public:
 	virtual size_t slice(size_t handle, const std::vector<size_t>& begin, const std::vector<size_t>& size);
 
 	virtual size_t sum(size_t handle, const std::vector<size_t>& axis);
+	virtual size_t pow(size_t handle, float e) ;
 
 	virtual void device(size_t handle, const float* ptr);
 	virtual void host(size_t handle, float* ptr) const;
