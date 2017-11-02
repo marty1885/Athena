@@ -18,7 +18,7 @@ int main()
 	net.add<At::FullyConnectedLayer>(5,1, &backend);
 	net.add<At::SigmoidLayer>(&backend);
 
-	int epoch = 1000;
+	int epoch = 100000;
 
 	At::NestrovOptimizer opt(&backend);
 	At::MSELoss loss;

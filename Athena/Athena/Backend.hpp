@@ -3,17 +3,9 @@
 #include <vector>
 #include <unordered_map>
 #include <typeinfo>
-#include <type_traits>
 
 #include <Athena/Error.hpp>
 #include <Athena/Delegate.hpp>
-
-#include <xtensor/xarray.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xio.hpp>
-#include <xtensor/xindexview.hpp>
-#include <xtensor/xvectorize.hpp>
-#include <xtensor-blas/xlinalg.hpp>
 
 namespace At
 {
@@ -26,7 +18,6 @@ using FCForwardFunction = FuncType<Tensor(const Tensor&,const Tensor&, const Ten
 using FCBackwardFunction = FuncType<Tensor(const Tensor&,const Tensor&)>;
 using ActivationForward = FuncType<Tensor(const Tensor&)>;
 using ActivationBackward = FuncType<Tensor(const Tensor&, const Tensor&)>;
-
 
 struct FunctoinWrapper
 {
@@ -68,6 +59,7 @@ public:
 	virtual size_t multiply(size_t handle1, size_t handle2) = 0;
 	virtual size_t scalarMul(float x, size_t handle) = 0;
 	virtual size_t scalarAdd(size_t handle, float val) = 0;
+	virtual void selfScalarAdd(size_t handle, float val) = 0;
 	virtual size_t div(size_t handle1, size_t handle2) = 0;
 	virtual size_t subtract(size_t handle1, size_t handle2) = 0;
 
@@ -77,6 +69,8 @@ public:
 	virtual void reshape(size_t handle, const std::vector<size_t>& targetShape) = 0;
 	virtual size_t transpose(size_t handle) = 0;
 	virtual size_t slice(size_t handle, const std::vector<size_t>& begin, const std::vector<size_t>& size) = 0;
+
+	virtual size_t sum(size_t handle, const std::vector<size_t>& axis) = 0;
 
 	virtual void device(size_t handle, const float* ptr) = 0;
 	virtual void host(size_t handle, float* ptr) const = 0;
@@ -105,57 +99,6 @@ public:
 protected:
 	std::vector<size_t> unusedSpace_;
 	std::unordered_map<std::string, FunctoinWrapper*> algorithms_;
-};
-
-//Implements a backend in xtensor
-class XtensorBackend : public Backend
-{
-public:
-	XtensorBackend();
-	virtual ~XtensorBackend()
-	{
-	}
-
-	virtual size_t createTensor(const xt::xarray<float>& arr);
-	virtual size_t createTensor(const std::vector<size_t>& dims);
-	virtual size_t createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape);
-	virtual size_t copyTensor(size_t src);
-	virtual void destoryTensor(size_t handle);
-	virtual size_t zeros(const std::vector<size_t>& shape);
-	virtual size_t ones(const std::vector<size_t>& shape);
-	virtual size_t rand(float lEdge, float rEdge, const std::vector<size_t>& shape);
-
-	virtual size_t add(size_t handle1, size_t handle2);
-	virtual size_t multiply(size_t handle1, size_t handle2);
-	virtual size_t scalarMul(float x, size_t handle);
-	virtual size_t scalarAdd(size_t handle, float val);
-	virtual size_t div(size_t handle1, size_t handle2);
-	virtual size_t subtract(size_t handle1, size_t handle2);
-
-	virtual size_t dot(size_t handle1, size_t handle2);
-
-	virtual std::vector<size_t> shape(size_t handle) const;
-	virtual void reshape(size_t handle, const std::vector<size_t>& targetShape);
-	virtual size_t transpose(size_t handle);
-	virtual size_t slice(size_t handle, const std::vector<size_t>& begin, const std::vector<size_t>& size);
-
-	virtual void device(size_t handle, const float* ptr);
-	virtual void host(size_t handle, float* ptr) const;
-
-	inline const xt::xarray<float>& get(size_t handle) const
-	{
-		return storage_[handle];
-	}
-
-	inline xt::xarray<float>& get(size_t handle)
-	{
-		return storage_[handle];
-	}
-
-
-protected:
-	std::vector<xt::xarray<float>> storage_;
-
 };
 
 

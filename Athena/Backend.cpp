@@ -1,5 +1,6 @@
 #include <Athena/Backend.hpp>
 #include <Athena/Tensor.hpp>
+#include <Athena/Xtensorbackend.hpp>
 
 #include <xtensor/xarray.hpp>
 #include <xtensor/xrandom.hpp>
@@ -8,7 +9,6 @@
 #include <xtensor/xvectorize.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xstridedview.hpp>
-
 
 using namespace At;
 
@@ -77,7 +77,7 @@ size_t XtensorBackend::createTensor(const std::vector<size_t>& dims)
 
 size_t XtensorBackend::createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape)
 {
-	if(vec.size() < std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>()))
+	if(vec.size() < std::accumulate(shape.begin(), shape.end(), size_t{1}, std::multiplies<size_t>()))
 		throw AtError("Error: Cannot create tensor with size not equal to source std::vector.");
 	xt::xarray<float> arr(shape);
 	std::copy(vec.begin(), vec.end(), arr.begin());
@@ -131,6 +131,11 @@ size_t XtensorBackend::scalarAdd(size_t handle, float x)
 	return createTensor(get(handle)+x);
 }
 
+void XtensorBackend::selfScalarAdd(size_t handle, float val)
+{
+	get(handle) += val;
+}
+
 size_t XtensorBackend::div(size_t handle1, size_t handle2)
 {
 	return createTensor(get(handle1)/get(handle2));
@@ -165,9 +170,14 @@ size_t XtensorBackend::slice(size_t handle, const std::vector<size_t>& begin, co
 {
 	const auto& t = get(handle);
 	xt::slice_vector sv(t);
-	for(int i=0;i<begin.size();i++)
+	for(size_t i=0;i<begin.size();i++)
 		sv.push_back(xt::range(begin[i], begin[i]+size[i]));
 	return createTensor(xt::dynamic_view(t, sv));
+}
+
+size_t XtensorBackend::sum(size_t handle, const std::vector<size_t>& axis)
+{
+	return createTensor(xt::sum(get(handle), axis));
 }
 
 void XtensorBackend::device(size_t handle, const float* ptr)

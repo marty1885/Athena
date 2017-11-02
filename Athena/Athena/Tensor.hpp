@@ -2,16 +2,11 @@
 
 #include <Athena/Backend.hpp>
 
-#include <xtensor/xarray.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xio.hpp>
-#include <xtensor/xindexview.hpp>
-#include <xtensor/xvectorize.hpp>
-#include <xtensor-blas/xlinalg.hpp>
-
 #include <assert.h>
 
 #include <vector>
+#include <numeric>
+#include <iostream>
 
 namespace At
 {
@@ -125,6 +120,11 @@ public:
 		return Tensor(backend_->transpose(handle_), backend_);
 	}
 
+	Tensor sum(const std::vector<size_t>& axis)
+	{
+		return Tensor(backend_->sum(handle_, axis), backend_);
+	}
+
 	const std::vector<size_t> shape() const
 	{
 		return backend_->shape(handle_);
@@ -134,6 +134,11 @@ public:
 	{
 		//Optimize this
 		*this = (*this - other);
+	}
+
+	void operator-=(const float& x)
+	{
+		backend_->selfScalarAdd(handle_,-x);
 	}
 
 	void reshape(const std::vector<size_t>& s)

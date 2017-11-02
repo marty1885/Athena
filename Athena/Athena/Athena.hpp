@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include <Athena/Backend.hpp>
+#include <Athena/Xtensorbackend.hpp>
 #include <Athena/Tensor.hpp>
 
 namespace At
@@ -323,8 +324,8 @@ public:
 		{
 			for(int j=0;j<datasetSize;j+=batchSize)
 			{
-				Tensor x = input.slice({j},{1});
-				Tensor y = desireOutput.slice({j},{1});
+				Tensor x = input.slice({j}, {1});
+				Tensor y = desireOutput.slice({j} ,{1});
 
 				x.reshape(inputShape);
 				y.reshape(outputShape);
@@ -356,7 +357,7 @@ public:
 						optimizer.update(weights[1], dE);
 					}
 
-					dE = tmp;
+					dE = std::move(tmp);
 				}
 				//epochLoss[j] = ((xt::xarray<float>)xt::sum(xt::pow(E,2)))[0];
 			}
