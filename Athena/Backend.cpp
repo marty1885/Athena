@@ -17,10 +17,10 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
 		[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor
 		{
-			const auto& i = this->get(in.internalHandle());
-			const auto& w = this->get(weight.internalHandle());
-			const auto& b = this->get(bias.internalHandle());
-			auto id = this->createTensor(
+			const auto& i = get(in.internalHandle());
+			const auto& w = get(weight.internalHandle());
+			const auto& b = get(bias.internalHandle());
+			auto id = createTensor(
 				xt::linalg::dot(i,w)+b
 			);
 			return Tensor(id, this);
@@ -29,8 +29,8 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
 		[this](const Tensor& dx, const Tensor& weight)->Tensor
 		{
-			const auto& i = this->get(dx.internalHandle());
-			const auto& w = this->get(weight.internalHandle());
+			const auto& i = get(dx.internalHandle());
+			const auto& w = get(weight.internalHandle());
 			return Tensor(this->createTensor(
 				xt::linalg::dot(i,xt::transpose(w))
 			), this);
@@ -39,7 +39,7 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<ActivationForward>("sigmoidForward",
 		[this](const Tensor& x)->Tensor
 		{
-			const auto& t = this->get(x.internalHandle());
+			const auto& t = get(x.internalHandle());
 			return Tensor(createTensor(1/(1+xt::exp(-t))), this);
 			
 		});
@@ -47,8 +47,8 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<ActivationBackward>("sigmoidBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const auto& dy = this->get(a.internalHandle());
-			const auto& y = this->get(b.internalHandle());
+			const auto& dy = get(a.internalHandle());
+			const auto& y = get(b.internalHandle());
 			return Tensor(createTensor(dy*(y*(1-y))), this);
 			
 		});
