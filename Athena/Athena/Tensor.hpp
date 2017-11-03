@@ -157,6 +157,11 @@ public:
 		return Tensor(backend_->transpose(handle_), backend_);
 	}
 
+	Tensor clone() const
+	{
+		return Tensor(backend_->copyTensor(handle_), backend_);
+	}
+
 	Tensor sum(const std::vector<size_t>& axis)
 	{
 		return Tensor(backend_->sum(handle_, axis), backend_);
