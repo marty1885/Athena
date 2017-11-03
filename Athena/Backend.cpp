@@ -47,11 +47,11 @@ XtensorBackend::XtensorBackend()
 		});
 
 	addAlgorithm<ActivationBackward>("sigmoidBackward",
-		[this](const Tensor& err, const Tensor& y)->Tensor
+		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const auto& dy = this->get(err.internalHandle());
-			const auto& t = this->get(y.internalHandle());
-			return Tensor(createTensor(dy*(t*(1-t))), this);
+			const auto& dy = this->get(a.internalHandle());
+			const auto& y = this->get(b.internalHandle());
+			return Tensor(createTensor(dy*(y*(1-y))), this);
 			
 		});
 }

@@ -21,12 +21,12 @@ public:
 	{
 	}
 
-	void addRef()
+	inline void addRef()
 	{
 		count_++;
 	}
     
-	int release()
+	inline int release()
 	{
 	    return --count_;
 	}
@@ -160,6 +160,11 @@ public:
 	Tensor sum(const std::vector<size_t>& axis)
 	{
 		return Tensor(backend_->sum(handle_, axis), backend_);
+	}
+
+	Tensor pow(float e)
+	{
+		return Tensor(backend_->pow(handle_, e), backend_);
 	}
 
 	const std::vector<size_t> shape() const

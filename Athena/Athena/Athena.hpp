@@ -25,7 +25,7 @@ public:
 	{
 	}
 
-	Layer(int input, int output, Backend* backend=nullptr, bool trainable=false):
+	Layer(size_t input, size_t output, Backend* backend=nullptr, bool trainable=false):
 		inputShape_({input}), mOutputShape({output}), backend_(backend), trainable_(trainable)
 	{
 	}
@@ -62,8 +62,8 @@ public:
 
 protected:
 	std::vector<Tensor> weights_;
-	std::vector<int> inputShape_;
-	std::vector<int> mOutputShape;
+	std::vector<size_t> inputShape_;
+	std::vector<size_t> mOutputShape;
 	Backend* backend_;
 	bool trainable_ = false;
 };
@@ -169,7 +169,7 @@ public:
 class FullyConnectedLayer : public Layer
 {
 public:
-	FullyConnectedLayer(int input, int output, Backend* backend):
+	FullyConnectedLayer(size_t input, size_t output, Backend* backend):
 		Layer(input, output, backend, true)
 	{
 		weights_.push_back(At::rand(-1,1, {input, output}, backend_));
@@ -218,6 +218,7 @@ protected:
 	delegate<ActivationForward> forwardAlgorithm;
 	delegate<ActivationBackward> backwardAlgorithm;
 };
+
 /*
 class TanhLayer : public Layer
 {
@@ -252,7 +253,7 @@ public:
 class LossFunction
 {
 public:
-	virtual float f(const Tensor& y, const Tensor& t) = 0;
+	virtual Tensor f(const Tensor& y, const Tensor& t) = 0;
 
 	virtual void df(const Tensor& y, const Tensor& t, Tensor& d)
 	{
@@ -261,9 +262,9 @@ public:
 
 class MSELoss : public LossFunction
 {
-	virtual float f(const Tensor& y, const Tensor& t) override
+	virtual Tensor f(const Tensor& y, const Tensor& t) override
 	{
-		return 1.f;//((xt::xarray<float>)xt::sum(xt::pow(y-t,2.f)))[0];
+		return (y-t).pow(2.f).sum({0});
 	}
 
 	virtual void df(const Tensor& y, const Tensor& t, Tensor& d) override
@@ -309,12 +310,13 @@ public:
 	{
 		assert(input.shape()[0]%batchSize == 0);
 		assert(input.ahape()[0]<batchSize);
-		int datasetSize = input.shape()[0];
+		size_t datasetSize = input.shape()[0];
 
 		auto inputShape = input.shape();
 		auto outputShape = desireOutput.shape();
 		inputShape[0] = batchSize;
 		outputShape[0] = batchSize;
+		std::vector<Tensor> layerOutputs(mLayers.size()+1);
 
 		std::vector<float> epochLoss(datasetSize/batchSize);
 
@@ -322,8 +324,7 @@ public:
 
 		for(int i=0;i<epoch;i++)
 		{
-			std::vector<Tensor> layerOutputs(mLayers.size()+1);
-			for(int j=0;j<datasetSize;j+=batchSize)
+			for(size_t j=0;j<datasetSize;j+=batchSize)
 			{
 				Tensor x = input.slice({j}, {1});
 				Tensor y = desireOutput.slice({j} ,{1});
@@ -343,7 +344,7 @@ public:
 				}
 
 				Tensor E = layerOutputs.back() - y;
-				Tensor dE = E;//*loss.f(layerOutputs.back(), y);
+				Tensor dE = E*loss.f(layerOutputs.back(), y);
 
 				for(int k=mLayers.size()-1;k>=0;k--)
 				{
