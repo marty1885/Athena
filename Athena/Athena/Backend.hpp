@@ -58,15 +58,15 @@ public:
 	virtual void* ones(const std::vector<size_t>& shape) = 0;
 	virtual void* rand(float lEdge, float rEdge, const std::vector<size_t>& shape) = 0;
 
-	virtual void* add(void* handle1, void* handle2) = 0;
-	virtual void* multiply(void* handle1, void* handle2) = 0;
-	virtual void* scalarMul(float x, void* handle) = 0;
-	virtual void* scalarAdd(void* handle, float val) = 0;
+	virtual void* add(const void* handle1,const  void* handle2) = 0;
+	virtual void* multiply(const void* handle1,const  void* handle2) = 0;
+	virtual void* scalarMul(float x,const  void* handle) = 0;
+	virtual void* scalarAdd(const void* handle, float val) = 0;
 	virtual void selfScalarAdd(void* handle, float val) = 0;
-	virtual void* div(void* handle1, void* handle2) = 0;
-	virtual void* subtract(void* handle1, void* handle2) = 0;
+	virtual void* div(const void* handle1,const  void* handle2) = 0;
+	virtual void* subtract(const void* handle1,const  void* handle2) = 0;
 
-	virtual void* dot(void* handle1, void* handle2) = 0;
+	virtual void* dot(const void* handle1, const void* handle2) = 0;
 
 	virtual void* sum(void* handle, const std::vector<size_t>& axis) = 0;
 	virtual void* pow(void* handle, float e) = 0;

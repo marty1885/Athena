@@ -102,22 +102,22 @@ std::vector<size_t> XtensorBackend::shape(void* handle) const
 }
 
 
-void* XtensorBackend::add(void* handle1, void* handle2)
+void* XtensorBackend::add(const void* handle1,const void* handle2)
 {
 	return createTensor(get(handle1)+get(handle2));
 }
 
-void* XtensorBackend::multiply(void* handle1, void* handle2)
+void* XtensorBackend::multiply(const void* handle1,const void* handle2)
 {
 	return createTensor(get(handle1)*get(handle2));
 }
 
-void* XtensorBackend::scalarMul(float x, void* handle)
+void* XtensorBackend::scalarMul(const float x,const void* handle)
 {
 	return createTensor(x*get(handle));
 }
 
-void* XtensorBackend::scalarAdd(void* handle, float x)
+void* XtensorBackend::scalarAdd(const void* handle,float x)
 {
 	return createTensor(get(handle)+x);
 }
@@ -127,12 +127,12 @@ void XtensorBackend::selfScalarAdd(void* handle, float val)
 	get(handle) += val;
 }
 
-void* XtensorBackend::div(void* handle1, void* handle2)
+void* XtensorBackend::div(const void* handle1,const  void* handle2)
 {
 	return createTensor(get(handle1)/get(handle2));
 }
 
-void* XtensorBackend::subtract(void* handle1, void* handle2)
+void* XtensorBackend::subtract(const void* handle1,const  void* handle2)
 {
 	return createTensor(get(handle1)-get(handle2));
 }
@@ -147,7 +147,7 @@ void* XtensorBackend::transpose(void* handle)
 	return createTensor(xt::transpose(get(handle)));
 }
 
-void* XtensorBackend::dot(void* handle1, void* handle2)
+void* XtensorBackend::dot(const void* handle1, const void* handle2)
 {
 	return createTensor(xt::linalg::dot(get(handle1),get(handle2)));
 }

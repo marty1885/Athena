@@ -50,7 +50,7 @@ public:
 			return;
 
 		backend_ = t.backend();
-		handle_ = t.internalHandle();
+		handle_ = const_cast<void*>(t.internalHandle());
 		if(referenceCounter_ != nullptr)
 			referenceCounter_->addRef();
 	}
@@ -61,7 +61,7 @@ public:
 			return *this;
 
 		backend_ = other.backend();
-		handle_ = other.internalHandle();
+		handle_ = const_cast<void*>(other.internalHandle());
 		referenceCounter_ = other.referenceCounter();
 		if(referenceCounter_ != nullptr)
 			referenceCounter_->addRef();
@@ -81,7 +81,7 @@ public:
 		t.setReferenceCounter(nullptr);
 	}
 
-	Backend* backend() const
+	inline Backend* backend() const
 	{
 		return backend_;
 	}
@@ -179,12 +179,12 @@ public:
 		return std::accumulate(s.begin(), s.end(), 1, std::multiplies<size_t>());
 	}
 
-	void* internalHandle() const
+	inline const void* internalHandle() const
 	{
 		return handle_;
 	}
 
-	void*& internalHandle()
+	inline void*& internalHandle()
 	{
 		return handle_;
 	}
@@ -196,7 +196,6 @@ public:
 
 	virtual ~Tensor()
 	{
-
 		if(referenceCounter_ != nullptr)
 		{
 			if(referenceCounter_->release() == 0)
@@ -206,18 +205,18 @@ public:
 				delete referenceCounter_;
 			}
 		}
-	
+
 		handle_ = 0;
 		backend_ = nullptr;
 	}
 
 protected:
-	ReferenceCounter* referenceCounter() const
+	inline ReferenceCounter* referenceCounter() const
 	{
 		return referenceCounter_;
 	}
 
-	void setReferenceCounter(ReferenceCounter* ptr)
+	inline void setReferenceCounter(ReferenceCounter* ptr)
 	{
 		referenceCounter_ = ptr;
 	}
