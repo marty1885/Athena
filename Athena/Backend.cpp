@@ -82,6 +82,95 @@ void* XtensorBackend::copyTensor(const void* src)
 	return createTensor(t);
 }
 
+void* XtensorBackend::zeros(const std::vector<size_t>& shape)
+{
+	return createTensor(xt::zeros<float>(shape));
+}
+void* XtensorBackend::ones(const std::vector<size_t>& shape)
+{
+	return createTensor(xt::ones<float>(shape));
+}
+
+void* XtensorBackend::rand(float lEdge, float rEdge, const std::vector<size_t>& shape)
+{
+	return createTensor(xt::random::rand<float>(shape, lEdge, rEdge));
+}
+
+std::vector<size_t> XtensorBackend::shape(void* handle) const
+{
+	return get(handle).shape();
+}
+
+
+void* XtensorBackend::add(void* handle1, void* handle2)
+{
+	return createTensor(get(handle1)+get(handle2));
+}
+
+void* XtensorBackend::multiply(void* handle1, void* handle2)
+{
+	return createTensor(get(handle1)*get(handle2));
+}
+
+void* XtensorBackend::scalarMul(float x, void* handle)
+{
+	return createTensor(x*get(handle));
+}
+
+void* XtensorBackend::scalarAdd(void* handle, float x)
+{
+	return createTensor(get(handle)+x);
+}
+
+void XtensorBackend::selfScalarAdd(void* handle, float val)
+{
+	get(handle) += val;
+}
+
+void* XtensorBackend::div(void* handle1, void* handle2)
+{
+	return createTensor(get(handle1)/get(handle2));
+}
+
+void* XtensorBackend::subtract(void* handle1, void* handle2)
+{
+	return createTensor(get(handle1)-get(handle2));
+}
+
+void XtensorBackend::reshape(void* handle, const std::vector<size_t>& targetShape)
+{
+	get(handle).reshape(targetShape);
+}
+
+void* XtensorBackend::transpose(void* handle)
+{
+	return createTensor(xt::transpose(get(handle)));
+}
+
+void* XtensorBackend::dot(void* handle1, void* handle2)
+{
+	return createTensor(xt::linalg::dot(get(handle1),get(handle2)));
+}
+
+void* XtensorBackend::slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size)
+{
+	const auto& t = get(handle);
+	xt::slice_vector sv(t);
+	for(size_t i=0;i<begin.size();i++)
+		sv.push_back(xt::range(begin[i], begin[i]+size[i]));
+	return createTensor(xt::dynamic_view(t, sv));
+}
+
+void* XtensorBackend::sum(void* handle, const std::vector<size_t>& axis)
+{
+	return createTensor(xt::sum(get(handle), axis));
+}
+
+void* XtensorBackend::pow(void* handle, float e)
+{
+	return createTensor(xt::pow(get(handle), e));
+}
+
 void XtensorBackend::device(void* handle, const float* ptr)
 {
 	auto& t = get(handle);
@@ -98,9 +187,4 @@ size_t XtensorBackend::size(void* handle)
 {
 	auto& t = get(handle);
 	return t.size();
-}
-
-void XtensorBackend::reshape(void* handle, const std::vector<size_t>& s)
-{
-	get(handle).reshape(s);
 }

@@ -54,9 +54,30 @@ public:
 
 	virtual void device(void* handle, const float* ptr) = 0;
 	virtual void host(void* handle, float* ptr) const = 0;
+	virtual void* zeros(const std::vector<size_t>& shape) = 0;
+	virtual void* ones(const std::vector<size_t>& shape) = 0;
+	virtual void* rand(float lEdge, float rEdge, const std::vector<size_t>& shape) = 0;
+
+	virtual void* add(void* handle1, void* handle2) = 0;
+	virtual void* multiply(void* handle1, void* handle2) = 0;
+	virtual void* scalarMul(float x, void* handle) = 0;
+	virtual void* scalarAdd(void* handle, float val) = 0;
+	virtual void selfScalarAdd(void* handle, float val) = 0;
+	virtual void* div(void* handle1, void* handle2) = 0;
+	virtual void* subtract(void* handle1, void* handle2) = 0;
+
+	virtual void* dot(void* handle1, void* handle2) = 0;
+
+	virtual void* sum(void* handle, const std::vector<size_t>& axis) = 0;
+	virtual void* pow(void* handle, float e) = 0;
+
+	virtual std::vector<size_t> shape(void* handle) const = 0;
+	virtual void reshape(void* handle, const std::vector<size_t>& targetShape) = 0;
+	virtual void* transpose(void* handle) = 0;
+	virtual void* slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size) = 0;
+
 
 	virtual size_t size(void* handle) = 0;
-	virtual void reshape(void* handle, const std::vector<size_t>& s) = 0;
 
 	template<typename FT>
 	inline void addAlgorithm(const std::string& name, delegate<FT> f)
