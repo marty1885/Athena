@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Athena/Backend.hpp>
+#include <Athena/ReferenceCounter.hpp>
 
 #include <assert.h>
 
@@ -10,27 +11,6 @@
 
 namespace At
 {
-
-class ReferenceCounter
-{
-protected:
-	size_t count_;
-public:
-	ReferenceCounter(size_t initVal = 0)
-		: count_(initVal)
-	{
-	}
-
-	inline void addRef()
-	{
-		count_++;
-	}
-    
-	inline int release()
-	{
-	    return --count_;
-	}
-};
 
 class Tensor
 {
@@ -47,8 +27,8 @@ public:
 		backend_ = backend;
 		handle_ = backend->createTensor(shape);
 	}
-	
-	Tensor(size_t handle, Backend* backend)
+
+	Tensor(void* handle, Backend* backend)
 		: Tensor()
 	{
 		handle_ = handle;
@@ -74,7 +54,7 @@ public:
 		if(referenceCounter_ != nullptr)
 			referenceCounter_->addRef();
 	}
-	
+
 	Tensor& operator= (const Tensor& other)
 	{
 		if(other.backend() == nullptr)
@@ -101,136 +81,32 @@ public:
 		t.setReferenceCounter(nullptr);
 	}
 
-	Backend* backend() const
-	{
-		return backend_;
-	}
-
-	Tensor operator+(const Tensor& other) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->add(handle_, other.internalHandle()), backend_);
-	}
-
-	Tensor operator-(const Tensor& other) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->subtract(handle_, other.internalHandle()), backend_);
-	}
-
-	Tensor operator*(const Tensor& other) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->multiply(handle_, other.internalHandle()), backend_);
-	}
-
-	Tensor operator/(const Tensor& other) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->subtract(handle_, other.internalHandle()), backend_);
-	}
-	
-	Tensor operator*(float amp) const
-	{
-		return Tensor(backend_->scalarMul(amp, handle_), backend_);
-	}
-
-	Tensor operator+(const float& x) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->scalarAdd(handle_, x), backend_);
-	}
-
-	Tensor operator-(const float& x) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->scalarAdd(handle_, -x), backend_);
-	}
-
-	Tensor slice(const std::vector<size_t>& begin, const std::vector<size_t>& size) const
-	{
-		return Tensor(backend_->slice(handle_, begin, size), backend_);
-	}
-
-	Tensor transpose() const
-	{
-		return Tensor(backend_->transpose(handle_), backend_);
-	}
-
-	Tensor clone() const
-	{
-		return Tensor(backend_->copyTensor(handle_), backend_);
-	}
-
-	Tensor sum(const std::vector<size_t>& axis)
-	{
-		return Tensor(backend_->sum(handle_, axis), backend_);
-	}
-
-	Tensor pow(float e)
-	{
-		return Tensor(backend_->pow(handle_, e), backend_);
-	}
-
-	const std::vector<size_t> shape() const
-	{
-		return backend_->shape(handle_);
-	}
-	
-	void operator-=(const Tensor& other)
-	{
-		//Optimize this
-		*this = (*this - other);
-	}
-
-	void operator-=(const float& x)
-	{
-		backend_->selfScalarAdd(handle_,-x);
-	}
-
-	void reshape(const std::vector<size_t>& s)
-	{
-		backend_->reshape(handle_, s);
-	}
-
-	size_t size() const
-	{
-		auto& s = shape();
-		return std::accumulate(s.begin(), s.end(), 1, std::multiplies<size_t>());
-	}
-
-	const size_t& internalHandle() const
-	{
-		return handle_;
-	}
-
-	size_t& internalHandle()
-	{
-		return handle_;
-	}
-
 	void host(float* ptr) const
 	{
 		backend_->host(handle_, ptr);
 	}
 
-	virtual ~Tensor()
+	size_t size() const
 	{
-
-		if(referenceCounter_ != nullptr)
-		{
-			if(referenceCounter_->release() == 0)
-			{
-				if(handle_ != 0)
-					backend_->destoryTensor(handle_);
-				delete referenceCounter_;
-			}
-		}
-	
-		handle_ = 0;
-		backend_ = nullptr;
+		return backend_->size(handle_);
 	}
 
+	void* internalHandle() const
+	{
+		return handle_;
+	}
+
+	void*& internalHandle()
+	{
+		return handle_;
+	}
+
+	Backend* backend() const
+	{
+		return backend_;
+	}
+
+	
 protected:
 	ReferenceCounter* referenceCounter() const
 	{
@@ -243,24 +119,9 @@ protected:
 	}
 
 	Backend* backend_ = nullptr;
-	size_t handle_ = 0;
 	ReferenceCounter* referenceCounter_ = nullptr;
+	void* handle_ = nullptr;
 };
-
-Tensor rand(float lEdge, float rEdge, const std::vector<size_t>& shape, Backend* backend)
-{
-	return Tensor(backend->rand(rEdge, lEdge, shape), backend);
-}
-
-Tensor zeros(const std::vector<size_t>& shape, Backend* backend)
-{
-	return Tensor(backend->zeros(shape), backend);
-}
-
-Tensor dot(const Tensor& a, const Tensor& b)
-{
-	return Tensor(a.backend()->dot(a.internalHandle(), b.internalHandle()), a.backend());
-}
 
 std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
