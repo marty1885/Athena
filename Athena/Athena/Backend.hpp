@@ -77,7 +77,7 @@ public:
 	virtual void* slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size) = 0;
 
 
-	virtual size_t size(void* handle) = 0;
+	virtual size_t size(const void* handle) = 0;
 
 	template<typename FT>
 	inline void addAlgorithm(const std::string& name, delegate<FT> f)

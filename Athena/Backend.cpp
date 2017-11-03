@@ -183,7 +183,7 @@ void XtensorBackend::host(void* handle, float* ptr) const
 	std::copy(t.begin(), t.end(), ptr);
 }
 
-size_t XtensorBackend::size(void* handle)
+size_t XtensorBackend::size(const void* handle)
 {
 	auto& t = get(handle);
 	return t.size();

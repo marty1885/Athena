@@ -47,7 +47,7 @@ public:
 	virtual void* transpose(void* handle);
 	virtual void* slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size);
 
-	virtual size_t size(void* handle);
+	virtual size_t size(const void* handle);
 
 	inline xt::xarray<float>& get(void* handle) const
 	{

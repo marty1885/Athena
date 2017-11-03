@@ -175,8 +175,7 @@ public:
 
 	size_t size() const
 	{
-		auto& s = shape();
-		return std::accumulate(s.begin(), s.end(), 1, std::multiplies<size_t>());
+		return backend_->size(handle_);
 	}
 
 	inline const void* internalHandle() const
