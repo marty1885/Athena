@@ -86,47 +86,6 @@ public:
 		return backend_;
 	}
 
-	Tensor operator+(const Tensor& other) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->add(handle_, other.internalHandle()), backend_);
-	}
-
-	Tensor operator-(const Tensor& other) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->subtract(handle_, other.internalHandle()), backend_);
-	}
-
-	Tensor operator*(const Tensor& other) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->multiply(handle_, other.internalHandle()), backend_);
-	}
-
-	Tensor operator/(const Tensor& other) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->subtract(handle_, other.internalHandle()), backend_);
-	}
-	
-	Tensor operator*(float amp) const
-	{
-		return Tensor(backend_->scalarMul(amp, handle_), backend_);
-	}
-
-	Tensor operator+(const float& x) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->scalarAdd(handle_, x), backend_);
-	}
-
-	Tensor operator-(const float& x) const
-	{
-		assert(other.backend() == backend());
-		return Tensor(backend_->scalarAdd(handle_, -x), backend_);
-	}
-
 	Tensor slice(const std::vector<size_t>& begin, const std::vector<size_t>& size) const
 	{
 		return Tensor(backend_->slice(handle_, begin, size), backend_);
@@ -155,17 +114,6 @@ public:
 	const std::vector<size_t> shape() const
 	{
 		return backend_->shape(handle_);
-	}
-	
-	void operator-=(const Tensor& other)
-	{
-		//Optimize this
-		*this = (*this - other);
-	}
-
-	void operator-=(const float& x)
-	{
-		backend_->selfScalarAdd(handle_,-x);
 	}
 
 	void reshape(const std::vector<size_t>& s)
@@ -250,5 +198,58 @@ std::ostream& operator<< (std::ostream& os, const Tensor& t)
 	os << "}";
 	return os;
 }
+
+Tensor operator+(const Tensor& t, const Tensor& other)
+{
+	assert(t.backend() == t.backend());
+	return Tensor(t.backend()->add(t.internalHandle(), other.internalHandle()), t.backend());
+}
+
+Tensor operator-(const Tensor& t, const Tensor& other)
+{
+	assert(t.backend() == t.backend());
+	return Tensor(t.backend()->subtract(t.internalHandle(), other.internalHandle()), t.backend());
+}
+
+void operator-=(Tensor& t, const Tensor& other)
+{
+	t = std::move(t-other);
+}
+
+Tensor operator*(const Tensor& t, const Tensor& other)
+{
+	assert(t.backend() == t.backend());
+	return Tensor(t.backend()->multiply(t.internalHandle(), other.internalHandle()), t.backend());
+}
+
+Tensor operator/(const Tensor& t, const Tensor& other)
+{
+	assert(t.backend() == t.backend());
+	return Tensor(t.backend()->div(t.internalHandle(), other.internalHandle()), t.backend());
+}
+
+void operator-=(Tensor& t, const float& x)
+{
+	t.backend()->selfScalarAdd(t.internalHandle(),-x);
+}
+
+Tensor operator+(const Tensor& t, float val)
+{
+	assert(t.backend() == t.backend());
+	return Tensor(t.backend()->scalarAdd(t.internalHandle(), val), t.backend());
+}
+
+Tensor operator-(const Tensor& t, float val)
+{
+	assert(t.backend() == t.backend());
+	return Tensor(t.backend()->scalarAdd(t.internalHandle(), -val), t.backend());
+}
+
+Tensor operator*(const Tensor& t, float amp)
+{
+	assert(t.backend() == t.backend());
+	return Tensor(t.backend()->scalarMul(t.internalHandle(), amp), t.backend());
+}
+
 
 }

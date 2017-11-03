@@ -28,7 +28,7 @@ public:
 
 	virtual void* add(const void* handle1,const  void* handle2);
 	virtual void* multiply(const void* handle1,const  void* handle2);
-	virtual void* scalarMul(float x,const  void* handle);
+	virtual void* scalarMul(const  void* handle, float x);
 	virtual void* scalarAdd(const void* handle, float val);
 	virtual void selfScalarAdd(void* handle, float val);
 	virtual void* div(const void* handle1,const  void* handle2);

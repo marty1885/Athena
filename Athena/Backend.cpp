@@ -112,7 +112,7 @@ void* XtensorBackend::multiply(const void* handle1,const void* handle2)
 	return createTensor(get(handle1)*get(handle2));
 }
 
-void* XtensorBackend::scalarMul(const float x,const void* handle)
+void* XtensorBackend::scalarMul(const void* handle, float x)
 {
 	return createTensor(x*get(handle));
 }

@@ -26,7 +26,7 @@ public:
 	}
 
 	Layer(size_t input, size_t output, Backend* backend=nullptr, bool trainable=false):
-		inputShape_({input}), mOutputShape({output}), backend_(backend), trainable_(trainable)
+		inputShape_({input}), outputShape_({output}), backend_(backend), trainable_(trainable)
 	{
 	}
 
@@ -63,7 +63,7 @@ public:
 protected:
 	std::vector<Tensor> weights_;
 	std::vector<size_t> inputShape_;
-	std::vector<size_t> mOutputShape;
+	std::vector<size_t> outputShape_;
 	Backend* backend_;
 	bool trainable_ = false;
 };
@@ -122,7 +122,7 @@ protected:
 class MomentumOptimizer : public StatefulOptimizer<1>
 {
 public:
-	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
+	virtual void update(Tensor& weight, const Tensor& grad) override
 	{
 		auto& v = get<0>(weight);
 		v = mMu*v - mAlpha*grad;
@@ -131,8 +131,8 @@ public:
 
 	float mAlpha = 0.01;
 	float mMu = 0.9;
-};*/
-
+};
+*/
 class NestrovOptimizer : public StatefulOptimizer<1>
 {
 public:
