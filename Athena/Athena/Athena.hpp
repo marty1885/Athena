@@ -219,37 +219,57 @@ protected:
 	delegate<ActivationBackward> backwardAlgorithm;
 };
 
-/*
+
 class TanhLayer : public Layer
 {
 public:
-	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
+	TanhLayer(Backend* backend) : Layer(backend)
 	{
-		y = xt::tanh(x);
+		forwardAlgorithm = backend_->getAlgorithm<ActivationForward>("tanhForward");
+		backwardAlgorithm = backend_->getAlgorithm<ActivationBackward>("tanhBackward");
 	}
 
-	virtual void backword(const xt::xarray<float>& x, const xt::xarray<float>& y,
-			xt::xarray<float>& dx, const xt::xarray<float>& dy) override
+	virtual void forward(const Tensor& x, Tensor& y) override
 	{
-		dx = dy * (1 - xt::pow(xt::tanh(y), 2));
+		y = forwardAlgorithm(x);
 	}
+
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override
+	{
+		dx = backwardAlgorithm(dy, y);
+	}
+
+protected:
+	delegate<ActivationForward> forwardAlgorithm;
+	delegate<ActivationBackward> backwardAlgorithm;
 };
 
 class ReluLayer : public Layer
 {
 public:
-	virtual void forward(const xt::xarray<float>& x, xt::xarray<float>& y) override
+	ReluLayer(Backend* backend) : Layer(backend)
 	{
-		y = xt::vectorize([](float v){return v > 0 ? v : 0.f;})(x);
+		forwardAlgorithm = backend_->getAlgorithm<ActivationForward>("reluForward");
+		backwardAlgorithm = backend_->getAlgorithm<ActivationBackward>("reluBackward");
 	}
 
-	virtual void backword(const xt::xarray<float>& x, const xt::xarray<float>& y,
-			xt::xarray<float>& dx, const xt::xarray<float>& dy) override
+	virtual void forward(const Tensor& x, Tensor& y) override
 	{
-		dx = dy * xt::vectorize([](float v){return v > 0 ? 1.f : 0.f;})(y);
+		y = forwardAlgorithm(x);
 	}
+
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override
+	{
+		dx = backwardAlgorithm(dy, y);
+	}
+
+protected:
+	delegate<ActivationForward> forwardAlgorithm;
+	delegate<ActivationBackward> backwardAlgorithm;
 };
-*/
+
 class LossFunction
 {
 public:
@@ -319,8 +339,6 @@ public:
 		std::vector<Tensor> layerOutputs(mLayers.size()+1);
 
 		std::vector<float> epochLoss(datasetSize/batchSize);
-
-		optimizer.reset();
 
 		for(int i=0;i<epoch;i++)
 		{

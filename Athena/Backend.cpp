@@ -67,6 +67,22 @@ XtensorBackend::XtensorBackend()
 			xt::xarray<float> res = dy * (1 - xt::pow(xt::tanh(y), 2));
 			return Tensor(createTensor(res), this);	
 		});
+
+	addAlgorithm<ActivationForward>("reluForward",
+		[this](const Tensor& x)->Tensor
+		{
+			const auto& t = get(x.internalHandle());
+			xt::xarray<float> res = (t>0)*t;
+			return Tensor(createTensor(res), this);
+		});
+
+	addAlgorithm<ActivationBackward>("reluBackward",
+		[this](const Tensor& a, const Tensor& b)->Tensor
+		{
+			const auto& y = get(b.internalHandle());
+			xt::xarray<float> res = (y>0);
+			return Tensor(createTensor(res), this);	
+		});
 }
 void* XtensorBackend::createTensor(const std::vector<size_t>& dims)
 {

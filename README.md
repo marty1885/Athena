@@ -9,4 +9,4 @@
  * High level neural netowrk API
 
 ## Tensor and Backends
-`Athena` handles tensor like how a game engine handles it's scenes and objecteds.
+`Athena` handles tensor like how a game engine handles it's scenes and objecteds. The `Tensor` class does not creare nor operate a tensor itself. Instead it calls a `Backend` that does all the job.
