@@ -18,13 +18,13 @@ int main()
 	net.add<At::FullyConnectedLayer>(5,1, &backend);
 	net.add<At::SigmoidLayer>(&backend);
 
-	int epoch = 100000;
+	size_t epoch = 100000;
 
 	At::NestrovOptimizer opt(&backend);
 	At::MSELoss loss;
 	opt.mAlpha = 0.35;
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	net.fit(opt,loss,X,Y,1,epoch);
+	net.fit(opt,loss,X,Y,4,epoch);
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
 	duration<double> time_span = duration_cast<duration<double>>(t2 - t1);

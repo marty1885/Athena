@@ -326,7 +326,7 @@ public:
 	}
 
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
-		int batchSize, int epoch)
+		size_t batchSize, size_t epoch)
 	{
 		assert(input.shape()[0]%batchSize == 0);
 		assert(input.ahape()[0]<batchSize);
@@ -340,12 +340,12 @@ public:
 
 		std::vector<float> epochLoss(datasetSize/batchSize);
 
-		for(int i=0;i<epoch;i++)
+		for(size_t i=0;i<epoch;i++)
 		{
 			for(size_t j=0;j<datasetSize;j+=batchSize)
 			{
-				Tensor x = input.slice({j}, {1});
-				Tensor y = desireOutput.slice({j} ,{1});
+				Tensor x = input.slice({j}, {batchSize});
+				Tensor y = desireOutput.slice({j} ,{batchSize});
 
 				x.reshape(inputShape);
 				y.reshape(outputShape);
@@ -373,7 +373,7 @@ public:
 					if(weights.size() > 0 && layer->trainable())
 					{
 						optimizer.update(weights[0], dot(layerOutputs[k].transpose(), dE));
-						optimizer.update(weights[1], dE);
+						optimizer.update(weights[1], dE.sum({0}));
 					}
 
 					dE = std::move(tmp);
