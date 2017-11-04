@@ -39,10 +39,11 @@ public:
 	virtual void device(void* t, const float* ptr);
 	virtual void host(void* t, float* ptr) const;
 
-	virtual void* sum(void* handle, const std::vector<size_t>& axis);
-	virtual void* pow(void* handle, float e);
+	virtual void* sum(const void* handle, const std::vector<size_t>& axis);
+	virtual void* pow(const void* handle, float e);
 
 	virtual void* sqrt(const void* handle);
+	virtual void* abs(const void* handle);
 
 	virtual std::vector<size_t> shape(void* handle) const;
 	virtual void reshape(void* handle, const std::vector<size_t>& targetShape);

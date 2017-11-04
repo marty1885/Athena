@@ -203,6 +203,16 @@ Tensor sqrt(const Tensor& t)
 	return Tensor(t.backend()->sqrt(t.internalHandle()), t.backend());
 }
 
+Tensor abs(const Tensor& t)
+{
+	return Tensor(t.backend()->abs(t.internalHandle()), t.backend());
+}
+
+Tensor sum(const Tensor& t, const std::vector<size_t> axis = {})
+{
+	return Tensor(t.backend()->sum(t.internalHandle(), axis), t.backend());
+}
+
 std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
 	std::vector<float> v(t.size());

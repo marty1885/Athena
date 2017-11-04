@@ -276,26 +276,26 @@ class MSELoss : public LossFunction
 };
 
 using L2Loss = MSELoss;
-/*
+
 class AbsoluteLoss : public LossFunction
 {
-	virtual float f(const xt::xarray<float>& y, const xt::xarray<float>& t) override
+	virtual Tensor f(const Tensor& y, const Tensor& t)
 	{
-		return ((xt::xarray<float>)xt::sum(xt::abs(y-t)))[0];
+		return sum(abs(y-t));
 	}
 
-	virtual void df(const xt::xarray<float>& y, const xt::xarray<float>& t, xt::xarray<float>& d) override
+	virtual void df(const Tensor& y, const Tensor& t, Tensor& d) override
 	{
-		d.reshape(t.shape());
+		/*d.reshape(t.shape());
 		float factor = 1.f/(float)t.size();
 		auto func = [factor](float x)->float{return x < 0.f? -factor : (x > 0.f ? factor : 0.f);};
 
-		d = xt::vectorize(func)(y-t);
+		d = xt::vectorize(func)(y-t);*/
 	}
 };
 
 using L1Loss = AbsoluteLoss;
-*/
+
 class SequentialNetwork
 {
 public:
