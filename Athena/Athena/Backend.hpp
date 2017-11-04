@@ -69,8 +69,8 @@ public:
 	virtual void* dot(const void* handle1, const void* handle2) = 0;
 
 	virtual void* sum(const void* handle, const std::vector<size_t>& axis) = 0;
-	virtual void* pow(const void* handle, float e) = 0;
 
+	virtual void* pow(const void* handle, float e) = 0;
 	virtual void* sqrt(const void* handle) = 0;
 	virtual void* abs(const void* handle) = 0;
 
@@ -78,7 +78,6 @@ public:
 	virtual void reshape(void* handle, const std::vector<size_t>& targetShape) = 0;
 	virtual void* transpose(void* handle) = 0;
 	virtual void* slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size) = 0;
-
 
 	virtual size_t size(const void* handle) = 0;
 
@@ -104,7 +103,6 @@ public:
 	}
 
 protected:
-	std::vector<size_t> unusedSpace_;
 	std::unordered_map<std::string, FunctoinWrapper*> algorithms_;
 };
 

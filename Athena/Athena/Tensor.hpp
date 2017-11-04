@@ -165,6 +165,7 @@ public:
 
 		handle_ = 0;
 		backend_ = nullptr;
+		referenceCounter_ = nullptr;
 	}
 
 protected:
