@@ -80,7 +80,7 @@ XtensorBackend::XtensorBackend()
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
 			const auto& y = get(b.internalHandle());
-			xt::xarray<float> res = (y>0);
+			xt::xarray<float> res = 1.f*(y>0);
 			return Tensor(createTensor(res), this);	
 		});
 }

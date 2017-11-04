@@ -100,7 +100,7 @@ public:
 
 	virtual void reset() override
 	{
-		for(auto& s : mStorage)
+		for(auto& s : storage_)
 			s.clear();
 	}
 
@@ -108,14 +108,14 @@ protected:
 	template <int Index>
 	Tensor& get(const Tensor& vec)
 	{
-		auto& s = mStorage[Index];
+		auto& s = storage_[Index];
 		auto it = s.find(&vec);
 		if(it == s.end())
 			s[&vec] = At::zeros(vec.shape(), backend_);
 
 		return s[&vec];
 	}
-	std::array<std::unordered_map<const Tensor*, Tensor>, N> mStorage;
+	std::array<std::unordered_map<const Tensor*, Tensor>, N> storage_;
 	Backend* backend_;
 };
 
@@ -322,21 +322,25 @@ public:
 	template<typename LayerType, typename ... Args>
 	void add(Args ... args)
 	{
-		mLayers.push_back(new LayerType(args ...));
+		layers_.push_back(new LayerType(args ...));
 	}
 
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
 		size_t batchSize, size_t epoch)
 	{
-		assert(input.shape()[0]%batchSize == 0);
-		assert(input.ahape()[0]<batchSize);
+		if(input.shape()[0]%batchSize != 0)
+			throw AtError("Error: batch size cannot divied the number of datasets perfectly.");
+		
+		if(input.shape()[0]<batchSize)
+			throw AtError("Error: batch size is larger than the number of datasets");
+
 		size_t datasetSize = input.shape()[0];
 
 		auto inputShape = input.shape();
 		auto outputShape = desireOutput.shape();
 		inputShape[0] = batchSize;
 		outputShape[0] = batchSize;
-		std::vector<Tensor> layerOutputs(mLayers.size()+1);
+		std::vector<Tensor> layerOutputs(layers_.size()+1);
 
 		std::vector<float> epochLoss(datasetSize/batchSize);
 
@@ -353,7 +357,7 @@ public:
 				layerOutputs[0] = x.clone();
 
 				int index = 0;
-				for(auto& layer : mLayers)
+				for(auto& layer : layers_)
 				{
 					const auto& currentInput = layerOutputs[index];
 					Tensor out;
@@ -364,9 +368,9 @@ public:
 				Tensor E = layerOutputs.back() - y;
 				Tensor dE = E*loss.f(layerOutputs.back(), y);
 
-				for(int k=mLayers.size()-1;k>=0;k--)
+				for(int k=layers_.size()-1;k>=0;k--)
 				{
-					auto& layer = mLayers[k];
+					auto& layer = layers_[k];
 					Tensor tmp;
 					layer->backword(layerOutputs[k],layerOutputs[k+1], tmp, dE);
 					auto& weights = layer->weights();
@@ -385,26 +389,28 @@ public:
 
 	void predict(const Tensor& input, Tensor& output)
 	{
-		std::vector<Tensor> layerOutputs;
-		layerOutputs.push_back(input);
-
-		for(auto& layer : mLayers)
+		Tensor in = input.clone();
+		for(auto& layer : layers_)
 		{
-			auto& currentInput = layerOutputs.back();
 			Tensor out;
-			layer->forward(currentInput, out);
-			layerOutputs.push_back(out);
+			layer->forward(in, out);
+			in = out;
 		}
 
-		output = layerOutputs.back();
+		output = in;
+	}
+
+	const Layer* operator[](int index) const
+	{
+		return layers_[index];
 	}
 
 	Layer* operator[](int index)
 	{
-		return mLayers[index];
+		return layers_[index];
 	}
 
-	std::vector<Layer*> mLayers;
+	std::vector<Layer*> layers_;
 };
 
 }
