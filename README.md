@@ -4,8 +4,9 @@
 
 ## Introduction
 `Athena` provides
- * A computation backend that can be easily expanded on
+ * A computation backend that can be easily implemented
  * Tensor operators colosely resambles TensorFlow's
- * High level neural netowrk design API
+ * High level neural netowrk API
 
 ## Tensor and Backends
+`Athena` handles tensor like how a game engine handles it's scenes and objecteds.

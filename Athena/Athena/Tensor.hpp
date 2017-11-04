@@ -47,7 +47,7 @@ public:
 	{
 		//Workarround someone trying to copy a not initialized Tensor
 		if(t.backend() == nullptr)
-			return;
+			return;	
 
 		backend_ = t.backend();
 		handle_ = const_cast<void*>(t.internalHandle());
@@ -57,8 +57,18 @@ public:
 	
 	Tensor& operator= (const Tensor& other)
 	{
-		if(other.backend() == nullptr)
+		if(this == &other || other.backend() == nullptr)
 			return *this;
+
+		if(referenceCounter_ != nullptr)
+		{
+			if(referenceCounter_->release() == 0)
+			{
+				if(handle_ != nullptr)
+					backend_->destoryTensor(handle_);
+				delete referenceCounter_;
+			}
+		}
 
 		backend_ = other.backend();
 		handle_ = const_cast<void*>(other.internalHandle());
@@ -186,6 +196,11 @@ Tensor zeros(const std::vector<size_t>& shape, Backend* backend)
 Tensor dot(const Tensor& a, const Tensor& b)
 {
 	return Tensor(a.backend()->dot(a.internalHandle(), b.internalHandle()), a.backend());
+}
+
+Tensor sqrt(const Tensor& t)
+{
+	return Tensor(t.backend()->sqrt(t.internalHandle()), t.backend());
 }
 
 std::ostream& operator<< (std::ostream& os, const Tensor& t)

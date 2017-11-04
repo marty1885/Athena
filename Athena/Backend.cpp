@@ -171,6 +171,11 @@ void* XtensorBackend::pow(void* handle, float e)
 	return createTensor(xt::pow(get(handle), e));
 }
 
+void* XtensorBackend::sqrt(const void* handle)
+{
+	return createTensor(xt::sqrt(get(handle)));
+}
+
 void XtensorBackend::device(void* handle, const float* ptr)
 {
 	auto& t = get(handle);

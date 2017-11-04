@@ -71,6 +71,8 @@ public:
 	virtual void* sum(void* handle, const std::vector<size_t>& axis) = 0;
 	virtual void* pow(void* handle, float e) = 0;
 
+	virtual void* sqrt(const void* handle) = 0;
+
 	virtual std::vector<size_t> shape(void* handle) const = 0;
 	virtual void reshape(void* handle, const std::vector<size_t>& targetShape) = 0;
 	virtual void* transpose(void* handle) = 0;

@@ -118,7 +118,7 @@ protected:
 	std::array<std::unordered_map<const Tensor*, Tensor>, N> mStorage;
 	Backend* backend_;
 };
-/*
+
 class MomentumOptimizer : public StatefulOptimizer<1>
 {
 public:
@@ -132,7 +132,7 @@ public:
 	float mAlpha = 0.01;
 	float mMu = 0.9;
 };
-*/
+
 class NestrovOptimizer : public StatefulOptimizer<1>
 {
 public:
@@ -152,19 +152,19 @@ public:
 	float mAlpha = 0.01;
 	float mMomentum = 0.9;
 };
-/*
+
 class AdaGradOptimizer : public StatefulOptimizer<1>
 {
 public:
-	virtual void update(xt::xarray<float>& weight, const xt::xarray<float>& grad) override
+	virtual void update(Tensor& weight, const Tensor& grad) override
 	{
 		auto& h = get<0>(weight);
 		h += grad*grad;
-		weight -= mAlpha*grad/(xt::sqrt(h)+1e-7f);
+		weight -= mAlpha*grad/(sqrt(h)+1e-7f);
 	}
 
 	float mAlpha = 0.01;
-};*/
+};
 
 class FullyConnectedLayer : public Layer
 {
