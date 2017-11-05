@@ -6,6 +6,7 @@
 #include <iostream>
 #include <array>
 #include <unordered_map>
+#include <string>
 
 #include <Athena/Backend.hpp>
 #include <Athena/XtensorBackend.hpp>
@@ -21,12 +22,8 @@ public:
 	{
 	}
 
-	Layer(Backend* backend) : backend_(backend)
-	{
-	}
-
-	Layer(size_t input, size_t output, Backend* backend=nullptr, bool trainable=false):
-		inputShape_({input}), outputShape_({output}), backend_(backend), trainable_(trainable)
+	Layer(Backend* backend=nullptr, bool trainable=false):
+		backend_(backend), trainable_(trainable)
 	{
 	}
 
@@ -37,6 +34,26 @@ public:
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy)
 	{
+	}
+	
+	void setInputShape(const std::vector<size_t>& s)
+	{
+		inputShape_ = s;
+	}
+	
+	void setOutputShape(const std::vector<size_t>& s)
+	{
+		outputShape_ = s;
+	}
+	
+	std::vector<size_t> inputShape()
+	{
+		return inputShape_;
+	}
+	
+	std::vector<size_t> outputShape()
+	{
+		return outputShape_;
 	}
 
 	bool trainable() const
@@ -52,6 +69,11 @@ public:
 	const std::vector<Tensor>& weights() const
 	{
 		return weights_;
+	}
+	
+	bool isInitialized() const
+	{
+		return backend_ != nullptr;
 	}
 
 	std::vector<Tensor>& weights()
@@ -125,12 +147,12 @@ public:
 	virtual void update(Tensor& weight, const Tensor& grad) override
 	{
 		auto& v = get<0>(weight);
-		v = mMu*v - mAlpha*grad;
+		v = mu_*v - alpha_*grad;
 		weight += v;
 	}
 
-	float mAlpha = 0.01;
-	float mMu = 0.9;
+	float alpha_ = 0.01;
+	float mu_ = 0.9;
 };
 
 class NestrovOptimizer : public StatefulOptimizer<1>
@@ -143,14 +165,14 @@ public:
 	virtual void update(Tensor& weight, const Tensor& grad) override
 	{
 		auto& v = this->get<0>(weight);
-		v = v * mMomentum;
-		v = v - grad*mAlpha;
-		weight = weight + v*mMomentum*mMomentum;
-		weight = weight - grad*(1.f+mMomentum)*mAlpha;
+		v = v * momentum_;
+		v = v - grad*alpha_;
+		weight = weight + v*momentum_*momentum_;
+		weight = weight - grad*(1.f+momentum_)*alpha_;
 	}
 
-	float mAlpha = 0.01;
-	float mMomentum = 0.9;
+	float alpha_ = 0.01;
+	float momentum_ = 0.9;
 };
 
 class AdaGradOptimizer : public StatefulOptimizer<1>
@@ -160,39 +182,41 @@ public:
 	{
 		auto& h = get<0>(weight);
 		h += grad*grad;
-		weight -= mAlpha*grad/(sqrt(h)+1e-7f);
+		weight -= alpha_*grad/(sqrt(h)+1e-7f);
 	}
 
-	float mAlpha = 0.01;
+	float alpha_ = 0.01;
 };
 
 class FullyConnectedLayer : public Layer
 {
 public:
 	FullyConnectedLayer(size_t input, size_t output, Backend* backend):
-		Layer(input, output, backend, true)
+		Layer(backend, true)
 	{
+		setInputShape(std::vector<size_t>({input}));
+		setOutputShape(std::vector<size_t>({output}));
 		weights_.push_back(At::rand(-1,1, {input, output}, backend_));
 		weights_.push_back(At::rand(-1,1, {output}, backend_));
 
-		forwardAlgorithm = backend_->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
-		backwardAlgorithm = backend_->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
+		forwardAlgorithm_ = backend_->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
+		backwardAlgorithm_ = backend_->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
 	{
-		y = forwardAlgorithm(x, weights_[0], weights_[1]);
+		y = forwardAlgorithm_(x, weights_[0], weights_[1]);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override
 	{
-		dx = backwardAlgorithm(dy, weights_[0]);
+		dx = backwardAlgorithm_(dy, weights_[0]);
 	}
 
 protected:
-	delegate<FCForwardFunction> forwardAlgorithm;
-	delegate<FCBackwardFunction> backwardAlgorithm;
+	delegate<FCForwardFunction> forwardAlgorithm_;
+	delegate<FCBackwardFunction> backwardAlgorithm_;
 };
 
 class SigmoidLayer : public Layer
@@ -200,23 +224,23 @@ class SigmoidLayer : public Layer
 public:
 	SigmoidLayer(Backend* backend) : Layer(backend)
 	{
-		forwardAlgorithm = backend_->getAlgorithm<ActivationForward>("sigmoidForward");
-		backwardAlgorithm = backend_->getAlgorithm<ActivationBackward>("sigmoidBackward");
+		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("sigmoidForward");
+		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("sigmoidBackward");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
 	{
-		y = forwardAlgorithm(x);
+		y = forwardAlgorithm_(x);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override
 	{
-		dx = backwardAlgorithm(dy, y);
+		dx = backwardAlgorithm_(dy, y);
 	}
 protected:
-	delegate<ActivationForward> forwardAlgorithm;
-	delegate<ActivationBackward> backwardAlgorithm;
+	delegate<ActivationForward> forwardAlgorithm_;
+	delegate<ActivationBackward> backwardAlgorithm_;
 };
 
 
@@ -225,24 +249,24 @@ class TanhLayer : public Layer
 public:
 	TanhLayer(Backend* backend) : Layer(backend)
 	{
-		forwardAlgorithm = backend_->getAlgorithm<ActivationForward>("tanhForward");
-		backwardAlgorithm = backend_->getAlgorithm<ActivationBackward>("tanhBackward");
+		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("tanhForward");
+		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("tanhBackward");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
 	{
-		y = forwardAlgorithm(x);
+		y = forwardAlgorithm_(x);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override
 	{
-		dx = backwardAlgorithm(dy, y);
+		dx = backwardAlgorithm_(dy, y);
 	}
 
 protected:
-	delegate<ActivationForward> forwardAlgorithm;
-	delegate<ActivationBackward> backwardAlgorithm;
+	delegate<ActivationForward> forwardAlgorithm_;
+	delegate<ActivationBackward> backwardAlgorithm_;
 };
 
 class ReluLayer : public Layer
@@ -250,24 +274,24 @@ class ReluLayer : public Layer
 public:
 	ReluLayer(Backend* backend) : Layer(backend)
 	{
-		forwardAlgorithm = backend_->getAlgorithm<ActivationForward>("reluForward");
-		backwardAlgorithm = backend_->getAlgorithm<ActivationBackward>("reluBackward");
+		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("reluForward");
+		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("reluBackward");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
 	{
-		y = forwardAlgorithm(x);
+		y = forwardAlgorithm_(x);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override
 	{
-		dx = backwardAlgorithm(dy, y);
+		dx = backwardAlgorithm_(dy, y);
 	}
 
 protected:
-	delegate<ActivationForward> forwardAlgorithm;
-	delegate<ActivationBackward> backwardAlgorithm;
+	delegate<ActivationForward> forwardAlgorithm_;
+	delegate<ActivationBackward> backwardAlgorithm_;
 };
 
 class LossFunction
@@ -284,7 +308,7 @@ class MSELoss : public LossFunction
 {
 	virtual Tensor f(const Tensor& y, const Tensor& t) override
 	{
-		return (y-t).pow(2.f).sum({0});
+		return (y-t).pow(2.f).sum({0})/(float)y.shape()[0];
 	}
 
 	virtual void df(const Tensor& y, const Tensor& t, Tensor& d) override
@@ -324,12 +348,35 @@ public:
 	{
 		layers_.push_back(new LayerType(args ...));
 	}
+	
+	void compile()
+	{
+		//Ignored for now
+		/*auto compareVec = [](const auto& a, const auto& b)->bool{
+			if(a.size() != b.size())
+				return false;
+			for(int i=0;i<a.size();i++)
+			{
+				if(a[i] != b[i])
+					return false;
+			}
+			return true;
+		};
+
+		for(size_t i=1;i<layers_.size();i++)
+		{
+			if(compareVec(layers_[i-1]->outputShape(), layers_[i]->inputShape()) == false)
+				throw AtError("Error: Later " + std::to_string(i-1) + "'s output shaped does not match"
+					" the input shpae of layer " + std::to_string(i) + "'s."
+				);
+		}*/
+	}
 
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
 		size_t batchSize, size_t epoch)
 	{
 		if(input.shape()[0]%batchSize != 0)
-			throw AtError("Error: batch size cannot divied the number of datasets perfectly.");
+			throw AtError("Error: batch size cannot divide the number of datasets perfectly.");
 		
 		if(input.shape()[0]<batchSize)
 			throw AtError("Error: batch size is larger than the number of datasets");

@@ -214,6 +214,11 @@ Tensor sum(const Tensor& t, const std::vector<size_t> axis = {})
 	return Tensor(t.backend()->sum(t.internalHandle(), axis), t.backend());
 }
 
+Tensor transpose(const Tensor& t)
+{
+	return t.transpose();
+}
+
 std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
 	std::vector<float> v(t.size());
