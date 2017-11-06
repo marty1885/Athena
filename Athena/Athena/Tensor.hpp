@@ -27,7 +27,7 @@ public:
 		backend_ = backend;
 		handle_ = backend->createTensor(shape);
 	}
-	
+
 	Tensor(void* handle, Backend* backend)
 		: Tensor()
 	{
@@ -37,7 +37,7 @@ public:
 
 	Tensor(const std::vector<float>& vec, const std::vector<size_t>& shape, Backend* backend)
 		: Tensor()
-	{	
+	{
 		backend_ = backend;
 		handle_ = backend->createTensor(vec, shape);
 	}
@@ -47,14 +47,14 @@ public:
 	{
 		//Workarround someone trying to copy a not initialized Tensor
 		if(t.backend() == nullptr)
-			return;	
+			return;
 
 		backend_ = t.backend();
 		handle_ = const_cast<void*>(t.internalHandle());
 		if(referenceCounter_ != nullptr)
 			referenceCounter_->addRef();
 	}
-	
+
 	Tensor& operator= (const Tensor& other)
 	{
 		if(this == &other || other.backend() == nullptr)
@@ -149,6 +149,11 @@ public:
 	void host(float* ptr) const
 	{
 		backend_->host(handle_, ptr);
+	}
+
+	std::vector<float> host() const
+	{
+		return backend_->host(handle_);
 	}
 
 	virtual ~Tensor()

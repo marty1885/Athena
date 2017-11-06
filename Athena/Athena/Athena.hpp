@@ -87,6 +87,16 @@ public:
 		return type_;
 	}
 
+	Backend* backend() const
+	{
+		return backend_;
+	}
+
+	void setBackend(Backend* backend)
+	{
+		backend_ = backend;
+	}
+
 protected:
 
 	void setType(const std::string& str)
@@ -489,7 +499,8 @@ public:
 				}
 
 				Tensor E = layerOutputs.back() - y;
-				Tensor dE = E*loss.f(layerOutputs.back(), y);
+				Tensor l = loss.f(layerOutputs.back(), y);
+				Tensor dE = E*l;
 
 				for(int k=layers_.size()-1;k>=0;k--)
 				{
@@ -505,7 +516,7 @@ public:
 
 					dE = std::move(tmp);
 				}
-				//epochLoss[j] = ((xt::xarray<float>)xt::sum(xt::pow(E,2)))[0];
+				epochLoss[j] = l.host()[0];
 			}
 		}
 	}

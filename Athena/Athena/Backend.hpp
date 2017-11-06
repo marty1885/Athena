@@ -81,6 +81,15 @@ public:
 
 	virtual size_t size(const void* handle) = 0;
 
+	std::vector<float> host(void* handle)
+	{
+		size_t s = size(handle);
+		std::vector<float> vec(s);
+		host(handle, &vec[0]);
+		return vec;
+	}
+
+
 	template<typename FT>
 	inline void addAlgorithm(const std::string& name, delegate<FT> f)
 	{
