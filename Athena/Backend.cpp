@@ -5,8 +5,6 @@
 #include <xtensor/xarray.hpp>
 #include <xtensor/xrandom.hpp>
 #include <xtensor/xio.hpp>
-#include <xtensor/xindexview.hpp>
-#include <xtensor/xvectorize.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xstridedview.hpp>
 

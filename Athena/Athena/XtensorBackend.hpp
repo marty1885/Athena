@@ -3,7 +3,6 @@
 #include <Athena/Backend.hpp>
 
 #include <xtensor/xarray.hpp>
-#include <xtensor/xio.hpp>
 
 namespace At
 {
