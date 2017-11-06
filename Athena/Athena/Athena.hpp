@@ -82,10 +82,22 @@ public:
 			(static_cast<const Layer*>(this)->weights());
 	}
 
+	std::string type() const
+	{
+		return type_;
+	}
+
 protected:
+
+	void setType(const std::string& str)
+	{
+		type_ = str;
+	}
+
 	std::vector<Tensor> weights_;
 	std::vector<size_t> inputShape_;
 	std::vector<size_t> outputShape_;
+	std::string type_;
 	Backend* backend_;
 	bool trainable_ = false;
 };
@@ -201,6 +213,8 @@ public:
 
 		forwardAlgorithm_ = backend_->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
 		backwardAlgorithm_ = backend_->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
+
+		setType("fullyConnected");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -226,6 +240,8 @@ public:
 	{
 		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("sigmoidForward");
 		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("sigmoidBackward");
+
+		setType("Sigmoid");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -251,6 +267,8 @@ public:
 	{
 		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("tanhForward");
 		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("tanhBackward");
+
+		setType("Tanh");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -276,6 +294,8 @@ public:
 	{
 		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("reluForward");
 		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("reluBackward");
+
+		setType("Relu");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -372,6 +392,52 @@ public:
 		}*/
 	}
 
+	void summary() const
+	{
+		auto printN = [](const std::string& str, int n) {for(int i=0;i<n;i++)std::cout << str;};
+		auto trimString = [](const std::string& str, size_t n){
+			std::string res;
+			res.reserve(n);
+			size_t end = std::min(str.size(), n);
+			res += str.substr(0, end);
+			if(end == n)
+				return res;
+			return res+std::string(n-end, ' ');
+		};
+		
+		printN("─",80);
+		std::cout << trimString("Layer type",24) << trimString("Output shape", 24) << trimString("Params #", 16) << '\n';
+		printN("=",80);
+		for(size_t i=0;i<depth();i++)
+		{
+			const auto& l = layers_[i];
+			std::cout << trimString(l->type(), 24);
+
+			const auto& shape = l->outputShape();
+			std::ostringstream stream;
+			stream << "{";
+			for(auto v : shape)
+				stream << v << ", ";
+			stream << "}";
+			std::string str =  stream.str();
+			std::cout << trimString(str, 24);
+
+			if(l->trainable() == false)
+				std::cout << trimString("0", 16);
+			else
+			{
+				size_t val = 0;
+				const auto& weights = l->weights();
+				for(const auto& w : weights)
+					val += w.size();
+				std::cout << trimString(std::to_string(val), 16);
+			}
+
+			std::cout << '\n';
+			printN("─",80);
+		}
+	}
+
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
 		size_t batchSize, size_t epoch)
 	{
@@ -455,6 +521,11 @@ public:
 	Layer* operator[](int index)
 	{
 		return layers_[index];
+	}
+
+	size_t depth() const
+	{
+		return layers_.size();
 	}
 
 	std::vector<Layer*> layers_;

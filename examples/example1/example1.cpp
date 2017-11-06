@@ -20,6 +20,8 @@ int main()
 	
 	net.compile();
 
+	net.summary();
+
 	size_t epoch = 100000;
 
 	At::NestrovOptimizer opt(&backend);
