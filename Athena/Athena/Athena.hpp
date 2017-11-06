@@ -7,9 +7,9 @@
 #include <array>
 #include <unordered_map>
 #include <string>
+#include <sstream>
 
 #include <Athena/Backend.hpp>
-#include <Athena/XtensorBackend.hpp>
 #include <Athena/Tensor.hpp>
 
 namespace At
@@ -251,7 +251,7 @@ public:
 		forwardAlgorithm_ = backend_->getAlgorithm<SigmoidForward>("sigmoidForward");
 		backwardAlgorithm_ = backend_->getAlgorithm<SigmoidBackward>("sigmoidBackward");
 
-		setType("Sigmoid");
+		setType("sigmoid");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -278,7 +278,7 @@ public:
 		forwardAlgorithm_ = backend_->getAlgorithm<TanhForward>("tanhForward");
 		backwardAlgorithm_ = backend_->getAlgorithm<TanhBackward>("tanhBackward");
 
-		setType("Tanh");
+		setType("tanh");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -305,7 +305,7 @@ public:
 		forwardAlgorithm_ = backend_->getAlgorithm<ReluForward>("reluForward");
 		backwardAlgorithm_ = backend_->getAlgorithm<ReluBackward>("reluBackward");
 
-		setType("Relu");
+		setType("relu");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override

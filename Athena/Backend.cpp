@@ -1,4 +1,5 @@
 #include <Athena/Backend.hpp>
+#include <Athena/Error.hpp>
 
 using namespace At;
 

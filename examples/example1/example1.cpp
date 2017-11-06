@@ -1,4 +1,5 @@
 #include <Athena/Athena.hpp>
+#include <Athena/XtensorBackend.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -8,26 +9,25 @@ using namespace std::chrono;
 int main()
 {
 	At::XtensorBackend backend;
-
-	At::Tensor X({0,0, 1,0, 0,1, 1,1}, {4,2}, &backend);
-	At::Tensor Y({0,1,1,0}, {4,1}, &backend);
-
 	At::SequentialNetwork net;
+
 	net.add<At::FullyConnectedLayer>(2,5, &backend);
 	net.add<At::SigmoidLayer>(&backend);
 	net.add<At::FullyConnectedLayer>(5,1, &backend);
 	net.add<At::SigmoidLayer>(&backend);
-
 	net.compile();
 
 	net.summary();
 
-	size_t epoch = 100000;
+
+	At::Tensor X({0,0, 1,0, 0,1, 1,1}, {4,2}, &backend);
+	At::Tensor Y({0,1,1,0}, {4,1}, &backend);
 
 	At::NestrovOptimizer opt(&backend);
 	At::MSELoss loss;
 	opt.alpha_ = 0.35;
 
+	size_t epoch = 100000;
 
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
