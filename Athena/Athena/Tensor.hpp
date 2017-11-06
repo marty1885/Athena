@@ -230,7 +230,7 @@ std::ostream& operator<< (std::ostream& os, const Tensor& t)
 	t.host(&v[0]);
 	os << "{";
 	for(size_t i=0;i<t.size();i++)
-		std::cout << v[i] << (i==t.size()-1 ? "" : ", ");
+		os << v[i] << (i==t.size()-1 ? "" : ", ");
 	os << "}";
 	return os;
 }
