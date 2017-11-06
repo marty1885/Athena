@@ -35,22 +35,22 @@ public:
 		Tensor& dx, const Tensor& dy)
 	{
 	}
-	
+
 	void setInputShape(const std::vector<size_t>& s)
 	{
 		inputShape_ = s;
 	}
-	
+
 	void setOutputShape(const std::vector<size_t>& s)
 	{
 		outputShape_ = s;
 	}
-	
+
 	std::vector<size_t> inputShape()
 	{
 		return inputShape_;
 	}
-	
+
 	std::vector<size_t> outputShape()
 	{
 		return outputShape_;
@@ -70,7 +70,7 @@ public:
 	{
 		return weights_;
 	}
-	
+
 	bool isInitialized() const
 	{
 		return backend_ != nullptr;
@@ -368,7 +368,7 @@ public:
 	{
 		layers_.push_back(new LayerType(args ...));
 	}
-	
+
 	void compile()
 	{
 		//Ignored for now
@@ -404,12 +404,16 @@ public:
 				return res;
 			return res+std::string(n-end, ' ');
 		};
-		
+
 		printN("─",80);
-		std::cout << trimString("Layer type",24) << trimString("Output shape", 24) << trimString("Params #", 16) << '\n';
-		printN("=",80);
+		std::cout << trimString("Layer type",24) << trimString("Output shape", 16) << trimString("Params #", 16) << '\n';
+		size_t trainableWeights = 0;
 		for(size_t i=0;i<depth();i++)
 		{
+			if(i == 0)
+				printN("=",80);
+			else
+				printN("─",80);
 			const auto& l = layers_[i];
 			std::cout << trimString(l->type(), 24);
 
@@ -420,7 +424,7 @@ public:
 				stream << v << ", ";
 			stream << "}";
 			std::string str =  stream.str();
-			std::cout << trimString(str, 24);
+			std::cout << trimString(str, 16);
 
 			if(l->trainable() == false)
 				std::cout << trimString("0", 16);
@@ -430,12 +434,18 @@ public:
 				const auto& weights = l->weights();
 				for(const auto& w : weights)
 					val += w.size();
+				trainableWeights += val;
 				std::cout << trimString(std::to_string(val), 16);
 			}
 
 			std::cout << '\n';
-			printN("─",80);
+			if(i != depth()-1)
+				std::cout << '\n';
 		}
+
+		printN("=",80);
+
+		std::cout << "Trainable weights: " << trainableWeights << '\n';
 	}
 
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
@@ -443,7 +453,7 @@ public:
 	{
 		if(input.shape()[0]%batchSize != 0)
 			throw AtError("Error: batch size cannot divide the number of datasets perfectly.");
-		
+
 		if(input.shape()[0]<batchSize)
 			throw AtError("Error: batch size is larger than the number of datasets");
 
