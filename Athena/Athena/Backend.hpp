@@ -16,8 +16,12 @@ using FuncType = FT;
 
 using FCForwardFunction = FuncType<Tensor(const Tensor&,const Tensor&, const Tensor&)>;
 using FCBackwardFunction = FuncType<Tensor(const Tensor&,const Tensor&)>;
-using ActivationForward = FuncType<Tensor(const Tensor&)>;
-using ActivationBackward = FuncType<Tensor(const Tensor&, const Tensor&)>;
+using SigmoidForward = FuncType<Tensor(const Tensor&)>;
+using SigmoidBackward = FuncType<Tensor(const Tensor&, const Tensor&)>;
+using TanhForward = FuncType<Tensor(const Tensor&)>;
+using TanhBackward = FuncType<Tensor(const Tensor&, const Tensor&)>;
+using ReluForward = FuncType<Tensor(const Tensor&)>;
+using ReluBackward = FuncType<Tensor(const Tensor&, const Tensor&)>;
 
 struct FunctoinWrapper
 {

@@ -248,8 +248,8 @@ class SigmoidLayer : public Layer
 public:
 	SigmoidLayer(Backend* backend) : Layer(backend)
 	{
-		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("sigmoidForward");
-		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("sigmoidBackward");
+		forwardAlgorithm_ = backend_->getAlgorithm<SigmoidForward>("sigmoidForward");
+		backwardAlgorithm_ = backend_->getAlgorithm<SigmoidBackward>("sigmoidBackward");
 
 		setType("Sigmoid");
 	}
@@ -265,8 +265,8 @@ public:
 		dx = backwardAlgorithm_(dy, y);
 	}
 protected:
-	delegate<ActivationForward> forwardAlgorithm_;
-	delegate<ActivationBackward> backwardAlgorithm_;
+	delegate<SigmoidForward> forwardAlgorithm_;
+	delegate<SigmoidBackward> backwardAlgorithm_;
 };
 
 
@@ -275,8 +275,8 @@ class TanhLayer : public Layer
 public:
 	TanhLayer(Backend* backend) : Layer(backend)
 	{
-		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("tanhForward");
-		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("tanhBackward");
+		forwardAlgorithm_ = backend_->getAlgorithm<TanhForward>("tanhForward");
+		backwardAlgorithm_ = backend_->getAlgorithm<TanhBackward>("tanhBackward");
 
 		setType("Tanh");
 	}
@@ -293,8 +293,8 @@ public:
 	}
 
 protected:
-	delegate<ActivationForward> forwardAlgorithm_;
-	delegate<ActivationBackward> backwardAlgorithm_;
+	delegate<TanhForward> forwardAlgorithm_;
+	delegate<TanhBackward> backwardAlgorithm_;
 };
 
 class ReluLayer : public Layer
@@ -302,8 +302,8 @@ class ReluLayer : public Layer
 public:
 	ReluLayer(Backend* backend) : Layer(backend)
 	{
-		forwardAlgorithm_ = backend_->getAlgorithm<ActivationForward>("reluForward");
-		backwardAlgorithm_ = backend_->getAlgorithm<ActivationBackward>("reluBackward");
+		forwardAlgorithm_ = backend_->getAlgorithm<ReluForward>("reluForward");
+		backwardAlgorithm_ = backend_->getAlgorithm<ReluBackward>("reluBackward");
 
 		setType("Relu");
 	}
@@ -320,8 +320,8 @@ public:
 	}
 
 protected:
-	delegate<ActivationForward> forwardAlgorithm_;
-	delegate<ActivationBackward> backwardAlgorithm_;
+	delegate<ReluForward> forwardAlgorithm_;
+	delegate<ReluBackward> backwardAlgorithm_;
 };
 
 class LossFunction
