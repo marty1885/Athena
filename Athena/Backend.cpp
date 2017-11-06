@@ -1,229 +1,140 @@
 #include <Athena/Backend.hpp>
-#include <Athena/Tensor.hpp>
-#include <Athena/XtensorBackend.hpp>
-
-#include <xtensor/xarray.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xio.hpp>
-#include <xtensor-blas/xlinalg.hpp>
-#include <xtensor/xstridedview.hpp>
 
 using namespace At;
 
-XtensorBackend::XtensorBackend()
+static const std::string notImplementString = " not implemented in backend. Method cannot be called.";
+
+void* Backend::createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape)
 {
-	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
-		[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor
-		{
-			const auto& i = get(in.internalHandle());
-			const auto& w = get(weight.internalHandle());
-			const auto& b = get(bias.internalHandle());
-			auto id = createTensor(
-				xt::linalg::dot(i,w)+b
-			);
-			return Tensor(id, this);
-		});
-
-	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
-		[this](const Tensor& dx, const Tensor& weight)->Tensor
-		{
-			const auto& i = get(dx.internalHandle());
-			const auto& w = get(weight.internalHandle());
-			return Tensor(this->createTensor(
-				xt::linalg::dot(i,xt::transpose(w))
-			), this);
-		});
-
-	addAlgorithm<SigmoidForward>("sigmoidForward",
-		[this](const Tensor& x)->Tensor
-		{
-			const auto& t = get(x.internalHandle());
-			return Tensor(createTensor(1/(1+xt::exp(-t))), this);
-		});
-
-	addAlgorithm<SigmoidBackward>("sigmoidBackward",
-		[this](const Tensor& a, const Tensor& b)->Tensor
-		{
-			const auto& dy = get(a.internalHandle());
-			const auto& y = get(b.internalHandle());
-			return Tensor(createTensor(dy*(y*(1-y))), this);
-		});
-
-	addAlgorithm<TanhForward>("tanhForward",
-		[this](const Tensor& x)->Tensor
-		{
-			const auto& t = get(x.internalHandle());
-			xt::xarray<float> res = xt::tanh(t);
-			return Tensor(createTensor(res), this);
-		});
-
-	addAlgorithm<TanhBackward>("tanhBackward",
-		[this](const Tensor& a, const Tensor& b)->Tensor
-		{
-			const auto& dy = get(a.internalHandle());
-			const auto& y = get(b.internalHandle());
-			xt::xarray<float> res = dy * (1 - xt::pow(xt::tanh(y), 2));
-			return Tensor(createTensor(res), this);
-		});
-
-	addAlgorithm<ReluForward>("reluForward",
-		[this](const Tensor& x)->Tensor
-		{
-			const auto& t = get(x.internalHandle());
-			xt::xarray<float> res = (t>0)*t;
-			return Tensor(createTensor(res), this);
-		});
-
-	addAlgorithm<ReluBackward>("reluBackward",
-		[this](const Tensor& a, const Tensor& b)->Tensor
-		{
-			const auto& y = get(b.internalHandle());
-			xt::xarray<float> res = 1.f*(y>0);
-			return Tensor(createTensor(res), this);
-		});
-}
-void* XtensorBackend::createTensor(const std::vector<size_t>& dims)
-{
-	return createTensor(xt::zeros<float>(dims));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape)
+void* Backend::createTensor(const std::vector<size_t>& dims)
 {
-	auto t = new xt::xarray<float>(shape);
-	std::copy(vec.begin(), vec.end(), t->begin());
-	return t;
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::createTensor(const xt::xarray<float>& arr)
+void* Backend::copyTensor(const void* src)
 {
-	auto* t = new xt::xarray<float>(arr);
-	return t;
+	throw AtError(__func__ + notImplementString);
 }
 
-void XtensorBackend::destoryTensor(void* handle)
+void Backend::destoryTensor(void* handle)
 {
-	delete &get(handle);
-}
-
-void* XtensorBackend::copyTensor(const void* src)
-{
-	const auto& t = get(src);
-	return createTensor(t);
-}
-
-void* XtensorBackend::zeros(const std::vector<size_t>& shape)
-{
-	return createTensor(xt::zeros<float>(shape));
-}
-void* XtensorBackend::ones(const std::vector<size_t>& shape)
-{
-	return createTensor(xt::ones<float>(shape));
-}
-
-void* XtensorBackend::rand(float lEdge, float rEdge, const std::vector<size_t>& shape)
-{
-	return createTensor(xt::random::rand<float>(shape, lEdge, rEdge));
-}
-
-std::vector<size_t> XtensorBackend::shape(void* handle) const
-{
-	return get(handle).shape();
+	throw AtError(__func__ + notImplementString);
 }
 
 
-void* XtensorBackend::add(const void* handle1,const void* handle2)
+void Backend::device(void* handle, const float* ptr)
 {
-	return createTensor(get(handle1)+get(handle2));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::multiply(const void* handle1,const void* handle2)
+void Backend::host(void* handle, float* ptr) const
 {
-	return createTensor(get(handle1)*get(handle2));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::scalarMul(const void* handle, float x)
+void* Backend::zeros(const std::vector<size_t>& shape)
 {
-	return createTensor(x*get(handle));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::scalarAdd(const void* handle,float x)
+void* Backend::ones(const std::vector<size_t>& shape)
 {
-	return createTensor(get(handle)+x);
+	throw AtError(__func__ + notImplementString);
 }
 
-void XtensorBackend::selfScalarAdd(void* handle, float val)
+void* Backend::rand(float lEdge, float rEdge, const std::vector<size_t>& shape)
 {
-	get(handle) += val;
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::div(const void* handle1,const  void* handle2)
+
+void* Backend::add(const void* handle1,const  void* handle2)
 {
-	return createTensor(get(handle1)/get(handle2));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::subtract(const void* handle1,const  void* handle2)
+void* Backend::multiply(const void* handle1,const  void* handle2)
 {
-	return createTensor(get(handle1)-get(handle2));
+	throw AtError(__func__ + notImplementString);
 }
 
-void XtensorBackend::reshape(void* handle, const std::vector<size_t>& targetShape)
+void* Backend::scalarMul(const  void* handle, float x)
 {
-	get(handle).reshape(targetShape);
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::transpose(void* handle)
+void* Backend::scalarAdd(const void* handle, float val)
 {
-	return createTensor(xt::transpose(get(handle)));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::dot(const void* handle1, const void* handle2)
+void Backend::selfScalarAdd(void* handle, float val)
 {
-	return createTensor(xt::linalg::dot(get(handle1),get(handle2)));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size)
+void* Backend::div(const void* handle1,const  void* handle2)
 {
-	const auto& t = get(handle);
-	xt::slice_vector sv(t);
-	for(size_t i=0;i<begin.size();i++)
-		sv.push_back(xt::range(begin[i], begin[i]+size[i]));
-	return createTensor(xt::dynamic_view(t, sv));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::sum(const void* handle, const std::vector<size_t>& axis)
+void* Backend::subtract(const void* handle1,const  void* handle2)
 {
-	return createTensor(xt::sum(get(handle), axis));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::pow(const void* handle, float e)
+void* Backend::dot(const void* handle1, const void* handle2)
 {
-	return createTensor(xt::pow(get(handle), e));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::sqrt(const void* handle)
+
+void* Backend::sum(const void* handle, const std::vector<size_t>& axis)
 {
-	return createTensor(xt::sqrt(get(handle)));
+	throw AtError(__func__ + notImplementString);
 }
 
-void* XtensorBackend::abs(const void* handle)
+void* Backend::pow(const void* handle, float e)
 {
-	return createTensor(xt::abs(get(handle)));
+	throw AtError(__func__ + notImplementString);
 }
 
-void XtensorBackend::device(void* handle, const float* ptr)
+void* Backend::sqrt(const void* handle)
 {
-	auto& t = get(handle);
-	std::copy(ptr, ptr+t.size(), t.begin());
+	throw AtError(__func__ + notImplementString);
 }
 
-void XtensorBackend::host(void* handle, float* ptr) const
+void* Backend::abs(const void* handle)
 {
-	const auto& t = get(handle);
-	std::copy(t.begin(), t.end(), ptr);
+	throw AtError(__func__ + notImplementString);
 }
 
-size_t XtensorBackend::size(const void* handle)
+
+std::vector<size_t> Backend::shape(void* handle) const
 {
-	auto& t = get(handle);
-	return t.size();
+	throw AtError(__func__ + notImplementString);
+}
+
+void Backend::reshape(void* handle, const std::vector<size_t>& targetShape)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+void* Backend::transpose(void* handle)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+void* Backend::slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+
+size_t Backend::size(const void* handle)
+{
+	throw AtError(__func__ + notImplementString);
 }

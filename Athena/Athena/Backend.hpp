@@ -51,39 +51,39 @@ public:
 			delete it.second;
 	}
 
-	virtual void* createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape) = 0;
-	virtual void* createTensor(const std::vector<size_t>& dims) = 0;
-	virtual void* copyTensor(const void* src) = 0;
-	virtual void destoryTensor(void* handle) = 0;
+	virtual void* createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape);
+	virtual void* createTensor(const std::vector<size_t>& dims);
+	virtual void* copyTensor(const void* src);
+	virtual void destoryTensor(void* handle);
 
-	virtual void device(void* handle, const float* ptr) = 0;
-	virtual void host(void* handle, float* ptr) const = 0;
-	virtual void* zeros(const std::vector<size_t>& shape) = 0;
-	virtual void* ones(const std::vector<size_t>& shape) = 0;
-	virtual void* rand(float lEdge, float rEdge, const std::vector<size_t>& shape) = 0;
+	virtual void device(void* handle, const float* ptr);
+	virtual void host(void* handle, float* ptr) const;
+	virtual void* zeros(const std::vector<size_t>& shape);
+	virtual void* ones(const std::vector<size_t>& shape);
+	virtual void* rand(float lEdge, float rEdge, const std::vector<size_t>& shape);
 
-	virtual void* add(const void* handle1,const  void* handle2) = 0;
-	virtual void* multiply(const void* handle1,const  void* handle2) = 0;
-	virtual void* scalarMul(const  void* handle, float x) = 0;
-	virtual void* scalarAdd(const void* handle, float val) = 0;
-	virtual void selfScalarAdd(void* handle, float val) = 0;
-	virtual void* div(const void* handle1,const  void* handle2) = 0;
-	virtual void* subtract(const void* handle1,const  void* handle2) = 0;
+	virtual void* add(const void* handle1,const  void* handle2);
+	virtual void* multiply(const void* handle1,const  void* handle2);
+	virtual void* scalarMul(const  void* handle, float x);
+	virtual void* scalarAdd(const void* handle, float val);
+	virtual void selfScalarAdd(void* handle, float val);
+	virtual void* div(const void* handle1,const  void* handle2);
+	virtual void* subtract(const void* handle1,const  void* handle2);
 
-	virtual void* dot(const void* handle1, const void* handle2) = 0;
+	virtual void* dot(const void* handle1, const void* handle2);
 
-	virtual void* sum(const void* handle, const std::vector<size_t>& axis) = 0;
+	virtual void* sum(const void* handle, const std::vector<size_t>& axis);
 
-	virtual void* pow(const void* handle, float e) = 0;
-	virtual void* sqrt(const void* handle) = 0;
-	virtual void* abs(const void* handle) = 0;
+	virtual void* pow(const void* handle, float e);
+	virtual void* sqrt(const void* handle);
+	virtual void* abs(const void* handle);
 
-	virtual std::vector<size_t> shape(void* handle) const = 0;
-	virtual void reshape(void* handle, const std::vector<size_t>& targetShape) = 0;
-	virtual void* transpose(void* handle) = 0;
-	virtual void* slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size) = 0;
+	virtual std::vector<size_t> shape(void* handle) const;
+	virtual void reshape(void* handle, const std::vector<size_t>& targetShape);
+	virtual void* transpose(void* handle);
+	virtual void* slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size);
 
-	virtual size_t size(const void* handle) = 0;
+	virtual size_t size(const void* handle);
 
 	std::vector<float> host(void* handle)
 	{

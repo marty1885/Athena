@@ -1,3 +1,3 @@
 project(Athena)
 
-add_library(Athena SHARED Athena.cpp Backend.cpp)
+add_library(Athena SHARED Athena.cpp Backend.cpp XtensorBackend.cpp)
