@@ -229,8 +229,8 @@ std::ostream& operator<< (std::ostream& os, const Tensor& t)
 	std::vector<float> v(t.size());
 	t.host(&v[0]);
 	os << "{";
-	for(auto val : v)
-		os << val << ", ";
+	for(size_t i=0;i<t.size();i++)
+		std::cout << v[i] << (i==t.size()-1 ? "" : ", ");
 	os << "}";
 	return os;
 }
