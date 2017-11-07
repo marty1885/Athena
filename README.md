@@ -23,4 +23,4 @@ Currently only the `XtensorBackend` using `xtensor` as the base library is avlia
 
 ## Development and contribution
 
-Contribution is welcomed.
+Since deep learning and it's community is rapidly growing, we'd love to get contribution from you to accelerate Athena's development. Feel free to open a pull request or an issue to report a bug or requesting features.
