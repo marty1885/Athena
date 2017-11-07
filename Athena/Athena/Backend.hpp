@@ -82,6 +82,8 @@ public:
 	virtual void reshape(void* handle, const std::vector<size_t>& targetShape);
 	virtual void* transpose(void* handle);
 	virtual void* slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size);
+	virtual void* concatenate(const void* handle1, const void* handle2, int axis=0);
+	virtual void* stack(const void* handle1, const void* handle2, int axis=0);
 
 	virtual size_t size(const void* handle);
 

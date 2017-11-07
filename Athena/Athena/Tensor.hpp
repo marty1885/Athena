@@ -224,6 +224,16 @@ Tensor transpose(const Tensor& t)
 	return t.transpose();
 }
 
+Tensor concatenate(const Tensor& t, const Tensor& q, int axis)
+{
+	return Tensor(t.backend()->concatenate(t.internalHandle(), q.internalHandle(), axis), t.backend());
+}
+
+Tensor stack(const Tensor& t, const Tensor& q, int axis)
+{
+	return Tensor(t.backend()->stack(t.internalHandle(), q.internalHandle(), axis), t.backend());
+}
+
 std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
 	std::vector<float> v(t.size());

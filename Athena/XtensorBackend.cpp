@@ -190,6 +190,16 @@ void* XtensorBackend::slice(void* handle, const std::vector<size_t>& begin, cons
 	return createTensor(std::move(xt::dynamic_view(t, sv)));
 }
 
+void* XtensorBackend::concatenate(const void* handle1,const  void* handle2, int axis)
+{
+	return createTensor(std::move(xt::concatenate(xtuple(get(handle1),get(handle2)), axis)));
+}
+
+void* XtensorBackend::stack(const void* handle1, const void* handle2, int axis)
+{
+	return createTensor(std::move(xt::stack(xtuple(get(handle1),get(handle2)), axis)));
+}
+
 void* XtensorBackend::sum(const void* handle, const std::vector<size_t>& axis)
 {
 	return createTensor(std::move(xt::sum(get(handle), axis)));

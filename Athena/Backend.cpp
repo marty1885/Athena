@@ -134,6 +134,15 @@ void* Backend::slice(void* handle, const std::vector<size_t>& begin, const std::
 	throw AtError(__func__ + notImplementString);
 }
 
+void* Backend::concatenate(const void* handle1, const void* handle2, int axis)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+void* Backend::stack(const void* handle1, const void* handle2, int axis)
+{
+	throw AtError(__func__ + notImplementString);
+}
 
 size_t Backend::size(const void* handle)
 {

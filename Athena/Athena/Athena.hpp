@@ -166,6 +166,10 @@ protected:
 class MomentumOptimizer : public StatefulOptimizer<1>
 {
 public:
+	MomentumOptimizer(Backend* backend) : StatefulOptimizer(backend)
+	{
+	}
+
 	virtual void update(Tensor& weight, const Tensor& grad) override
 	{
 		auto& v = get<0>(weight);
@@ -200,6 +204,10 @@ public:
 class AdaGradOptimizer : public StatefulOptimizer<1>
 {
 public:
+	AdaGradOptimizer(Backend* backend) : StatefulOptimizer(backend)
+	{
+	}
+
 	virtual void update(Tensor& weight, const Tensor& grad) override
 	{
 		auto& h = get<0>(weight);
@@ -461,6 +469,14 @@ public:
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
 		size_t batchSize, size_t epoch)
 	{
+		fit(optimizer, loss, input, desireOutput, batchSize, epoch, [](float){}, [](float){});
+	}
+
+	template <typename OnBatchEnumerate
+		, typename OnEpochEnumerate>
+	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
+		size_t batchSize, size_t epoch, OnBatchEnumerate onBatchEnumerate, OnEpochEnumerate onEpochEnumerate)
+	{
 		if(input.shape()[0]%batchSize != 0)
 			throw AtError("Error: batch size cannot divide the number of datasets perfectly.");
 
@@ -475,10 +491,10 @@ public:
 		outputShape[0] = batchSize;
 		std::vector<Tensor> layerOutputs(layers_.size()+1);
 
-		std::vector<float> epochLoss(datasetSize/batchSize);
-
 		for(size_t i=0;i<epoch;i++)
 		{
+			float batchLoss;
+			float epochLoss = 0;
 			for(size_t j=0;j<datasetSize;j+=batchSize)
 			{
 				Tensor x = input.slice({j}, {batchSize});
@@ -516,8 +532,12 @@ public:
 
 					dE = std::move(tmp);
 				}
-				epochLoss[j] = l.host()[0];
+				batchLoss = l.host()[0];
+				onBatchEnumerate(batchLoss);
+				epochLoss += batchLoss*(float)(batchSize)/datasetSize;
 			}
+			onEpochEnumerate(epochLoss);
+
 		}
 	}
 
