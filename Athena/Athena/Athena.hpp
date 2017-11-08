@@ -493,7 +493,6 @@ public:
 
 		for(size_t i=0;i<epoch;i++)
 		{
-			float batchLoss;
 			float epochLoss = 0;
 			for(size_t j=0;j<datasetSize;j+=batchSize)
 			{
@@ -532,7 +531,7 @@ public:
 
 					dE = std::move(tmp);
 				}
-				batchLoss = l.host()[0];
+				float batchLoss = l.host()[0];
 				onBatchEnumerate(batchLoss);
 				epochLoss += batchLoss*(float)(batchSize)/datasetSize;
 			}
