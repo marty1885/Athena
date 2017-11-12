@@ -15,6 +15,13 @@
 namespace At
 {
 
+class Optimizer
+{
+public:
+	virtual void update(Tensor& weight, const Tensor& grad) = 0;
+	virtual void reset(){} //Implement if needed
+};
+
 class Layer
 {
 public:
@@ -97,6 +104,8 @@ public:
 		backend_ = backend;
 	}
 
+	virtual void update(Optimizer* optimizer) {} //Implement this if thr layer can be trained
+
 protected:
 
 	void setType(const std::string& str)
@@ -110,13 +119,6 @@ protected:
 	std::string type_;
 	Backend* backend_;
 	bool trainable_ = false;
-};
-
-class Optimizer
-{
-public:
-	virtual void update(Tensor& weight, const Tensor& grad) = 0;
-	virtual void reset(){} //Implement if needed
 };
 
 class SGDOptimizer : public Optimizer
@@ -244,11 +246,23 @@ public:
 		Tensor& dx, const Tensor& dy) override
 	{
 		dx = backwardAlgorithm_(dy, weights_[0]);
+
+		dE = dy;
+		dW = dot(x.transpose(), dy);
+	}
+
+	virtual void update(Optimizer* optimizer) override
+	{
+		optimizer->update(weights_[0], dW);
+		optimizer->update(weights_[1], dE.sum({0}));
 	}
 
 protected:
 	delegate<FCForwardFunction> forwardAlgorithm_;
 	delegate<FCBackwardFunction> backwardAlgorithm_;
+
+	Tensor dE;
+	Tensor dW;
 };
 
 class SigmoidLayer : public Layer
@@ -522,12 +536,8 @@ public:
 					auto& layer = layers_[k];
 					Tensor tmp;
 					layer->backword(layerOutputs[k],layerOutputs[k+1], tmp, dE);
-					auto& weights = layer->weights();
-					if(weights.size() > 0 && layer->trainable())
-					{
-						optimizer.update(weights[0], dot(layerOutputs[k].transpose(), dE));
-						optimizer.update(weights[1], dE.sum({0}));
-					}
+					if( layer->trainable())
+						layer->update(&optimizer);
 
 					dE = std::move(tmp);
 				}
