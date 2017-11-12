@@ -17,13 +17,12 @@ class Tensor
 public:
 	Tensor()
 	{
-		referenceCounter_ = new ReferenceCounter(0);
-		referenceCounter_->addRef();
 	}
 
 	Tensor(const std::vector<size_t>& shape, Backend* backend)
 		: Tensor()
 	{
+		referenceCounter_ = new ReferenceCounter(1);
 		backend_ = backend;
 		handle_ = backend->createTensor(shape);
 	}
@@ -31,6 +30,7 @@ public:
 	Tensor(void* handle, Backend* backend)
 		: Tensor()
 	{
+		referenceCounter_ = new ReferenceCounter(1);
 		handle_ = handle;
 		backend_ = backend;
 	}
@@ -38,6 +38,7 @@ public:
 	Tensor(const std::vector<float>& vec, const std::vector<size_t>& shape, Backend* backend)
 		: Tensor()
 	{
+		referenceCounter_ = new ReferenceCounter(1);
 		backend_ = backend;
 		handle_ = backend->createTensor(vec, shape);
 	}
@@ -60,7 +61,7 @@ public:
 		if(this == &other || other.backend() == nullptr)
 			return *this;
 
-		if(referenceCounter_ != nullptr)
+		if(referenceCounter_ != nullptr && other.referenceCounter() != nullptr)
 		{
 			if(referenceCounter_->release() == 0)
 			{
