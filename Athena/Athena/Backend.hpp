@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <typeinfo>
+#include <string>
 
 #include <Athena/Error.hpp>
 #include <Athena/Delegate.hpp>
@@ -87,6 +88,11 @@ public:
 
 	virtual size_t size(const void* handle);
 
+	inline std::string type() const
+	{
+		return type_;
+	}
+
 	std::vector<float> host(void* handle)
 	{
 		size_t s = size(handle);
@@ -94,7 +100,6 @@ public:
 		host(handle, &vec[0]);
 		return vec;
 	}
-
 
 	template<typename FT>
 	inline void addAlgorithm(const std::string& name, delegate<FT> f)
@@ -118,7 +123,14 @@ public:
 	}
 
 protected:
+
+	void setType(const std::string& str)
+	{
+		type_ = str;
+	}
+
 	std::unordered_map<std::string, FunctoinWrapper*> algorithms_;
+	std::string type_;
 };
 
 

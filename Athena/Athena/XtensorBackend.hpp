@@ -53,12 +53,12 @@ public:
 
 	virtual size_t size(const void* handle);
 
-	inline xt::xarray<float>& get(void* handle) const
+	static inline xt::xarray<float>& get(void* handle)
 	{
 		return *(xt::xarray<float>*)handle;
 	}
 
-	inline const xt::xarray<float>& get(const void* handle) const
+	static inline const xt::xarray<float>& get(const void* handle)
 	{
 		return *(xt::xarray<float>*)handle;
 	}

@@ -81,6 +81,8 @@ XtensorBackend::XtensorBackend()
 			xt::xarray<float> res = 1.f*(y>0);
 			return Tensor(createTensor(std::move(res)), this);
 		});
+
+	setType("Xtensor");
 }
 void* XtensorBackend::createTensor(const std::vector<size_t>& dims)
 {
