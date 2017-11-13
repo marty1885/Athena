@@ -346,6 +346,31 @@ protected:
 	delegate<ReluBackward> backwardAlgorithm_;
 };
 
+class SquashLayer : public Layer
+{
+public:
+	SquashLayer(Backend* backend) : Layer(backend)
+	{
+		forwardAlgorithm_ = backend_->getAlgorithm<ReluForward>("squashForward");
+		backwardAlgorithm_ = backend_->getAlgorithm<ReluBackward>("squashBackward");
+
+		setType("squash");
+	}
+	virtual void forward(const Tensor& x, Tensor& y) override
+	{
+		y = forwardAlgorithm_(x);
+	}
+
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override
+	{
+		dx = backwardAlgorithm_(dy, y);
+	}
+protected:
+	delegate<ReluForward> forwardAlgorithm_;
+	delegate<ReluBackward> backwardAlgorithm_;
+};
+
 class RecurrentLayer : public Layer
 {
 public:

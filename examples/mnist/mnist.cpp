@@ -107,5 +107,5 @@ int main()
 		if(predictLabel == dataset.test_labels[i])
 			correct++;
 	}
-	std::cout << "Accuracy: " << correct/100.f << std::endl;
+	std::cout << "Accuracy: " << correct/(float)testingImage.shape()[0] << std::endl;
 }
