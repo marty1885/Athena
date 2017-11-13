@@ -24,6 +24,7 @@ public:
 	virtual void* zeros(const std::vector<size_t>& shape);
 	virtual void* ones(const std::vector<size_t>& shape);
 	virtual void* rand(float lEdge, float rEdge, const std::vector<size_t>& shape);
+	virtual void* normal(float mean, float stddev, const std::vector<size_t>& shape);
 
 	virtual void* add(const void* handle1,const  void* handle2);
 	virtual void* multiply(const void* handle1,const  void* handle2);

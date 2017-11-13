@@ -195,6 +195,11 @@ Tensor rand(float lEdge, float rEdge, const std::vector<size_t>& shape, Backend*
 	return Tensor(backend->rand(rEdge, lEdge, shape), backend);
 }
 
+Tensor normal(float mean, float stddev, const std::vector<size_t>& shape, Backend* backend)
+{
+	return Tensor(backend->normal(mean, stddev, shape), backend);
+}
+
 Tensor zeros(const std::vector<size_t>& shape, Backend* backend)
 {
 	return Tensor(backend->zeros(shape), backend);

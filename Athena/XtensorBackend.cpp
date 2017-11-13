@@ -8,6 +8,8 @@
 #include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xstridedview.hpp>
 
+#include <random>
+
 using namespace At;
 
 XtensorBackend::XtensorBackend()
@@ -125,6 +127,21 @@ void* XtensorBackend::ones(const std::vector<size_t>& shape)
 void* XtensorBackend::rand(float lEdge, float rEdge, const std::vector<size_t>& shape)
 {
 	return createTensor(std::move(xt::random::rand<float>(shape, lEdge, rEdge)));
+}
+
+void* XtensorBackend::normal(float mean, float stddev, const std::vector<size_t>& shape)
+{
+	//XXX: Xtensor does not support normal distrobution. use C++'s normal distrobution 
+	//until Xtensor has it.
+	std::minstd_rand eng; //Should be good enoguh for our purpose
+	std::normal_distribution<float> dist(mean, stddev);
+	std::vector<float> vec;
+
+	size_t size = std::accumulate(shape.begin(), shape.end(), 1L, std::multiplies<size_t>());
+	vec.resize(size);
+	for(auto& v : vec)
+		v = dist(eng);
+	return createTensor(std::move(vec), shape);
 }
 
 std::vector<size_t> XtensorBackend::shape(void* handle) const

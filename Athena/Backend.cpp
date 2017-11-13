@@ -51,6 +51,10 @@ void* Backend::rand(float lEdge, float rEdge, const std::vector<size_t>& shape)
 	throw AtError(__func__ + notImplementString);
 }
 
+void* Backend::normal(float mean, float stddev, const std::vector<size_t>& shape)
+{
+	throw AtError(__func__ + notImplementString);
+}
 
 void* Backend::add(const void* handle1,const  void* handle2)
 {

@@ -124,16 +124,16 @@ protected:
 class SGDOptimizer : public Optimizer
 {
 public:
-	SGDOptimizer(float alpha = 0.45) : mAlpha(alpha)
+	SGDOptimizer(float alpha = 0.45) : alpha_(alpha)
 	{
 	}
 
 	virtual void update(Tensor& weight, const Tensor& grad) override
 	{
-		weight -= grad*mAlpha;
+		weight -= grad*alpha_;
 	}
 
-	float mAlpha;
+	float alpha_;
 };
 
 template <int N>
@@ -344,6 +344,15 @@ public:
 protected:
 	delegate<ReluForward> forwardAlgorithm_;
 	delegate<ReluBackward> backwardAlgorithm_;
+};
+
+class RecurrentLayer : public Layer
+{
+public:
+
+protected:
+
+	Tensor hiddenState_;
 };
 
 class LossFunction
