@@ -52,7 +52,7 @@ At::Tensor labelsToOnehot(const std::vector<uint8_t>& labels, At::Backend* backe
 int main()
 {
 	At::XtensorBackend backend;
-	At::SequentialNetwork net;
+	At::SequentialNetwork net(&backend);
 
 	auto dataset = mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>("../mnist");
 	At::Tensor traningImage = imagesToTensor(dataset.training_images, &backend);
@@ -60,15 +60,15 @@ int main()
 	At::Tensor testingImage = imagesToTensor(dataset.test_images, &backend);
 	At::Tensor testingLabels = labelsToOnehot(dataset.test_labels, &backend);
 
-	net.add<At::FullyConnectedLayer>(784,50, &backend);
-	net.add<At::SigmoidLayer>(&backend);
-	net.add<At::FullyConnectedLayer>(50,10, &backend);
-	net.add<At::SigmoidLayer>(&backend);
+	net.add<At::FullyConnectedLayer>(784,50);
+	net.add<At::SigmoidLayer>();
+	net.add<At::FullyConnectedLayer>(50,10);
+	net.add<At::SigmoidLayer>();
 	net.compile();
 
 	net.summary();
 
-	At::AdaGradOptimizer opt(&backend);
+	At::AdaGradOptimizer opt;
 	opt.alpha_ = 0.1f;
 	At::MSELoss loss;
 
@@ -101,8 +101,7 @@ int main()
 	for(size_t i=0;i<testingImage.shape()[0];i++)
 	{
 		At::Tensor x = testingImage.slice({i},{1});
-		At::Tensor res;
-		net.predict(x, res);
+		At::Tensor res = net.predict(x);
 		int predictLabel = maxElementIndex(res.host());
 		if(predictLabel == dataset.test_labels[i])
 			correct++;

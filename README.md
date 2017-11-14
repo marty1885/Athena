@@ -13,13 +13,14 @@
 ## Tensor and Backends
 
 `Athena` handles tensor like how a game engine handles shaders and meshes. The `Tensor` class does not creare nor operate a tensor itself. Instead it calls a `Backend` that does all the job. This design allows `Athena` to load backends at runtime and even utilize multiple backened at once.<br>
-Backends in `Athena` can do more than performing tensor operations. So called `Algoritms` can be inserted into a backend then queried at runtime to perforem specific tasks if the uderlying library has a way to do it faster then using tensor operations.
+Backends in `Athena` can do more than performing tensor operations. So called `Algoritms` can be inserted into a backend then quary at runtime to perforem specific tasks if the uderlying library has a way to do it faster then using tensor operations.
 
 Currently only the `XtensorBackend` using `xtensor` as the base library is avliable. Other backends using faster libraries like `ArrayFire`, `MIOpen` and `blaze` is planed.
 
 ## Examples
 
-`example1` in the `examples` folder demostrates how to implement a MLP to solve the XOR problem in Athena.
+`example1` in the `examples` folder demostrates how to implement a MLP to solve the XOR problem in Athena.<br>
+`mnist` contains an example using a MLP to classify MNIST digits.
 
 ## Development and contribution
 

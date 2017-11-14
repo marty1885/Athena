@@ -131,7 +131,7 @@ void* XtensorBackend::rand(float lEdge, float rEdge, const std::vector<size_t>& 
 
 void* XtensorBackend::normal(float mean, float stddev, const std::vector<size_t>& shape)
 {
-	//XXX: Xtensor does not support normal distrobution. use C++'s normal distrobution 
+	//XXX: Xtensor does not support normal distrobution. Use C++'s normal distrobution 
 	//until Xtensor has it.
 	std::minstd_rand eng; //Should be good enoguh for our purpose
 	std::normal_distribution<float> dist(mean, stddev);

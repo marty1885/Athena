@@ -104,7 +104,9 @@ public:
 		backend_ = backend;
 	}
 
-	virtual void update(Optimizer* optimizer) {} //Implement this if thr layer can be trained
+	virtual void update(Optimizer* optimizer) {} //Implement this if the layer can be trained
+
+	virtual void build() {}
 
 protected:
 
@@ -140,7 +142,7 @@ template <int N>
 class StatefulOptimizer : public Optimizer
 {
 public:
-	StatefulOptimizer(Backend* backend) : backend_(backend)
+	StatefulOptimizer()
 	{
 	}
 
@@ -157,18 +159,17 @@ protected:
 		auto& s = storage_[Index];
 		auto it = s.find(&vec);
 		if(it == s.end())
-			s[&vec] = At::zeros(vec.shape(), backend_);
+			s[&vec] = At::zeros(vec.shape(), vec.backend());
 
 		return s[&vec];
 	}
 	std::array<std::unordered_map<const Tensor*, Tensor>, N> storage_;
-	Backend* backend_;
 };
 
 class MomentumOptimizer : public StatefulOptimizer<1>
 {
 public:
-	MomentumOptimizer(Backend* backend) : StatefulOptimizer(backend)
+	MomentumOptimizer()
 	{
 	}
 
@@ -186,7 +187,7 @@ public:
 class NestrovOptimizer : public StatefulOptimizer<1>
 {
 public:
-	NestrovOptimizer(Backend* backend) : StatefulOptimizer(backend)
+	NestrovOptimizer()
 	{
 	}
 
@@ -206,7 +207,7 @@ public:
 class AdaGradOptimizer : public StatefulOptimizer<1>
 {
 public:
-	AdaGradOptimizer(Backend* backend) : StatefulOptimizer(backend)
+	AdaGradOptimizer()
 	{
 	}
 
@@ -223,18 +224,22 @@ public:
 class FullyConnectedLayer : public Layer
 {
 public:
-	FullyConnectedLayer(size_t input, size_t output, Backend* backend):
+	FullyConnectedLayer(size_t input, size_t output, Backend* backend = nullptr):
 		Layer(backend, true)
 	{
 		setInputShape(std::vector<size_t>({input}));
 		setOutputShape(std::vector<size_t>({output}));
-		weights_.push_back(At::rand(-1,1, {input, output}, backend_));
-		weights_.push_back(At::rand(-1,1, {output}, backend_));
-
-		forwardAlgorithm_ = backend_->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
-		backwardAlgorithm_ = backend_->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
 
 		setType("fullyConnected");
+	}
+
+	virtual void build()
+	{
+		weights_.push_back(At::rand(-1,1, {inputShape()[0], outputShape()[0]}, backend()));
+		weights_.push_back(At::rand(-1,1, outputShape(), backend()));
+
+		forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
+		backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -268,12 +273,15 @@ protected:
 class SigmoidLayer : public Layer
 {
 public:
-	SigmoidLayer(Backend* backend) : Layer(backend)
+	SigmoidLayer(Backend* backend = nullptr) : Layer(backend)
 	{
-		forwardAlgorithm_ = backend_->getAlgorithm<SigmoidForward>("sigmoidForward");
-		backwardAlgorithm_ = backend_->getAlgorithm<SigmoidBackward>("sigmoidBackward");
-
 		setType("sigmoid");
+	}
+
+	virtual void build()
+	{
+		forwardAlgorithm_ = backend()->getAlgorithm<SigmoidForward>("sigmoidForward");
+		backwardAlgorithm_ = backend()->getAlgorithm<SigmoidBackward>("sigmoidBackward");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -297,10 +305,13 @@ class TanhLayer : public Layer
 public:
 	TanhLayer(Backend* backend) : Layer(backend)
 	{
-		forwardAlgorithm_ = backend_->getAlgorithm<TanhForward>("tanhForward");
-		backwardAlgorithm_ = backend_->getAlgorithm<TanhBackward>("tanhBackward");
-
 		setType("tanh");
+	}
+
+	virtual void build()
+	{
+		forwardAlgorithm_ = backend()->getAlgorithm<TanhForward>("tanhForward");
+		backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("tanhBackward");
 	}
 
 	virtual void forward(const Tensor& x, Tensor& y) override
@@ -324,12 +335,15 @@ class ReluLayer : public Layer
 public:
 	ReluLayer(Backend* backend) : Layer(backend)
 	{
-		forwardAlgorithm_ = backend_->getAlgorithm<ReluForward>("reluForward");
-		backwardAlgorithm_ = backend_->getAlgorithm<ReluBackward>("reluBackward");
-
 		setType("relu");
 	}
 
+	virtual void build()
+	{
+		forwardAlgorithm_ = backend()->getAlgorithm<TanhForward>("reluForward");
+		backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("reluBackward");
+	}
+
 	virtual void forward(const Tensor& x, Tensor& y) override
 	{
 		y = forwardAlgorithm_(x);
@@ -346,30 +360,6 @@ protected:
 	delegate<ReluBackward> backwardAlgorithm_;
 };
 
-class SquashLayer : public Layer
-{
-public:
-	SquashLayer(Backend* backend) : Layer(backend)
-	{
-		forwardAlgorithm_ = backend_->getAlgorithm<ReluForward>("squashForward");
-		backwardAlgorithm_ = backend_->getAlgorithm<ReluBackward>("squashBackward");
-
-		setType("squash");
-	}
-	virtual void forward(const Tensor& x, Tensor& y) override
-	{
-		y = forwardAlgorithm_(x);
-	}
-
-	virtual void backword(const Tensor& x, const Tensor& y,
-		Tensor& dx, const Tensor& dy) override
-	{
-		dx = backwardAlgorithm_(dy, y);
-	}
-protected:
-	delegate<ReluForward> forwardAlgorithm_;
-	delegate<ReluBackward> backwardAlgorithm_;
-};
 
 class RecurrentLayer : public Layer
 {
@@ -429,6 +419,11 @@ using L1Loss = AbsoluteLoss;
 class SequentialNetwork
 {
 public:
+	SequentialNetwork(Backend* backend)
+	{
+		backend_ = backend;
+	}
+
 	template<typename LayerType, typename ... Args>
 	void add(Args ... args)
 	{
@@ -437,25 +432,12 @@ public:
 
 	void compile()
 	{
-		//Ignored for now
-		/*auto compareVec = [](const auto& a, const auto& b)->bool{
-			if(a.size() != b.size())
-				return false;
-			for(int i=0;i<a.size();i++)
-			{
-				if(a[i] != b[i])
-					return false;
-			}
-			return true;
-		};
-
-		for(size_t i=1;i<layers_.size();i++)
+		for(auto& layer : layers_)
 		{
-			if(compareVec(layers_[i-1]->outputShape(), layers_[i]->inputShape()) == false)
-				throw AtError("Error: Later " + std::to_string(i-1) + "'s output shaped does not match"
-					" the input shpae of layer " + std::to_string(i) + "'s."
-				);
-		}*/
+			if(layer->backend() == nullptr)
+				layer->setBackend(backend_);
+			layer->build();
+		}
 	}
 
 	void summary() const
@@ -584,7 +566,7 @@ public:
 		}
 	}
 
-	void predict(const Tensor& input, Tensor& output)
+	Tensor predict(const Tensor& input)
 	{
 		Tensor in = input.clone();
 		for(auto& layer : layers_)
@@ -594,7 +576,7 @@ public:
 			in = out;
 		}
 
-		output = in;
+		return in;
 	}
 
 	const Layer* operator[](int index) const
@@ -613,6 +595,7 @@ public:
 	}
 
 	std::vector<Layer*> layers_;
+	Backend* backend_;
 };
 
 }
