@@ -333,7 +333,7 @@ protected:
 class ReluLayer : public Layer
 {
 public:
-	ReluLayer(Backend* backend) : Layer(backend)
+	ReluLayer(Backend* backend = nullptr) : Layer(backend)
 	{
 		setType("relu");
 	}
