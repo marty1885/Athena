@@ -104,6 +104,16 @@ public:
 		backend_ = backend;
 	}
 
+	void setName(const std::string& name)
+	{
+		name_ = name;
+	}
+
+	std::string name()
+	{
+		return name_;
+	}
+
 	virtual void update(Optimizer* optimizer) {} //Implement this if the layer can be trained
 
 	virtual void build() {}
@@ -119,6 +129,7 @@ protected:
 	std::vector<size_t> inputShape_;
 	std::vector<size_t> outputShape_;
 	std::string type_;
+	std::string name_;
 	Backend* backend_;
 	bool trainable_ = false;
 };
@@ -552,7 +563,7 @@ public:
 					auto& layer = layers_[k];
 					Tensor tmp;
 					layer->backword(layerOutputs[k],layerOutputs[k+1], tmp, dE);
-					if( layer->trainable())
+					if(layer->trainable())
 						layer->update(&optimizer);
 
 					dE = std::move(tmp);
@@ -592,6 +603,16 @@ public:
 	size_t depth() const
 	{
 		return layers_.size();
+	}
+
+	Layer* getLayer(const std::string& name)
+	{
+		for(auto layer : layers_)
+		{
+			if(layer->name() == name)
+				return layer;
+		}
+		return nullptr;
 	}
 
 	std::vector<Layer*> layers_;

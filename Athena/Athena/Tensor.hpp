@@ -157,6 +157,12 @@ public:
 		return backend_->host(handle_);
 	}
 
+	Tensor transfer(Backend* otherBackend)
+	{
+		//TODO: Optimize this in the future
+		return Tensor(otherBackend->createTensor(host(), shape()), otherBackend);
+	}
+
 	virtual ~Tensor()
 	{
 		if(referenceCounter_ != nullptr)
