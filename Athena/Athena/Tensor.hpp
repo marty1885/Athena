@@ -12,6 +12,8 @@
 namespace At
 {
 
+using TensorHandle = void*;
+
 class Tensor
 {
 public:
@@ -19,7 +21,7 @@ public:
 	{
 	}
 
-	Tensor(const std::vector<size_t>& shape, Backend* backend)
+	Tensor(const Shape& shape, Backend* backend)
 		: Tensor()
 	{
 		referenceCounter_ = new ReferenceCounter(1);
@@ -35,7 +37,7 @@ public:
 		backend_ = backend;
 	}
 
-	Tensor(const std::vector<float>& vec, const std::vector<size_t>& shape, Backend* backend)
+	Tensor(const std::vector<float>& vec, const Shape& shape, Backend* backend)
 		: Tensor()
 	{
 		referenceCounter_ = new ReferenceCounter(1);
@@ -97,7 +99,7 @@ public:
 		return backend_;
 	}
 
-	Tensor slice(const std::vector<size_t>& begin, const std::vector<size_t>& size) const
+	Tensor slice(const Shape& begin, const Shape& size) const
 	{
 		return Tensor(backend_->slice(handle_, begin, size), backend_);
 	}
@@ -112,7 +114,7 @@ public:
 		return Tensor(backend_->copyTensor(handle_), backend_);
 	}
 
-	Tensor sum(const std::vector<size_t>& axis)
+	Tensor sum(const Shape& axis)
 	{
 		return Tensor(backend_->sum(handle_, axis), backend_);
 	}
@@ -122,12 +124,12 @@ public:
 		return Tensor(backend_->pow(handle_, e), backend_);
 	}
 
-	const std::vector<size_t> shape() const
+	const Shape shape() const
 	{
 		return backend_->shape(handle_);
 	}
 
-	void reshape(const std::vector<size_t>& s)
+	void reshape(const Shape& s)
 	{
 		backend_->reshape(handle_, s);
 	}
@@ -196,17 +198,17 @@ protected:
 	void* handle_ = nullptr;
 };
 
-Tensor rand(float lEdge, float rEdge, const std::vector<size_t>& shape, Backend* backend)
+Tensor rand(float lEdge, float rEdge, const Shape& shape, Backend* backend)
 {
 	return Tensor(backend->rand(rEdge, lEdge, shape), backend);
 }
 
-Tensor normal(float mean, float stddev, const std::vector<size_t>& shape, Backend* backend)
+Tensor normal(float mean, float stddev, const Shape& shape, Backend* backend)
 {
 	return Tensor(backend->normal(mean, stddev, shape), backend);
 }
 
-Tensor zeros(const std::vector<size_t>& shape, Backend* backend)
+Tensor zeros(const Shape& shape, Backend* backend)
 {
 	return Tensor(backend->zeros(shape), backend);
 }
@@ -226,7 +228,7 @@ Tensor abs(const Tensor& t)
 	return Tensor(t.backend()->abs(t.internalHandle()), t.backend());
 }
 
-Tensor sum(const Tensor& t, const std::vector<size_t> axis = {})
+Tensor sum(const Tensor& t, const Shape axis = {})
 {
 	return Tensor(t.backend()->sum(t.internalHandle(), axis), t.backend());
 }

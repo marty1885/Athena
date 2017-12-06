@@ -86,14 +86,15 @@ XtensorBackend::XtensorBackend()
 
 	setType("Xtensor");
 }
-void* XtensorBackend::createTensor(const std::vector<size_t>& dims)
+void* XtensorBackend::createTensor(const Shape& dims)
 {
 	return createTensor(xt::zeros<float>(dims));
 }
 
-void* XtensorBackend::createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape)
+void* XtensorBackend::createTensor(const std::vector<float>& vec, const Shape& shape)
 {
-	auto t = new xt::xarray<float>(shape);
+	std::vector<size_t> s(shape.begin(), shape.end());
+	auto t = new xt::xarray<float>(s);
 	std::copy(vec.begin(), vec.end(), t->begin());
 	return t;
 }
@@ -115,23 +116,23 @@ void* XtensorBackend::copyTensor(const void* src)
 	return createTensor(t);
 }
 
-void* XtensorBackend::zeros(const std::vector<size_t>& shape)
+void* XtensorBackend::zeros(const Shape& shape)
 {
 	return createTensor(xt::zeros<float>(shape));
 }
-void* XtensorBackend::ones(const std::vector<size_t>& shape)
+void* XtensorBackend::ones(const Shape& shape)
 {
 	return createTensor(xt::ones<float>(shape));
 }
 
-void* XtensorBackend::rand(float lEdge, float rEdge, const std::vector<size_t>& shape)
+void* XtensorBackend::rand(float lEdge, float rEdge, const Shape& shape)
 {
 	return createTensor(std::move(xt::random::rand<float>(shape, lEdge, rEdge)));
 }
 
-void* XtensorBackend::normal(float mean, float stddev, const std::vector<size_t>& shape)
+void* XtensorBackend::normal(float mean, float stddev, const Shape& shape)
 {
-	//XXX: Xtensor does not support normal distrobution. Use C++'s normal distrobution 
+	//XXX: Xtensor does not support normal distrobution. Use C++'s normal distrobution
 	//until Xtensor has it.
 	std::minstd_rand eng; //Should be good enoguh for our purpose
 	std::normal_distribution<float> dist(mean, stddev);
@@ -144,9 +145,13 @@ void* XtensorBackend::normal(float mean, float stddev, const std::vector<size_t>
 	return createTensor(std::move(vec), shape);
 }
 
-std::vector<size_t> XtensorBackend::shape(void* handle) const
+Shape XtensorBackend::shape(void* handle) const
 {
-	return get(handle).shape();
+	Shape s;
+	auto sh = get(handle).shape();
+	s.resize(sh.size());
+	std::copy(sh.begin(), sh.end(), s.begin());
+	return s;
 }
 
 
@@ -185,7 +190,7 @@ void* XtensorBackend::subtract(const void* handle1,const  void* handle2)
 	return createTensor(std::move(get(handle1)-get(handle2)));
 }
 
-void XtensorBackend::reshape(void* handle, const std::vector<size_t>& targetShape)
+void XtensorBackend::reshape(void* handle, const Shape& targetShape)
 {
 	get(handle).reshape(targetShape);
 }
@@ -200,7 +205,7 @@ void* XtensorBackend::dot(const void* handle1, const void* handle2)
 	return createTensor(std::move(xt::linalg::dot(get(handle1),get(handle2))));
 }
 
-void* XtensorBackend::slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size)
+void* XtensorBackend::slice(void* handle, const Shape& begin, const Shape& size)
 {
 	const auto& t = get(handle);
 	xt::slice_vector sv(t);
@@ -219,7 +224,7 @@ void* XtensorBackend::stack(const void* handle1, const void* handle2, int axis)
 	return createTensor(std::move(xt::stack(xtuple(get(handle1),get(handle2)), axis)));
 }
 
-void* XtensorBackend::sum(const void* handle, const std::vector<size_t>& axis)
+void* XtensorBackend::sum(const void* handle, const Shape& axis)
 {
 	return createTensor(std::move(xt::sum(get(handle), axis)));
 }

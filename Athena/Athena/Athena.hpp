@@ -6,21 +6,17 @@
 #include <iostream>
 #include <array>
 #include <unordered_map>
+#include <map>
 #include <string>
 #include <sstream>
 
 #include <Athena/Backend.hpp>
 #include <Athena/Tensor.hpp>
+#include <Athena/Optimizer.hpp>
+#include <Athena/Shape.hpp>
 
 namespace At
 {
-
-class Optimizer
-{
-public:
-	virtual void update(Tensor& weight, const Tensor& grad) = 0;
-	virtual void reset(){} //Implement if needed
-};
 
 class Layer
 {
@@ -43,22 +39,22 @@ public:
 	{
 	}
 
-	void setInputShape(const std::vector<size_t>& s)
+	void setInputShape(const Shape& s)
 	{
 		inputShape_ = s;
 	}
 
-	void setOutputShape(const std::vector<size_t>& s)
+	void setOutputShape(const Shape& s)
 	{
 		outputShape_ = s;
 	}
 
-	std::vector<size_t> inputShape()
+	Shape inputShape()
 	{
 		return inputShape_;
 	}
 
-	std::vector<size_t> outputShape()
+	Shape outputShape()
 	{
 		return outputShape_;
 	}
@@ -126,110 +122,12 @@ protected:
 	}
 
 	std::vector<Tensor> weights_;
-	std::vector<size_t> inputShape_;
-	std::vector<size_t> outputShape_;
+	Shape inputShape_;
+	Shape outputShape_;
 	std::string type_;
 	std::string name_;
 	Backend* backend_;
 	bool trainable_ = false;
-};
-
-class SGDOptimizer : public Optimizer
-{
-public:
-	SGDOptimizer(float alpha = 0.45) : alpha_(alpha)
-	{
-	}
-
-	virtual void update(Tensor& weight, const Tensor& grad) override
-	{
-		weight -= grad*alpha_;
-	}
-
-	float alpha_;
-};
-
-template <int N>
-class StatefulOptimizer : public Optimizer
-{
-public:
-	StatefulOptimizer()
-	{
-	}
-
-	virtual void reset() override
-	{
-		for(auto& s : storage_)
-			s.clear();
-	}
-
-protected:
-	template <int Index>
-	Tensor& get(const Tensor& vec)
-	{
-		auto& s = storage_[Index];
-		auto it = s.find(&vec);
-		if(it == s.end())
-			s[&vec] = At::zeros(vec.shape(), vec.backend());
-
-		return s[&vec];
-	}
-	std::array<std::unordered_map<const Tensor*, Tensor>, N> storage_;
-};
-
-class MomentumOptimizer : public StatefulOptimizer<1>
-{
-public:
-	MomentumOptimizer()
-	{
-	}
-
-	virtual void update(Tensor& weight, const Tensor& grad) override
-	{
-		auto& v = get<0>(weight);
-		v = mu_*v - alpha_*grad;
-		weight += v;
-	}
-
-	float alpha_ = 0.01;
-	float mu_ = 0.9;
-};
-
-class NestrovOptimizer : public StatefulOptimizer<1>
-{
-public:
-	NestrovOptimizer()
-	{
-	}
-
-	virtual void update(Tensor& weight, const Tensor& grad) override
-	{
-		auto& v = this->get<0>(weight);
-		v = v * momentum_;
-		v = v - grad*alpha_;
-		weight = weight + v*momentum_*momentum_;
-		weight = weight - grad*(1.f+momentum_)*alpha_;
-	}
-
-	float alpha_ = 0.01;
-	float momentum_ = 0.9;
-};
-
-class AdaGradOptimizer : public StatefulOptimizer<1>
-{
-public:
-	AdaGradOptimizer()
-	{
-	}
-
-	virtual void update(Tensor& weight, const Tensor& grad) override
-	{
-		auto& h = get<0>(weight);
-		h += grad*grad;
-		weight -= alpha_*grad/(sqrt(h)+1e-7f);
-	}
-
-	float alpha_ = 0.01;
 };
 
 class FullyConnectedLayer : public Layer
@@ -238,8 +136,8 @@ public:
 	FullyConnectedLayer(size_t input, size_t output, Backend* backend = nullptr):
 		Layer(backend, true)
 	{
-		setInputShape(std::vector<size_t>({input}));
-		setOutputShape(std::vector<size_t>({output}));
+		setInputShape(Shape({input}));
+		setOutputShape(Shape({output}));
 
 		setType("fullyConnected");
 	}
@@ -443,10 +341,20 @@ public:
 
 	void compile()
 	{
+		std::map<std::string, int> layerTypeNum;
+
 		for(auto& layer : layers_)
 		{
+			if(layer->name() == "")
+			{
+				auto layerType = layer->type();
+				//std::map initializes variable by default even  when accessing it
+				layer->setName(layerType+"_"+std::to_string(++layerTypeNum[layerType]));
+			}
+
 			if(layer->backend() == nullptr)
 				layer->setBackend(backend_);
+
 			layer->build();
 		}
 	}
@@ -465,7 +373,7 @@ public:
 		};
 
 		printN("─",80);
-		std::cout << trimString("Layer type",24) << trimString("Output shape", 16) << trimString("Params #", 16) << '\n';
+		std::cout << trimString("Layer (type)",23) << " " << trimString("Output shape", 15) << " " << trimString("Params #", 16) << '\n';
 		size_t trainableWeights = 0;
 		for(size_t i=0;i<depth();i++)
 		{
@@ -474,16 +382,13 @@ public:
 			else
 				printN("─",80);
 			const auto& l = layers_[i];
-			std::cout << trimString(l->type(), 24);
+			std::cout << trimString(l->name()+" ("+l->type()+")", 23) << " ";
 
 			const auto& shape = l->outputShape();
 			std::ostringstream stream;
-			stream << "{";
-			for(auto v : shape)
-				stream << v << ", ";
-			stream << "}";
+			stream << shape;
 			std::string str =  stream.str();
-			std::cout << trimString(str, 16);
+			std::cout << trimString(str, 15) << " ";
 
 			if(l->trainable() == false)
 				std::cout << trimString("0", 16);
@@ -494,7 +399,7 @@ public:
 				for(const auto& w : weights)
 					val += w.size();
 				trainableWeights += val;
-				std::cout << trimString(std::to_string(val), 16);
+				std::cout << trimString(std::to_string(val), 15) << " ";
 			}
 
 			std::cout << '\n';

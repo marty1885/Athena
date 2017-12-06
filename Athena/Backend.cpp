@@ -5,12 +5,12 @@ using namespace At;
 
 static const std::string notImplementString = " not implemented in backend. Method cannot be called.";
 
-void* Backend::createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape)
+void* Backend::createTensor(const std::vector<float>& vec, const Shape& shape)
 {
 	throw AtError(__func__ + notImplementString);
 }
 
-void* Backend::createTensor(const std::vector<size_t>& dims)
+void* Backend::createTensor(const Shape& dims)
 {
 	throw AtError(__func__ + notImplementString);
 }
@@ -36,22 +36,22 @@ void Backend::host(void* handle, float* ptr) const
 	throw AtError(__func__ + notImplementString);
 }
 
-void* Backend::zeros(const std::vector<size_t>& shape)
+void* Backend::zeros(const Shape& shape)
 {
 	throw AtError(__func__ + notImplementString);
 }
 
-void* Backend::ones(const std::vector<size_t>& shape)
+void* Backend::ones(const Shape& shape)
 {
 	throw AtError(__func__ + notImplementString);
 }
 
-void* Backend::rand(float lEdge, float rEdge, const std::vector<size_t>& shape)
+void* Backend::rand(float lEdge, float rEdge, const Shape& shape)
 {
 	throw AtError(__func__ + notImplementString);
 }
 
-void* Backend::normal(float mean, float stddev, const std::vector<size_t>& shape)
+void* Backend::normal(float mean, float stddev, const Shape& shape)
 {
 	throw AtError(__func__ + notImplementString);
 }
@@ -97,7 +97,7 @@ void* Backend::dot(const void* handle1, const void* handle2)
 }
 
 
-void* Backend::sum(const void* handle, const std::vector<size_t>& axis)
+void* Backend::sum(const void* handle, const Shape& axis)
 {
 	throw AtError(__func__ + notImplementString);
 }
@@ -118,12 +118,12 @@ void* Backend::abs(const void* handle)
 }
 
 
-std::vector<size_t> Backend::shape(void* handle) const
+Shape Backend::shape(void* handle) const
 {
 	throw AtError(__func__ + notImplementString);
 }
 
-void Backend::reshape(void* handle, const std::vector<size_t>& targetShape)
+void Backend::reshape(void* handle, const Shape& targetShape)
 {
 	throw AtError(__func__ + notImplementString);
 }
@@ -133,7 +133,7 @@ void* Backend::transpose(void* handle)
 	throw AtError(__func__ + notImplementString);
 }
 
-void* Backend::slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size)
+void* Backend::slice(void* handle, const Shape& begin, const Shape& size)
 {
 	throw AtError(__func__ + notImplementString);
 }

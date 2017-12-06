@@ -6,6 +6,7 @@
 #include <string>
 
 #include <Athena/Error.hpp>
+#include <Athena/Shape.hpp>
 #include <Athena/Delegate.hpp>
 
 namespace At
@@ -52,17 +53,17 @@ public:
 			delete it.second;
 	}
 
-	virtual void* createTensor(const std::vector<float>& vec, const std::vector<size_t>& shape);
-	virtual void* createTensor(const std::vector<size_t>& dims);
+	virtual void* createTensor(const std::vector<float>& vec, const Shape& shape);
+	virtual void* createTensor(const Shape& dims);
 	virtual void* copyTensor(const void* src);
 	virtual void destoryTensor(void* handle);
 
 	virtual void device(void* handle, const float* ptr);
 	virtual void host(void* handle, float* ptr) const;
-	virtual void* zeros(const std::vector<size_t>& shape);
-	virtual void* ones(const std::vector<size_t>& shape);
-	virtual void* rand(float lEdge, float rEdge, const std::vector<size_t>& shape);
-	virtual void* normal(float mean, float stddev, const std::vector<size_t>& shape);
+	virtual void* zeros(const Shape& shape);
+	virtual void* ones(const Shape& shape);
+	virtual void* rand(float lEdge, float rEdge, const Shape& shape);
+	virtual void* normal(float mean, float stddev, const Shape& shape);
 
 	virtual void* add(const void* handle1,const  void* handle2);
 	virtual void* multiply(const void* handle1,const  void* handle2);
@@ -74,16 +75,16 @@ public:
 
 	virtual void* dot(const void* handle1, const void* handle2);
 
-	virtual void* sum(const void* handle, const std::vector<size_t>& axis);
+	virtual void* sum(const void* handle, const Shape& axis);
 
 	virtual void* pow(const void* handle, float e);
 	virtual void* sqrt(const void* handle);
 	virtual void* abs(const void* handle);
 
-	virtual std::vector<size_t> shape(void* handle) const;
-	virtual void reshape(void* handle, const std::vector<size_t>& targetShape);
+	virtual Shape shape(void* handle) const;
+	virtual void reshape(void* handle, const Shape& targetShape);
 	virtual void* transpose(void* handle);
-	virtual void* slice(void* handle, const std::vector<size_t>& begin, const std::vector<size_t>& size);
+	virtual void* slice(void* handle, const Shape& begin, const Shape& size);
 	virtual void* concatenate(const void* handle1, const void* handle2, int axis=0);
 	virtual void* stack(const void* handle1, const void* handle2, int axis=0);
 
