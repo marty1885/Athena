@@ -13,7 +13,7 @@ int maxElementIndex(const std::vector<float>& vec)
 	return std::distance(vec.begin(), std::max_element(vec.begin(), vec.end()));
 }
 
-At::Tensor imagesToTensor(const std::vector<std::vector<uint8_t>>& arr, At::Backend* backend)
+At::Tensor imagesToTensor(const std::vector<std::vector<uint8_t>>& arr, At::Backend& backend)
 {
 	std::vector<float> res;
 	res.reserve(arr.size()*arr[0].size());
@@ -23,7 +23,7 @@ At::Tensor imagesToTensor(const std::vector<std::vector<uint8_t>>& arr, At::Back
 			res.push_back(v/255.f);
 	}
 
-	return At::Tensor(res,{arr.size(),arr[0].size()}, backend);
+	return At::Tensor(res,{(intmax_t)arr.size(),(intmax_t)arr[0].size()}, backend);
 }
 
 std::vector<float> onehot(int ind, int total)
@@ -34,7 +34,7 @@ std::vector<float> onehot(int ind, int total)
 	return vec;
 }
 
-At::Tensor labelsToOnehot(const std::vector<uint8_t>& labels, At::Backend* backend)
+At::Tensor labelsToOnehot(const std::vector<uint8_t>& labels, At::Backend& backend)
 {
 	std::vector<float> buffer;
 	buffer.reserve(labels.size()*10);
@@ -46,7 +46,7 @@ At::Tensor labelsToOnehot(const std::vector<uint8_t>& labels, At::Backend* backe
 			buffer.push_back((float)v);
 	}
 
-	return At::Tensor(buffer, {labels.size(), 10}, backend);
+	return At::Tensor(buffer, {(intmax_t)labels.size(), 10}, backend);
 }
 
 int main()
@@ -55,10 +55,10 @@ int main()
 	At::SequentialNetwork net(&backend);
 
 	auto dataset = mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>("../mnist");
-	At::Tensor traningImage = imagesToTensor(dataset.training_images, &backend);
-	At::Tensor traningLabels = labelsToOnehot(dataset.training_labels, &backend);
-	At::Tensor testingImage = imagesToTensor(dataset.test_images, &backend);
-	At::Tensor testingLabels = labelsToOnehot(dataset.test_labels, &backend);
+	At::Tensor traningImage = imagesToTensor(dataset.training_images, backend);
+	At::Tensor traningLabels = labelsToOnehot(dataset.training_labels, backend);
+	At::Tensor testingImage = imagesToTensor(dataset.test_images, backend);
+	At::Tensor testingLabels = labelsToOnehot(dataset.test_labels, backend);
 
 	net.add<At::FullyConnectedLayer>(784,50);
 	net.add<At::SigmoidLayer>();
@@ -68,7 +68,7 @@ int main()
 
 	net.summary();
 
-	At::AdaGradOptimizer opt;
+	At::NestrovOptimizer opt;
 	opt.alpha_ = 0.1f;
 	At::MSELoss loss;
 
@@ -98,7 +98,7 @@ int main()
 	std::cout << "It took me " << time_span.count() << " seconds." << std::endl;
 
 	int correct = 0;
-	for(size_t i=0;i<testingImage.shape()[0];i++)
+	for(intmax_t i=0;i<testingImage.shape()[0];i++)
 	{
 		At::Tensor x = testingImage.slice({i},{1});
 		At::Tensor res = net.predict(x);

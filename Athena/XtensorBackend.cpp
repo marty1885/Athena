@@ -9,128 +9,286 @@
 #include <xtensor/xstridedview.hpp>
 
 #include <random>
+#include <Athena/TensorImpl.hpp>
+#include <Athena/Tensor.hpp>
 
 using namespace At;
+
+//Converts between different containers
+template<typename ResType, typename InType>
+inline ResType as(const InType& shape)
+{
+	return ResType(shape.begin(), shape.end());
+}
+
+class XtensorTensorImpl : public TensorImpl
+{
+public:
+	XtensorTensorImpl(XtensorBackend* backend) : TensorImpl(backend)
+	{
+	}
+
+	XtensorTensorImpl(xt::xarray<float> arr, XtensorBackend* backend) : TensorImpl(backend)
+	{
+		arr_ = std::move(arr);
+	}
+
+	const xt::xarray<float>& get() const
+	{
+		return arr_;
+	}
+
+	xt::xarray<float>& get()
+	{
+		return arr_;
+	}
+
+	virtual void host(float* ptr) const
+	{
+		std::copy(arr_.begin(), arr_.end(), ptr);
+	}
+
+	virtual size_t size() const override
+	{
+		return arr_.size();
+	}
+
+	virtual Shape shape() const override
+	{
+		return as<Shape>(arr_.shape());
+	}
+
+	virtual void add(float val) override
+	{
+		arr_ = arr_ + val;
+	}
+
+	virtual void mul(float val) override
+	{
+		arr_ = arr_ * val;
+	}
+
+	//TODO: Check if the incoming impl is a XtensorTensorImpl
+	virtual void add(const TensorImpl* other) override
+	{
+		auto impl = (const XtensorTensorImpl*)other;
+		arr_ = arr_ + impl->get();
+	}
+
+	virtual void mul(const TensorImpl* other) override
+	{
+		auto impl = (const XtensorTensorImpl*)other;
+		arr_ = arr_ * impl->get();
+	}
+
+	virtual void subtract(const TensorImpl* other) override
+	{
+		auto impl = (const XtensorTensorImpl*)other;
+		arr_ = arr_ - impl->get();
+	}
+
+	virtual void divide(const TensorImpl* other) override
+	{
+		auto impl = (const XtensorTensorImpl*)other;
+		arr_ = arr_ / impl->get();
+	}
+
+	virtual TensorImpl* clone() const override
+	{
+		return new XtensorTensorImpl(arr_, (XtensorBackend*) backend());
+	}
+
+	virtual void reshape(const Shape& wantedShape) override
+	{
+		auto s = as<std::vector<size_t>>(wantedShape);
+		arr_.reshape(s);
+	}
+
+	virtual TensorImpl* dot(const TensorImpl* other) const override
+	{
+		auto impl = (const XtensorTensorImpl*)other;
+		auto res = xt::linalg::dot(arr_, impl->get());
+		return new XtensorTensorImpl(std::move(res), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* sqrt() const override
+	{
+		return new XtensorTensorImpl(xt::sqrt(arr_), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* transpose() const
+	{
+		return new XtensorTensorImpl(xt::transpose(arr_), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* sum(intmax_t axis) const override
+	{
+		return new XtensorTensorImpl(xt::sum(arr_, {axis}), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* pow(float val) const override
+	{
+		return new XtensorTensorImpl(xt::pow(arr_, val), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* slice(const Shape& begin, const Shape& size) const override
+	{
+		xt::slice_vector sv(arr_);
+		for(size_t i=0;i<begin.size();i++)
+			sv.push_back(xt::range(begin[i], begin[i]+size[i]));
+		return new XtensorTensorImpl(std::move(xt::dynamic_view(arr_, sv)), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* abs() const override
+	{
+		return new XtensorTensorImpl(std::move(xt::abs(arr_)), (XtensorBackend*)backend());
+	}
+
+	TensorImpl* stack(const TensorImpl* other, int axis) const override
+	{
+		auto impl = (const XtensorTensorImpl*)other;
+		return new XtensorTensorImpl(std::move(xt::stack(xtuple(arr_, impl->get()), axis)), (XtensorBackend*)backend());
+	}
+
+	TensorImpl* concatenate(const TensorImpl* other, int axis) const override
+	{
+		auto impl = (const XtensorTensorImpl*)other;
+		return new XtensorTensorImpl(std::move(xt::concatenate(xtuple(arr_, impl->get()), axis)), (XtensorBackend*)backend());
+	}
+
+protected:
+	xt::xarray<float> arr_;
+};
+
+inline xt::xarray<float>& get(Tensor& t)
+{
+	return ((XtensorTensorImpl*)t.pimpl())->get();
+}
+
+inline const xt::xarray<float>& get(const Tensor& t)
+{
+	return ((XtensorTensorImpl*)t.pimpl())->get();
+}
+
 
 XtensorBackend::XtensorBackend()
 {
 	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
-		[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor
-		{
-			const auto& i = get(in.internalHandle());
-			const auto& w = get(weight.internalHandle());
-			const auto& b = get(bias.internalHandle());
-			auto id = createTensor(
-				std::move(xt::linalg::dot(i,w)+b)
-			);
-			return Tensor(id, this);
-		});
+	[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor
+	{
+		const auto& i = get(in);
+		const auto& w = get(weight);
+		const auto& b = get(bias);
+		auto res = new XtensorTensorImpl(
+			std::move(xt::linalg::dot(i,w)+b), this
+		);
+		return res;
+	});
 
 	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
 		[this](const Tensor& dx, const Tensor& weight)->Tensor
 		{
-			const auto& i = get(dx.internalHandle());
-			const auto& w = get(weight.internalHandle());
-			return Tensor(this->createTensor(
-				std::move(xt::linalg::dot(i,xt::transpose(w)))
-			), this);
+			const auto& i = get(dx);
+			const auto& w = get(weight);
+			return createTensor(
+				std::move(xt::linalg::dot(i,xt::transpose(w))));
 		});
 
 	addAlgorithm<SigmoidForward>("sigmoidForward",
 		[this](const Tensor& x)->Tensor
 		{
-			const auto& t = get(x.internalHandle());
-			return Tensor(createTensor(std::move(1/(1+xt::exp(-t)))), this);
+			const auto& t = get(x);
+			return createTensor(std::move(1/(1+xt::exp(-t))));
 		});
 
 	addAlgorithm<SigmoidBackward>("sigmoidBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const auto& dy = get(a.internalHandle());
-			const auto& y = get(b.internalHandle());
-			return Tensor(createTensor(std::move(dy*(y*(1-y)))), this);
+			const auto& dy = get(a);
+			const auto& y = get(b);
+			return createTensor(std::move(dy*(y*(1-y))));
 		});
 
 	addAlgorithm<TanhForward>("tanhForward",
 		[this](const Tensor& x)->Tensor
 		{
-			const auto& t = get(x.internalHandle());
+			const auto& t = get(x);
 			xt::xarray<float> res = xt::tanh(t);
-			return Tensor(createTensor(std::move(res)), this);
+			return createTensor(std::move(res));
 		});
 
 	addAlgorithm<TanhBackward>("tanhBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const auto& dy = get(a.internalHandle());
-			const auto& y = get(b.internalHandle());
+			const auto& dy = get(a);
+			const auto& y = get(b);
 			xt::xarray<float> res = dy * (1 - xt::pow(xt::tanh(y), 2));
-			return Tensor(createTensor(std::move(res)), this);
+			return createTensor(std::move(res));
 		});
 
 	addAlgorithm<ReluForward>("reluForward",
 		[this](const Tensor& x)->Tensor
 		{
-			const auto& t = get(x.internalHandle());
+			const auto& t = get(x);
 			xt::xarray<float> res = (t>0)*t;
-			return Tensor(createTensor(std::move(res)), this);
+			return createTensor(std::move(res));
 		});
 
 	addAlgorithm<ReluBackward>("reluBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const auto& y = get(b.internalHandle());
+			const auto& y = get(b);
 			xt::xarray<float> res = 1.f*(y>0);
-			return Tensor(createTensor(std::move(res)), this);
+			return createTensor(std::move(res));
 		});
 
 	setType("Xtensor");
 }
-void* XtensorBackend::createTensor(const Shape& dims)
+
+
+TensorImpl* XtensorBackend::createTensor(const Shape& dims)
 {
-	return createTensor(xt::zeros<float>(dims));
+	std::vector<size_t> size(dims.size());
+	std::copy(dims.begin(), dims.end(), size.begin());
+	return createTensor(xt::zeros<float>(size));
 }
 
-void* XtensorBackend::createTensor(const std::vector<float>& vec, const Shape& shape)
+TensorImpl* XtensorBackend::createTensor(const std::vector<float>& vec, const Shape& shape)
 {
-	std::vector<size_t> s(shape.begin(), shape.end());
-	auto t = new xt::xarray<float>(s);
-	std::copy(vec.begin(), vec.end(), t->begin());
-	return t;
+	auto s = as<xt::xarray<float>::shape_type>(shape);
+	xt::xarray<float> t(s);
+	std::copy(vec.begin(), vec.end(), t.begin());
+	return new XtensorTensorImpl(std::move(t), this);
 }
 
-void* XtensorBackend::createTensor(const xt::xarray<float>& arr)
+TensorImpl* XtensorBackend::createTensor(const xt::xarray<float>& arr)
 {
-	auto* t = new xt::xarray<float>(arr);
-	return t;
+	xt::xarray<float> t(arr);
+	return new XtensorTensorImpl(std::move(t), this);
 }
 
-void XtensorBackend::destoryTensor(void* handle)
+void XtensorBackend::destoryTensor(TensorImpl* impl)
 {
-	delete &get(handle);
+	delete impl;
 }
 
-void* XtensorBackend::copyTensor(const void* src)
-{
-	const auto& t = get(src);
-	return createTensor(t);
-}
-
-void* XtensorBackend::zeros(const Shape& shape)
+TensorImpl* XtensorBackend::zeros(const Shape& shape)
 {
 	return createTensor(xt::zeros<float>(shape));
 }
-void* XtensorBackend::ones(const Shape& shape)
+
+TensorImpl* XtensorBackend::ones(const Shape& shape)
 {
 	return createTensor(xt::ones<float>(shape));
 }
 
-void* XtensorBackend::rand(float lEdge, float rEdge, const Shape& shape)
+TensorImpl* XtensorBackend::rand(float lEdge, float rEdge, const Shape& shape)
 {
-	return createTensor(std::move(xt::random::rand<float>(shape, lEdge, rEdge)));
+	auto s = as<xt::xarray<float>::shape_type>(shape);
+	return createTensor(std::move(xt::random::rand<float>(s, lEdge, rEdge)));
 }
 
-void* XtensorBackend::normal(float mean, float stddev, const Shape& shape)
+TensorImpl* XtensorBackend::normal(float mean, float stddev, const Shape& shape)
 {
 	//XXX: Xtensor does not support normal distrobution. Use C++'s normal distrobution
 	//until Xtensor has it.
@@ -143,121 +301,4 @@ void* XtensorBackend::normal(float mean, float stddev, const Shape& shape)
 	for(auto& v : vec)
 		v = dist(eng);
 	return createTensor(std::move(vec), shape);
-}
-
-Shape XtensorBackend::shape(void* handle) const
-{
-	Shape s;
-	auto sh = get(handle).shape();
-	s.resize(sh.size());
-	std::copy(sh.begin(), sh.end(), s.begin());
-	return s;
-}
-
-
-void* XtensorBackend::add(const void* handle1,const void* handle2)
-{
-	return createTensor(std::move(get(handle1)+get(handle2)));
-}
-
-void* XtensorBackend::multiply(const void* handle1,const void* handle2)
-{
-	return createTensor(std::move(get(handle1)*get(handle2)));
-}
-
-void* XtensorBackend::scalarMul(const void* handle, float x)
-{
-	return createTensor(std::move(x*get(handle)));
-}
-
-void* XtensorBackend::scalarAdd(const void* handle,float x)
-{
-	return createTensor(std::move(get(handle)+x));
-}
-
-void XtensorBackend::selfScalarAdd(void* handle, float val)
-{
-	get(handle) += val;
-}
-
-void* XtensorBackend::div(const void* handle1,const  void* handle2)
-{
-	return createTensor(std::move(get(handle1)/get(handle2)));
-}
-
-void* XtensorBackend::subtract(const void* handle1,const  void* handle2)
-{
-	return createTensor(std::move(get(handle1)-get(handle2)));
-}
-
-void XtensorBackend::reshape(void* handle, const Shape& targetShape)
-{
-	get(handle).reshape(targetShape);
-}
-
-void* XtensorBackend::transpose(void* handle)
-{
-	return createTensor(std::move(xt::transpose(get(handle))));
-}
-
-void* XtensorBackend::dot(const void* handle1, const void* handle2)
-{
-	return createTensor(std::move(xt::linalg::dot(get(handle1),get(handle2))));
-}
-
-void* XtensorBackend::slice(void* handle, const Shape& begin, const Shape& size)
-{
-	const auto& t = get(handle);
-	xt::slice_vector sv(t);
-	for(size_t i=0;i<begin.size();i++)
-		sv.push_back(xt::range(begin[i], begin[i]+size[i]));
-	return createTensor(std::move(xt::dynamic_view(t, sv)));
-}
-
-void* XtensorBackend::concatenate(const void* handle1,const  void* handle2, int axis)
-{
-	return createTensor(std::move(xt::concatenate(xtuple(get(handle1),get(handle2)), axis)));
-}
-
-void* XtensorBackend::stack(const void* handle1, const void* handle2, int axis)
-{
-	return createTensor(std::move(xt::stack(xtuple(get(handle1),get(handle2)), axis)));
-}
-
-void* XtensorBackend::sum(const void* handle, const Shape& axis)
-{
-	return createTensor(std::move(xt::sum(get(handle), axis)));
-}
-
-void* XtensorBackend::pow(const void* handle, float e)
-{
-	return createTensor(std::move(xt::pow(get(handle), e)));
-}
-
-void* XtensorBackend::sqrt(const void* handle)
-{
-	return createTensor(std::move(xt::sqrt(get(handle))));
-}
-
-void* XtensorBackend::abs(const void* handle)
-{
-	return createTensor(std::move(xt::abs(get(handle))));
-}
-
-void XtensorBackend::device(void* handle, const float* ptr)
-{
-	auto& t = get(handle);
-	std::copy(ptr, ptr+t.size(), t.begin());
-}
-
-void XtensorBackend::host(void* handle, float* ptr) const
-{
-	const auto& t = get(handle);
-	std::copy(t.begin(), t.end(), ptr);
-}
-
-size_t XtensorBackend::size(const void* handle)
-{
-	auto& t = get(handle);
-	return t.size();
 }

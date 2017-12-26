@@ -2,6 +2,7 @@
 
 #include <Athena/Backend.hpp>
 #include <Athena/ReferenceCounter.hpp>
+#include <Athena/TensorImpl.hpp>
 
 #include <assert.h>
 
@@ -21,60 +22,54 @@ public:
 	{
 	}
 
-	Tensor(const Shape& shape, Backend* backend)
+	Tensor(const Shape& shape, Backend& backend)
 		: Tensor()
 	{
+		pimpl_ = backend.createTensor(shape);
 		referenceCounter_ = new ReferenceCounter(1);
-		backend_ = backend;
-		handle_ = backend->createTensor(shape);
 	}
 
-	Tensor(void* handle, Backend* backend)
+	Tensor(TensorImpl* pimpl)
 		: Tensor()
 	{
+		pimpl_ = pimpl;
 		referenceCounter_ = new ReferenceCounter(1);
-		handle_ = handle;
-		backend_ = backend;
 	}
 
-	Tensor(const std::vector<float>& vec, const Shape& shape, Backend* backend)
+	Tensor(const std::vector<float>& vec, const Shape& shape, Backend& backend)
 		: Tensor()
 	{
+		pimpl_ = backend.createTensor(vec, shape);
 		referenceCounter_ = new ReferenceCounter(1);
-		backend_ = backend;
-		handle_ = backend->createTensor(vec, shape);
 	}
 
 	Tensor(const Tensor& t)
 		:referenceCounter_(t.referenceCounter())
 	{
-		//Workarround someone trying to copy a not initialized Tensor
-		if(t.backend() == nullptr)
+		if(this == &t)
 			return;
 
-		backend_ = t.backend();
-		handle_ = const_cast<void*>(t.internalHandle());
+		pimpl_ = (TensorImpl*)t.pimpl();
+		referenceCounter_ = t.referenceCounter();
 		if(referenceCounter_ != nullptr)
 			referenceCounter_->addRef();
 	}
 
 	Tensor& operator= (const Tensor& other)
 	{
-		if(this == &other || other.backend() == nullptr)
+		if(this == &other || other.pimpl() == nullptr)
 			return *this;
 
 		if(referenceCounter_ != nullptr && other.referenceCounter() != nullptr)
 		{
 			if(referenceCounter_->release() == 0)
 			{
-				if(handle_ != nullptr)
-					backend_->destoryTensor(handle_);
 				delete referenceCounter_;
+				delete pimpl_;
 			}
 		}
 
-		backend_ = other.backend();
-		handle_ = const_cast<void*>(other.internalHandle());
+		pimpl_ = (TensorImpl*)other.pimpl();
 		referenceCounter_ = other.referenceCounter();
 		if(referenceCounter_ != nullptr)
 			referenceCounter_->addRef();
@@ -82,87 +77,112 @@ public:
 		return *this;
 	}
 
-	Tensor(Tensor&& t)
+	//TODO: Implement this. The default one is good enoguh now
+	/*Tensor(Tensor&& t)
 	{
 		if(t.referenceCounter() == nullptr)
 			return;
 
 		referenceCounter_ = t.referenceCounter();
-		backend_ = t.backend();
-		handle_ = t.internalHandle();
-		t.internalHandle() = 0;
-		t.setReferenceCounter(nullptr);
+		pimpl_ = (TensorImpl*)t.pimpl();
+
+	}*/
+
+	inline void add(float val)
+	{
+		pimpl_->add(val);
 	}
 
-	inline Backend* backend() const
+	inline void mul(float val)
 	{
-		return backend_;
+		pimpl_->mul(val);
 	}
 
 	Tensor slice(const Shape& begin, const Shape& size) const
 	{
-		return Tensor(backend_->slice(handle_, begin, size), backend_);
+		return pimpl_->slice(begin, size);
 	}
 
 	Tensor transpose() const
 	{
-		return Tensor(backend_->transpose(handle_), backend_);
+		return pimpl_->transpose();
 	}
 
 	Tensor clone() const
 	{
-		return Tensor(backend_->copyTensor(handle_), backend_);
+		return Tensor(pimpl_->clone());
 	}
 
-	Tensor sum(const Shape& axis)
+	Tensor sum(intmax_t axis) const
 	{
-		return Tensor(backend_->sum(handle_, axis), backend_);
+		return pimpl_->sum(axis);
 	}
 
 	Tensor pow(float e)
 	{
-		return Tensor(backend_->pow(handle_, e), backend_);
+		return pimpl_->pow(e);
+	}
+
+	Tensor dot(const Tensor& t) const
+	{
+		return pimpl_->dot(t.pimpl());
+	}
+
+	Tensor sqrt() const
+	{
+		return pimpl_->sqrt();
+	}
+
+	Tensor abs() const
+	{
+		return pimpl_->abs();
+	}
+
+	Tensor stack(const Tensor& t, intmax_t axis) const
+	{
+		return pimpl_->stack(t.pimpl(), axis);
 	}
 
 	const Shape shape() const
 	{
-		return backend_->shape(handle_);
+		return std::move(pimpl_->shape());
 	}
 
 	void reshape(const Shape& s)
 	{
-		backend_->reshape(handle_, s);
+		pimpl_->reshape(s);
+	}
+
+	Tensor concatenate(const Tensor& other, intmax_t axis) const
+	{
+		return pimpl_->concatenate(other.pimpl(), axis);
 	}
 
 	size_t size() const
 	{
-		return backend_->size(handle_);
-	}
-
-	inline const void* internalHandle() const
-	{
-		return handle_;
-	}
-
-	inline void*& internalHandle()
-	{
-		return handle_;
+		return pimpl_->size();
 	}
 
 	void host(float* ptr) const
 	{
-		backend_->host(handle_, ptr);
+		pimpl_->host(ptr);
 	}
 
 	std::vector<float> host() const
 	{
-		return backend_->host(handle_);
+		std::vector<float> v(pimpl_->size());
+		pimpl_->host(&v[0]);
+		return v;
 	}
 
-	Tensor transfer(Backend* otherBackend)
+	//TODO: Implement this
+	// Tensor transfer(Backend* otherBackend)
+	// {
+	// }
+
+	Backend* backend()
 	{
-		//TODO: Optimize this in the future
-		return Tensor(otherBackend->createTensor(host(), shape()), otherBackend);
+		return pimpl_->backend();
 	}
 
 	virtual ~Tensor()
@@ -171,16 +191,30 @@ public:
 		{
 			if(referenceCounter_->release() == 0)
 			{
-				if(handle_ != 0)
-					backend_->destoryTensor(handle_);
 				delete referenceCounter_;
+				backend()->destoryTensor(pimpl_);
 			}
 		}
-
-		handle_ = 0;
-		backend_ = nullptr;
 		referenceCounter_ = nullptr;
+		pimpl_ = nullptr;
 	}
+
+	inline TensorImpl* pimpl()
+	{
+		return pimpl_;
+	}
+
+	inline const TensorImpl* pimpl() const
+	{
+		return pimpl_;
+	}
+
+	Backend* backend() const
+	{
+		return pimpl_->backend();
+	}
+
+
 
 protected:
 	inline ReferenceCounter* referenceCounter() const
@@ -193,44 +227,43 @@ protected:
 		referenceCounter_ = ptr;
 	}
 
-	Backend* backend_ = nullptr;
 	ReferenceCounter* referenceCounter_ = nullptr;
-	void* handle_ = nullptr;
+	TensorImpl* pimpl_ = nullptr;
 };
 
-Tensor rand(float lEdge, float rEdge, const Shape& shape, Backend* backend)
+Tensor rand(float lEdge, float rEdge, const Shape& shape, Backend& backend)
 {
-	return Tensor(backend->rand(rEdge, lEdge, shape), backend);
+	return Tensor(backend.rand(lEdge, rEdge ,shape));
 }
 
-Tensor normal(float mean, float stddev, const Shape& shape, Backend* backend)
+Tensor normal(float mean, float stddev, const Shape& shape, Backend& backend)
 {
-	return Tensor(backend->normal(mean, stddev, shape), backend);
+	return Tensor(backend.normal(mean, stddev, shape));
 }
 
-Tensor zeros(const Shape& shape, Backend* backend)
+Tensor zeros(const Shape& shape, Backend& backend)
 {
-	return Tensor(backend->zeros(shape), backend);
+	return backend.zeros(shape);
 }
 
 Tensor dot(const Tensor& a, const Tensor& b)
 {
-	return Tensor(a.backend()->dot(a.internalHandle(), b.internalHandle()), a.backend());
+	return Tensor(a.dot(b));
 }
 
 Tensor sqrt(const Tensor& t)
 {
-	return Tensor(t.backend()->sqrt(t.internalHandle()), t.backend());
+	return t.sqrt();
 }
 
 Tensor abs(const Tensor& t)
 {
-	return Tensor(t.backend()->abs(t.internalHandle()), t.backend());
+	return t.abs();
 }
 
-Tensor sum(const Tensor& t, const Shape axis = {})
+Tensor sum(const Tensor& t, intmax_t axis = 0)
 {
-	return Tensor(t.backend()->sum(t.internalHandle(), axis), t.backend());
+	return t.sum(axis);
 }
 
 Tensor transpose(const Tensor& t)
@@ -238,14 +271,14 @@ Tensor transpose(const Tensor& t)
 	return t.transpose();
 }
 
-Tensor concatenate(const Tensor& t, const Tensor& q, int axis)
+Tensor concatenate(const Tensor& t, const Tensor& q, intmax_t axis)
 {
-	return Tensor(t.backend()->concatenate(t.internalHandle(), q.internalHandle(), axis), t.backend());
+	return t.concatenate(q, axis);
 }
 
-Tensor stack(const Tensor& t, const Tensor& q, int axis)
+Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
 {
-	return Tensor(t.backend()->stack(t.internalHandle(), q.internalHandle(), axis), t.backend());
+	return t.stack(q, axis);
 }
 
 std::ostream& operator<< (std::ostream& os, const Tensor& t)
@@ -261,114 +294,127 @@ std::ostream& operator<< (std::ostream& os, const Tensor& t)
 
 Tensor operator+(const Tensor& t, const Tensor& other)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->add(t.internalHandle(), other.internalHandle()), t.backend());
+	//assert(t.backend() == t.backend());
+	Tensor res(t.clone());
+	res.pimpl()->add(other.pimpl());
+	return res;
 }
 
 Tensor operator-(const Tensor& t, const Tensor& other)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->subtract(t.internalHandle(), other.internalHandle()), t.backend());
+	Tensor res(t.clone());
+	res.pimpl()->subtract(other.pimpl());
+	return res;
 }
 
 Tensor operator*(const Tensor& t, const Tensor& other)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->multiply(t.internalHandle(), other.internalHandle()), t.backend());
+	Tensor res(t.clone());
+	res.pimpl()->mul(other.pimpl());
+	return res;
 }
 
 Tensor operator/(const Tensor& t, const Tensor& other)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->div(t.internalHandle(), other.internalHandle()), t.backend());
+	Tensor res(t.clone());
+	res.pimpl()->divide(other.pimpl());
+	return res;
 }
 
 void operator-=(Tensor& t, const Tensor& other)
 {
-	t = std::move(t-other);
+	t.pimpl()->subtract(other.pimpl());
 }
 
 void operator-=(Tensor& t, const float& x)
 {
-	t.backend()->selfScalarAdd(t.internalHandle(),-x);
+	t.add(-x);
 }
 
 void operator+=(Tensor& t, const Tensor& other)
 {
-	t = std::move(t+other);
+	t.pimpl()->add(other.pimpl());
 }
 
 void operator+=(Tensor& t, const float& x)
 {
-	t.backend()->selfScalarAdd(t.internalHandle(),x);
+	t.add(x);
 }
 
 void operator*=(Tensor& t, const Tensor& other)
 {
-	t = std::move(t*other);
+	t.pimpl()->mul(other.pimpl());
 }
 
 void operator*=(Tensor& t, const float& x)
 {
-	t = Tensor(t.backend()->scalarMul(t.internalHandle(), x), t.backend());
+	t.mul(x);
 }
 
 void operator/=(Tensor& t, const Tensor& other)
 {
-	t = std::move(t*other);
+	t.pimpl()->divide(other.pimpl());
 }
 
 void operator/=(Tensor& t, const float& x)
 {
-	t = Tensor(t.backend()->scalarMul(t.internalHandle(), 1.f/x), t.backend());
+	t.mul(1.f/x);
 }
 
 Tensor operator+(const Tensor& t, float val)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->scalarAdd(t.internalHandle(), val), t.backend());
+	Tensor res(t.clone());
+	res.add(val);
+	return res;
 }
 
 Tensor operator-(const Tensor& t, float val)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->scalarAdd(t.internalHandle(), -val), t.backend());
+	Tensor res(t.clone());
+	res.add(-val);
+	return res;
 }
 
 Tensor operator*(const Tensor& t, float amp)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->scalarMul(t.internalHandle(), amp), t.backend());
+	Tensor res(t.clone());
+	res.mul(amp);
+	return res;
 }
 
 Tensor operator/(const Tensor& t, float amp)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->scalarMul(t.internalHandle(), 1.f/amp), t.backend());
+	Tensor res(t.clone());
+	res.mul(1.f/amp);
+	return res;
 }
 
 Tensor operator+(float val, const Tensor& t)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->scalarAdd(t.internalHandle(), val), t.backend());
+	Tensor res(t.clone());
+	res.add(val);
+	return res;
 }
 
 Tensor operator-(float val, const Tensor& t)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->scalarAdd(t.internalHandle(), -val), t.backend());
+	Tensor res(t.clone());
+	res.add(-val);
+	return res;
 }
 
 Tensor operator*(float val, const Tensor& t)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->scalarMul(t.internalHandle(), val), t.backend());
+	Tensor res(t.clone());
+	res.mul(val);
+	return res;
 }
 
 Tensor operator/(float amp, const Tensor& t)
 {
-	assert(t.backend() == t.backend());
-	return Tensor(t.backend()->scalarMul(t.internalHandle(), 1.f/amp), t.backend());
+	Tensor res(t.clone());
+	res.mul(amp);
+	return res;
 }
 
 

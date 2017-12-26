@@ -133,7 +133,7 @@ protected:
 class FullyConnectedLayer : public Layer
 {
 public:
-	FullyConnectedLayer(size_t input, size_t output, Backend* backend = nullptr):
+	FullyConnectedLayer(intmax_t input, intmax_t output, Backend* backend = nullptr):
 		Layer(backend, true)
 	{
 		setInputShape(Shape({input}));
@@ -144,8 +144,8 @@ public:
 
 	virtual void build()
 	{
-		weights_.push_back(At::rand(-1,1, {inputShape()[0], outputShape()[0]}, backend()));
-		weights_.push_back(At::rand(-1,1, outputShape(), backend()));
+		weights_.push_back(At::rand(-1,1, {inputShape()[0], outputShape()[0]}, *backend()));
+		weights_.push_back(At::rand(-1,1, outputShape(), *backend()));
 
 		forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
 		backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
@@ -313,14 +313,14 @@ class AbsoluteLoss : public LossFunction
 		return sum(abs(y-t));
 	}
 
-	virtual void df(const Tensor& y, const Tensor& t, Tensor& d) override
-	{
-		/*d.reshape(t.shape());
-		float factor = 1.f/(float)t.size();
-		auto func = [factor](float x)->float{return x < 0.f? -factor : (x > 0.f ? factor : 0.f);};
-
-		d = xt::vectorize(func)(y-t);*/
-	}
+	// virtual void df(const Tensor& y, const Tensor& t, Tensor& d) override
+	// {
+	// 	d.reshape(t.shape());
+	// 	float factor = 1.f/(float)t.size();
+	// 	auto func = [factor](float x)->float{return x < 0.f? -factor : (x > 0.f ? factor : 0.f);};
+        //
+	// 	d = xt::vectorize(func)(y-t);
+	// }
 };
 
 using L1Loss = AbsoluteLoss;
@@ -356,6 +356,7 @@ public:
 				layer->setBackend(backend_);
 
 			layer->build();
+
 		}
 	}
 
@@ -426,7 +427,7 @@ public:
 		if(input.shape()[0]%batchSize != 0)
 			throw AtError("Error: batch size cannot divide the number of datasets perfectly.");
 
-		if(input.shape()[0]<batchSize)
+		if(input.shape()[0]<(intmax_t)batchSize)
 			throw AtError("Error: batch size is larger than the number of datasets");
 
 		size_t datasetSize = input.shape()[0];
@@ -442,8 +443,8 @@ public:
 			float epochLoss = 0;
 			for(size_t j=0;j<datasetSize;j+=batchSize)
 			{
-				Tensor x = input.slice({j}, {batchSize});
-				Tensor y = desireOutput.slice({j} ,{batchSize});
+				Tensor x = input.slice({(intmax_t)j}, {(intmax_t)batchSize});
+				Tensor y = desireOutput.slice({(intmax_t)j} ,{(intmax_t)batchSize});
 
 				x.reshape(inputShape);
 				y.reshape(outputShape);

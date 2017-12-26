@@ -48,7 +48,7 @@ protected:
 		auto& s = storage_[Index];
 		auto it = s.find(&vec);
 		if(it == s.end())
-			s[&vec] = At::zeros(vec.shape(), vec.backend());
+			s[&vec] = At::zeros(vec.shape(), *vec.backend());
 
 		return s[&vec];
 	}

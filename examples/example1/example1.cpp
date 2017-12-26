@@ -9,7 +9,6 @@ using namespace std::chrono;
 int main()
 {
 	At::XtensorBackend backend;
-
 	At::SequentialNetwork net(&backend);
 	net.add<At::FullyConnectedLayer>(2,5);
 	net.add<At::SigmoidLayer>();
@@ -17,11 +16,12 @@ int main()
 	net.add<At::SigmoidLayer>();
 	net.compile();
 
+	std::cout << "Compile done" << std::endl;
+
 	net.summary();
 
-
-	At::Tensor X({0,0, 1,0, 0,1, 1,1}, {4,2}, &backend);
-	At::Tensor Y({0,1,1,0}, {4,1}, &backend);
+	At::Tensor X({0,0, 1,0, 0,1, 1,1}, {4,2}, backend);
+	At::Tensor Y({0,1,1,0}, {4,1}, backend);
 
 	At::NestrovOptimizer opt;
 	At::MSELoss loss;
@@ -37,7 +37,7 @@ int main()
 	duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
 	std::cout << "It took me " << time_span.count() << " seconds." << std::endl;
 
-	for(size_t i=0;i<X.shape()[0];i++)
+	for(int i=0;i<X.shape()[0];i++)
 	{
 		At::Tensor x = X.slice({i},{1});
 		auto res = net.predict(x);

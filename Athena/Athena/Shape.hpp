@@ -15,6 +15,12 @@ public:
 	{
 	}
 
+	template<class InputIt>
+	Shape(InputIt first, InputIt last)
+		: std::vector<intmax_t>(first, last)
+	{
+	}
+
 	Shape() : std::vector<intmax_t>()
 	{}
 };

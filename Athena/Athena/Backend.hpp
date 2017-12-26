@@ -8,6 +8,7 @@
 #include <Athena/Error.hpp>
 #include <Athena/Shape.hpp>
 #include <Athena/Delegate.hpp>
+#include <Athena/TensorImpl.hpp>
 
 namespace At
 {
@@ -53,55 +54,14 @@ public:
 			delete it.second;
 	}
 
-	virtual void* createTensor(const std::vector<float>& vec, const Shape& shape);
-	virtual void* createTensor(const Shape& dims);
-	virtual void* copyTensor(const void* src);
-	virtual void destoryTensor(void* handle);
+	virtual TensorImpl* createTensor(const std::vector<float>& vec, const Shape& shape);
+	virtual TensorImpl* createTensor(const Shape& dims);
+	virtual void destoryTensor(TensorImpl* handle);
 
-	virtual void device(void* handle, const float* ptr);
-	virtual void host(void* handle, float* ptr) const;
-	virtual void* zeros(const Shape& shape);
-	virtual void* ones(const Shape& shape);
-	virtual void* rand(float lEdge, float rEdge, const Shape& shape);
-	virtual void* normal(float mean, float stddev, const Shape& shape);
-
-	virtual void* add(const void* handle1,const  void* handle2);
-	virtual void* multiply(const void* handle1,const  void* handle2);
-	virtual void* scalarMul(const  void* handle, float x);
-	virtual void* scalarAdd(const void* handle, float val);
-	virtual void selfScalarAdd(void* handle, float val);
-	virtual void* div(const void* handle1,const  void* handle2);
-	virtual void* subtract(const void* handle1,const  void* handle2);
-
-	virtual void* dot(const void* handle1, const void* handle2);
-
-	virtual void* sum(const void* handle, const Shape& axis);
-
-	virtual void* pow(const void* handle, float e);
-	virtual void* sqrt(const void* handle);
-	virtual void* abs(const void* handle);
-
-	virtual Shape shape(void* handle) const;
-	virtual void reshape(void* handle, const Shape& targetShape);
-	virtual void* transpose(void* handle);
-	virtual void* slice(void* handle, const Shape& begin, const Shape& size);
-	virtual void* concatenate(const void* handle1, const void* handle2, int axis=0);
-	virtual void* stack(const void* handle1, const void* handle2, int axis=0);
-
-	virtual size_t size(const void* handle);
-
-	inline std::string type() const
-	{
-		return type_;
-	}
-
-	std::vector<float> host(void* handle)
-	{
-		size_t s = size(handle);
-		std::vector<float> vec(s);
-		host(handle, &vec[0]);
-		return vec;
-	}
+	virtual TensorImpl* zeros(const Shape& shape);
+	virtual TensorImpl* ones(const Shape& shape);
+	virtual TensorImpl* rand(float lEdge, float rEdge, const Shape& shape);
+	virtual TensorImpl* normal(float mean, float stddev, const Shape& shape);
 
 	template<typename FT>
 	inline void addAlgorithm(const std::string& name, delegate<FT> f)
