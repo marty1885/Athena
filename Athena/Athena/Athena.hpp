@@ -133,13 +133,17 @@ protected:
 class FullyConnectedLayer : public Layer
 {
 public:
-	FullyConnectedLayer(intmax_t input, intmax_t output, Backend* backend = nullptr):
-		Layer(backend, true)
+	FullyConnectedLayer(Backend* backend = nullptr)
+		:Layer(backend, true)
+	{
+		setType("fullyConnected");
+	}
+
+	FullyConnectedLayer(intmax_t input, intmax_t output, Backend* backend = nullptr)
+		:FullyConnectedLayer()
 	{
 		setInputShape(Shape({input}));
 		setOutputShape(Shape({output}));
-
-		setType("fullyConnected");
 	}
 
 	virtual void build()
@@ -337,6 +341,19 @@ public:
 	void add(Args ... args)
 	{
 		layers_.push_back(new LayerType(args ...));
+	}
+
+	template<typename LayerType>
+	void add(LayerType layer)
+	{
+		layers_.push_back(new LayerType(layer));
+	}
+
+	template<typename LayerType>
+	SequentialNetwork& operator <<(LayerType layer)
+	{
+		layers_.push_back(new LayerType(layer));
+		return *this;
 	}
 
 	void compile()

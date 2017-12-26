@@ -68,17 +68,6 @@ public:
 		return *this;
 	}
 
-	//TODO: Implement this. The default one is good enoguh now
-	/*Tensor(Tensor&& t)
-	{
-		if(t.referenceCounter() == nullptr)
-			return;
-
-		referenceCounter_ = t.referenceCounter();
-		pimpl_ = (TensorImpl*)t.pimpl();
-
-	}*/
-
 	inline void add(float val)
 	{
 		pimpl_->add(val);

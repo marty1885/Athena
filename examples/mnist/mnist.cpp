@@ -60,10 +60,10 @@ int main()
 	At::Tensor testingImage = imagesToTensor(dataset.test_images, backend);
 	At::Tensor testingLabels = labelsToOnehot(dataset.test_labels, backend);
 
-	net.add<At::FullyConnectedLayer>(784,50);
-	net.add<At::SigmoidLayer>();
-	net.add<At::FullyConnectedLayer>(50,10);
-	net.add<At::SigmoidLayer>();
+	net.add(At::FullyConnectedLayer(784,50));
+	net.add(At::SigmoidLayer());
+	net.add(At::FullyConnectedLayer(50,10));
+	net.add(At::SigmoidLayer());
 	net.compile();
 
 	net.summary();

@@ -10,13 +10,12 @@ int main()
 {
 	At::XtensorBackend backend;
 	At::SequentialNetwork net(&backend);
-	net.add<At::FullyConnectedLayer>(2,5);
-	net.add<At::SigmoidLayer>();
-	net.add<At::FullyConnectedLayer>(5,1);
-	net.add<At::SigmoidLayer>();
-	net.compile();
 
-	std::cout << "Compile done" << std::endl;
+	net.add(At::FullyConnectedLayer(2,5));
+	net.add(At::SigmoidLayer());
+	net.add(At::FullyConnectedLayer(5,1));
+	net.add(At::SigmoidLayer());
+	net.compile();
 
 	net.summary();
 
