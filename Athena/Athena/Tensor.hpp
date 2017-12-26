@@ -13,8 +13,6 @@
 namespace At
 {
 
-using TensorHandle = void*;
-
 class Tensor
 {
 public:
@@ -23,28 +21,21 @@ public:
 	}
 
 	Tensor(const Shape& shape, Backend& backend)
-		: Tensor()
+		: Tensor(backend.createTensor(shape))
 	{
-		pimpl_ = backend.createTensor(shape);
-		referenceCounter_ = new ReferenceCounter(1);
 	}
 
 	Tensor(TensorImpl* pimpl)
-		: Tensor()
+		: referenceCounter_(new ReferenceCounter(1)), pimpl_(pimpl)
 	{
-		pimpl_ = pimpl;
-		referenceCounter_ = new ReferenceCounter(1);
 	}
 
 	Tensor(const std::vector<float>& vec, const Shape& shape, Backend& backend)
-		: Tensor()
+		: Tensor(backend.createTensor(vec, shape))
 	{
-		pimpl_ = backend.createTensor(vec, shape);
-		referenceCounter_ = new ReferenceCounter(1);
 	}
 
 	Tensor(const Tensor& t)
-		:referenceCounter_(t.referenceCounter())
 	{
 		if(this == &t)
 			return;
@@ -65,7 +56,7 @@ public:
 			if(referenceCounter_->release() == 0)
 			{
 				delete referenceCounter_;
-				delete pimpl_;
+				backend()->destoryTensor(pimpl_);
 			}
 		}
 
@@ -180,11 +171,6 @@ public:
 	// {
 	// }
 
-	Backend* backend()
-	{
-		return pimpl_->backend();
-	}
-
 	virtual ~Tensor()
 	{
 		if(referenceCounter_ != nullptr)
@@ -207,6 +193,11 @@ public:
 	inline const TensorImpl* pimpl() const
 	{
 		return pimpl_;
+	}
+
+	Backend* backend()
+	{
+		return pimpl_->backend();
 	}
 
 	Backend* backend() const

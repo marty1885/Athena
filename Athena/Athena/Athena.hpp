@@ -284,8 +284,9 @@ class LossFunction
 public:
 	virtual Tensor f(const Tensor& y, const Tensor& t) = 0;
 
-	virtual void df(const Tensor& y, const Tensor& t, Tensor& d)
+	virtual Tensor df(const Tensor& y, const Tensor& t)
 	{
+		return Tensor();
 	}
 };
 
@@ -296,11 +297,10 @@ class MSELoss : public LossFunction
 		return (y-t).pow(2.f).sum({0})/(float)y.shape()[0];
 	}
 
-	virtual void df(const Tensor& y, const Tensor& t, Tensor& d) override
+	virtual Tensor df(const Tensor& y, const Tensor& t) override
 	{
-		d.reshape(t.shape());
 		float factor = 2.f/(float)t.size();
-		d = (y - t)*factor;
+		return factor*(y - t);
 	}
 };
 

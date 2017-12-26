@@ -167,7 +167,7 @@ inline xt::xarray<float>& get(Tensor& t)
 
 inline const xt::xarray<float>& get(const Tensor& t)
 {
-	return ((XtensorTensorImpl*)t.pimpl())->get();
+	return ((const XtensorTensorImpl*)t.pimpl())->get();
 }
 
 

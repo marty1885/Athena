@@ -37,12 +37,12 @@ public:
 	virtual TensorImpl* concatenate(const TensorImpl* other, int axis) const = 0;
 
 
-	Backend* backend()
+	inline Backend* backend()
 	{
 		return backend_;
 	}
 
-	const Backend* backend() const
+	inline const Backend* backend() const
 	{
 		return backend_;
 	}
