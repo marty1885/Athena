@@ -362,7 +362,7 @@ public:
 
 	void summary() const
 	{
-		auto printN = [](const std::string& str, int n) {for(int i=0;i<n;i++)std::cout << str;};
+		auto repeat = [](const std::string& str, int n) {std::ostringstream os;for(int i=0;i<n;i++)os << str; return os.str();};
 		auto trimString = [](const std::string& str, size_t n){
 			std::string res;
 			res.reserve(n);
@@ -373,15 +373,15 @@ public:
 			return res+std::string(n-end, ' ');
 		};
 
-		printN("─",80);
+		std::cout << repeat("─",80) << '\n';
 		std::cout << trimString("Layer (type)",23) << " " << trimString("Output shape", 15) << " " << trimString("Params #", 16) << '\n';
 		size_t trainableWeights = 0;
 		for(size_t i=0;i<depth();i++)
 		{
 			if(i == 0)
-				printN("=",80);
+				std::cout << repeat("=",80) << '\n';
 			else
-				printN("─",80);
+				std::cout << repeat("─",80) << '\n';
 			const auto& l = layers_[i];
 			std::cout << trimString(l->name()+" ("+l->type()+")", 23) << " ";
 
@@ -408,7 +408,7 @@ public:
 				std::cout << '\n';
 		}
 
-		printN("=",80);
+		std::cout << repeat("=",80) << '\n';
 
 		std::cout << "Trainable weights: " << trainableWeights << '\n';
 	}
