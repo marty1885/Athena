@@ -23,6 +23,14 @@ public:
 
 	Shape() : std::vector<intmax_t>()
 	{}
+
+	intmax_t volume() const
+	{
+		intmax_t val = 1;
+		for(size_t i=0;i<size();i++)
+			val *= operator[](i);
+		return val;
+	}
 };
 
 inline std::ostream& operator << (std::ostream& os, const Shape& s)

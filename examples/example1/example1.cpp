@@ -28,7 +28,7 @@ int main()
 
 	size_t epoch = 100000;
 
-	//Record how long it takes to tran
+	//Record how long it takes to train
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	net.fit(opt,loss,X,Y,4,epoch);
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();

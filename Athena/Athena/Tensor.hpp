@@ -78,7 +78,7 @@ public:
 		pimpl_->mul(val);
 	}
 
-	Tensor slice(const Shape& begin, const Shape& size) const
+	Tensor slice(const Shape& begin, const Shape& size={1}) const
 	{
 		return pimpl_->slice(begin, size);
 	}
@@ -261,14 +261,36 @@ Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
 	return t.stack(q, axis);
 }
 
+void osTensorRecursive (std::ostream& os, float* arr, Shape shape, int depth, bool nlAtLast=false)
+{
+	if(shape.size() == 1)
+	{
+		os << "{";
+		intmax_t size = shape[0];
+		for(intmax_t i=0;i<size;i++)
+			os << arr[i] << (i==size-1 ? "" : ", ");
+		os << "}" << (nlAtLast?"\n":"");
+	}
+	else
+	{
+		intmax_t size = shape[0];
+		shape.erase(shape.begin());
+		intmax_t vol = shape.volume();
+		if(depth == 0)
+			nlAtLast = size > 1;
+		os << "{";
+		for(intmax_t i=0;i<size;i++)
+			osTensorRecursive(os, arr+i*vol, shape,depth+i, nlAtLast);
+		os << "}";
+	}
+
+}
+
 std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
 	std::vector<float> v(t.size());
 	t.host(&v[0]);
-	os << "{";
-	for(size_t i=0;i<t.size();i++)
-		os << v[i] << (i==t.size()-1 ? "" : ", ");
-	os << "}";
+	osTensorRecursive(os, &v[0], t.shape(), 0);
 	return os;
 }
 

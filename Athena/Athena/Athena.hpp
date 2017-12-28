@@ -366,14 +366,13 @@ public:
 			{
 				auto layerType = layer->type();
 				//std::map initializes variable by default even  when accessing it
-				layer->setName(layerType+"_"+std::to_string(++layerTypeNum[layerType]));
+				layer->setName(layerType + "_" + std::to_string(++layerTypeNum[layerType]));
 			}
 
 			if(layer->backend() == nullptr)
 				layer->setBackend(backend_);
 
 			layer->build();
-
 		}
 	}
 
