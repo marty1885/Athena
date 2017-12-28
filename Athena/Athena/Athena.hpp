@@ -30,8 +30,9 @@ public:
 	{
 	}
 
-	virtual void forward(const Tensor& input, Tensor& output)
+	virtual Tensor forward(const Tensor& input)
 	{
+		return Tensor();
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -155,9 +156,9 @@ public:
 		backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
 	}
 
-	virtual void forward(const Tensor& x, Tensor& y) override
+	virtual Tensor forward(const Tensor& x) override
 	{
-		y = forwardAlgorithm_(x, weights_[0], weights_[1]);
+		return forwardAlgorithm_(x, weights_[0], weights_[1]);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -197,9 +198,9 @@ public:
 		backwardAlgorithm_ = backend()->getAlgorithm<SigmoidBackward>("sigmoidBackward");
 	}
 
-	virtual void forward(const Tensor& x, Tensor& y) override
+	virtual Tensor forward(const Tensor& x) override
 	{
-		y = forwardAlgorithm_(x);
+		return forwardAlgorithm_(x);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -227,9 +228,9 @@ public:
 		backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("tanhBackward");
 	}
 
-	virtual void forward(const Tensor& x, Tensor& y) override
+	virtual Tensor forward(const Tensor& x) override
 	{
-		y = forwardAlgorithm_(x);
+		return forwardAlgorithm_(x);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -257,9 +258,9 @@ public:
 		backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("reluBackward");
 	}
 
-	virtual void forward(const Tensor& x, Tensor& y) override
+	virtual Tensor forward(const Tensor& x) override
 	{
-		y = forwardAlgorithm_(x);
+		return forwardAlgorithm_(x);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -471,8 +472,7 @@ public:
 				for(auto& layer : layers_)
 				{
 					const auto& currentInput = layerOutputs[index];
-					Tensor out;
-					layer->forward(currentInput, out);
+					Tensor out = layer->forward(currentInput);
 					layerOutputs[++index] = std::move(out);
 				}
 
@@ -504,8 +504,7 @@ public:
 		Tensor in = input.clone();
 		for(auto& layer : layers_)
 		{
-			Tensor out;
-			layer->forward(in, out);
+			Tensor out = layer->forward(in);
 			in = out;
 		}
 
