@@ -51,7 +51,10 @@ public:
 	virtual ~Backend()
 	{
 		for(auto& it : algorithms_)
-			delete it.second;
+		{
+			for(auto& ptr : it.second)
+				delete ptr;
+		}
 	}
 
 	virtual TensorImpl* createTensor(const std::vector<float>& vec, const Shape& shape);
@@ -66,7 +69,7 @@ public:
 	template<typename FT>
 	inline void addAlgorithm(const std::string& name, delegate<FT> f)
 	{
-		algorithms_[name] = new FunctionContainer<FT>(f);
+		algorithms_[name].push_back(new FunctionContainer<FT>(f));
 	}
 
 	template<typename FT>
@@ -76,12 +79,18 @@ public:
 		if(it != algorithms_.end())
 		{
 			//Remove RTTI if it turns out to be too slow
-			FunctionContainer<FT>* container = dynamic_cast<FunctionContainer<FT>*>(it->second);
+			//Use the last entry as default
+			FunctionContainer<FT>* container = dynamic_cast<FunctionContainer<FT>*>(it->second.back());
 			if(container != nullptr)
 				return container->get();
 			throw AtError("Algorithm \"" + name + "\" is not typed as \"" + typeid(FT).name());
 		}
 		throw AtError("Algorithm \"" + name + "\" not found");
+	}
+
+	std::string type()
+	{
+		return type_;
 	}
 
 protected:
@@ -91,7 +100,7 @@ protected:
 		type_ = str;
 	}
 
-	std::unordered_map<std::string, FunctoinWrapper*> algorithms_;
+	std::unordered_map<std::string, std::vector<FunctoinWrapper*>> algorithms_;
 	std::string type_;
 };
 
