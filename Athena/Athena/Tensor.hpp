@@ -148,11 +148,23 @@ public:
 		pimpl_->host(ptr);
 	}
 
+	void flat()
+	{
+		reshape({(intmax_t)size()});
+	}
+
+	Tensor flatten()
+	{
+		Tensor t = std::move(clone());
+		t.flatten();
+		return std::move(t);
+	}
+
 	std::vector<float> host() const
 	{
 		std::vector<float> v(pimpl_->size());
 		pimpl_->host(&v[0]);
-		return v;
+		return std::move(v);
 	}
 
 	//TODO: Implement this
