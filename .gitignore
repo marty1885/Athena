@@ -54,3 +54,7 @@ CTestTestfile.cmake
 
 #test datas
 /mnist
+
+#editor data
+.vscode
+*.~

@@ -6,7 +6,7 @@
 #include <xtensor/xrandom.hpp>
 #include <xtensor/xio.hpp>
 #include <xtensor-blas/xlinalg.hpp>
-#include <xtensor/xstridedview.hpp>
+#include <xtensor/xstrided_view.hpp>
 
 #include <random>
 #include <Athena/TensorImpl.hpp>
