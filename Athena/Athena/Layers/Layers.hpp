@@ -11,6 +11,10 @@ namespace At
 class Layer
 {
 public:
+	virtual ~Layer()
+	{
+	}
+
 	Layer()
 	{
 	}

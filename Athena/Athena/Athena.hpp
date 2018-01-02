@@ -68,6 +68,12 @@ using L1Loss = AbsoluteLoss;
 class SequentialNetwork
 {
 public:
+	virtual ~SequentialNetwork()
+	{
+		for(auto layer : layers_)
+			delete layer;
+	}
+
 	SequentialNetwork(Backend* backend)
 	{
 		backend_ = backend;
