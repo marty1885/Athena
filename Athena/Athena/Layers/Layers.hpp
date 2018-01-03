@@ -167,7 +167,7 @@ public:
 	virtual void update(Optimizer* optimizer) override
 	{
 		optimizer->update(weights_[0], dW);
-		optimizer->update(weights_[1], dE.sum({0}));
+		optimizer->update(weights_[1], dE.sum(0));
 	}
 
 protected:

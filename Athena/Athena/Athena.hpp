@@ -34,7 +34,7 @@ class MSELoss : public LossFunction
 {
 	virtual Tensor f(const Tensor& y, const Tensor& t) override
 	{
-		return (y-t).pow(2.f).sum({0})/(float)y.shape()[0];
+		return (y-t).pow(2.f).sum(0)/(float)y.shape()[0];
 	}
 
 	virtual Tensor df(const Tensor& y, const Tensor& t) override
