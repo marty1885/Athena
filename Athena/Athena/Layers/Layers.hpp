@@ -141,7 +141,7 @@ public:
 		setOutputShape(Shape({output}));
 	}
 
-	virtual void build()
+	virtual void build() override
 	{
 		weights_.push_back(At::rand(-1,1, {inputShape()[0], outputShape()[0]}, *backend()));
 		weights_.push_back(At::rand(-1,1, outputShape(), *backend()));
@@ -186,7 +186,7 @@ public:
 		setType("sigmoid");
 	}
 
-	virtual void build()
+	virtual void build() override
 	{
 		forwardAlgorithm_ = backend()->getAlgorithm<SigmoidForward>("sigmoidForward");
 		backwardAlgorithm_ = backend()->getAlgorithm<SigmoidBackward>("sigmoidBackward");
@@ -216,7 +216,7 @@ public:
 		setType("tanh");
 	}
 
-	virtual void build()
+	virtual void build() override
 	{
 		forwardAlgorithm_ = backend()->getAlgorithm<TanhForward>("tanhForward");
 		backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("tanhBackward");
@@ -246,7 +246,7 @@ public:
 		setType("relu");
 	}
 
-	virtual void build()
+	virtual void build() override
 	{
 		forwardAlgorithm_ = backend()->getAlgorithm<TanhForward>("reluForward");
 		backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("reluBackward");

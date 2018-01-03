@@ -125,7 +125,7 @@ public:
 
 	const Shape shape() const
 	{
-		return std::move(pimpl_->shape());
+		return pimpl_->shape();
 	}
 
 	void reshape(const Shape& s)
@@ -156,21 +156,31 @@ public:
 	Tensor flatten()
 	{
 		Tensor t = std::move(clone());
-		t.flatten();
-		return std::move(t);
+		t.reshape({(intmax_t)t.size()});
+		return t;
 	}
 
 	std::vector<float> host() const
 	{
 		std::vector<float> v(pimpl_->size());
 		pimpl_->host(&v[0]);
-		return std::move(v);
+		return v;
 	}
 
 	//TODO: Implement this
 	// Tensor transfer(Backend* otherBackend)
 	// {
 	// }
+
+	float* hostPtr()
+	{
+		return pimpl_->hostPtr();
+	}
+
+	const float* hostPtr() const
+	{
+		return pimpl_->hostPtr();
+	}
 
 	virtual ~Tensor()
 	{

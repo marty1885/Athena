@@ -12,6 +12,8 @@
 #include <Athena/TensorImpl.hpp>
 #include <Athena/Tensor.hpp>
 
+#include <string.h>
+
 using namespace At;
 
 //Converts between different containers
@@ -43,7 +45,7 @@ public:
 		return arr_;
 	}
 
-	virtual void host(float* ptr) const
+	virtual void host(float* ptr) const override
 	{
 		std::copy(arr_.begin(), arr_.end(), ptr);
 	}
@@ -116,7 +118,7 @@ public:
 		return new XtensorTensorImpl(xt::sqrt(arr_), (XtensorBackend*)backend());
 	}
 
-	virtual TensorImpl* transpose() const
+	virtual TensorImpl* transpose() const override
 	{
 		return new XtensorTensorImpl(xt::transpose(arr_), (XtensorBackend*)backend());
 	}
@@ -154,6 +156,16 @@ public:
 	{
 		auto impl = (const XtensorTensorImpl*)other;
 		return new XtensorTensorImpl(std::move(xt::concatenate(xtuple(arr_, impl->get()), axis)), (XtensorBackend*)backend());
+	}
+
+	virtual float* hostPtr() override
+	{
+		return &arr_[0];
+	}
+
+	virtual const float* hostPtr() const override
+	{
+		return &arr_[0];
 	}
 
 protected:
@@ -255,6 +267,7 @@ TensorImpl* XtensorBackend::createTensor(const Shape& dims)
 
 TensorImpl* XtensorBackend::createTensor(const std::vector<float>& vec, const Shape& shape)
 {
+	assert(vec.size() == (size_t)shape.volume());
 	auto s = as<xt::xarray<float>::shape_type>(shape);
 	xt::xarray<float> t(s);
 	std::copy(vec.begin(), vec.end(), t.begin());
