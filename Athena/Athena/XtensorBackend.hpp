@@ -2,7 +2,7 @@
 
 #include <Athena/Backend.hpp>
 
-#include <xtensor/xarray.hpp>
+#include <xtensor/xtensor_forward.hpp>
 
 namespace At
 {
@@ -18,7 +18,7 @@ public:
 
 	virtual TensorImpl* createTensor(const std::vector<float>& vec, const Shape& shape) override;
 	virtual TensorImpl* createTensor(const Shape& dims) override;
-	virtual TensorImpl* createTensor(const xt::xarray<float>& arr);
+	TensorImpl* createTensor(const xt::xarray<float>& arr);
 	virtual void destoryTensor(TensorImpl* handle) override;
 
 	virtual TensorImpl* zeros(const Shape& shape) override;
