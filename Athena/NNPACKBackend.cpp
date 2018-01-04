@@ -37,6 +37,7 @@ NNPackBackend::NNPackBackend()
 		Shape resShape({batchSize, outVecSize});
 		std::vector<float> res(resShape.volume());
 
+		//use inference mode when batch size is small
 		if(batchSize < 64)
 		{
 			for(intmax_t i=0;i<batchSize;i++)
@@ -60,6 +61,39 @@ NNPackBackend::NNPackBackend()
 		}
 
 		return in.backend()->createTensor(std::move(res), resShape);
+	});
+
+	addAlgorithm<Conv2DForward>("conv2DForward",
+		[this](const Tensor& x, const Tensor& kernel, const Tensor& bias, std::array<intmax_t, 2> strides)->Tensor
+	{
+		assert(strides[0] == 1 && strides[1] == 1);//Limitation of NNPACK
+
+		//assuming input format of NCHW
+		auto algorithm = nnp_convolution_algorithm_auto;
+		intmax_t batchSize = x.shape()[0];
+		intmax_t inputChannels = x.shape()[1];
+		intmax_t outputChannels = kernel.shape()[0];
+		nnp_size inputSize = {(size_t)x.shape()[3], (size_t)x.shape()[2]};//NNPACK uses WH instead of HW
+		nnp_padding inputPadding = {0, 0, 0, 0};
+		Shape outputShape({batchSize, kernel.shape()[0], x.shape()[2]-kernel.shape()[2]+1, x.shape()[3]-kernel.shape()[3]+1});
+		std::vector<float> res(outputShape.volume());
+
+		nnp_size kernelSize = {(size_t)kernel.shape()[2], (size_t)kernel.shape()[3]};
+
+		nnp_convolution_output(algorithm,
+			batchSize,
+			inputChannels,
+			outputChannels,
+			inputSize,
+			inputPadding,
+			kernelSize,
+			x.hostPtr(),
+			kernel.hostPtr(),
+			bias.hostPtr(),
+			&res[0],
+			threadpool_,
+			nullptr);
+		return x.backend()->createTensor(std::move(res), outputShape);
 	});
 
 }

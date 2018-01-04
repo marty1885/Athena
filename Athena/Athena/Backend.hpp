@@ -25,6 +25,7 @@ using TanhForward = FuncType<Tensor(const Tensor&)>;
 using TanhBackward = FuncType<Tensor(const Tensor&, const Tensor&)>;
 using ReluForward = FuncType<Tensor(const Tensor&)>;
 using ReluBackward = FuncType<Tensor(const Tensor&, const Tensor&)>;
+using Conv2DForward = FuncType<Tensor(const Tensor&, const Tensor&, const Tensor&, std::array<intmax_t, 2>)>;
 
 struct FunctoinWrapper
 {
