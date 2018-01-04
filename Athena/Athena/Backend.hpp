@@ -73,7 +73,7 @@ public:
 	}
 
 	template<typename FT>
-	delegate<FT> getAlgorithm(const std::string& name, const std::vector<int64_t> params = {})
+	delegate<FT> getAlgorithm(const std::string& name, const std::vector<int64_t> params = {}) const
 	{
 		auto it = algorithms_.find(name);
 		if(it != algorithms_.end())
@@ -91,6 +91,14 @@ public:
 	std::string type()
 	{
 		return type_;
+	}
+
+	template <typename FT, typename BT>
+	void useAlgorithm(const std::string& name, const BT& other)
+	{
+		if(&other == this)//For good measure
+			return;
+		addAlgorithm<FT>(name, other.template getAlgorithm<FT>(name));
 	}
 
 protected:

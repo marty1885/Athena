@@ -1,5 +1,6 @@
 #include <Athena/Athena.hpp>
 #include <Athena/XtensorBackend.hpp>
+#include <Athena/NNPACKBackend.hpp>
 
 #include "mnist_reader.hpp"
 
@@ -52,6 +53,11 @@ At::Tensor labelsToOnehot(const std::vector<uint8_t>& labels, At::Backend& backe
 int main()
 {
 	At::XtensorBackend backend;
+
+	//Use the NNPACK backend to accelerate things. Remove if NNPACK is not avliable
+	At::NNPackBackend nnpBackend;
+	backend.useAlgorithm<At::FCForwardFunction>("fullyconnectedForward", nnpBackend);
+
 	At::SequentialNetwork net(&backend);
 
 	auto dataset = mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>("../mnist");
