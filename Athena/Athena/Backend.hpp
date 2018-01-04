@@ -85,10 +85,10 @@ public:
 				return container->get();
 			throw AtError("Algorithm \"" + name + "\" is not typed as \"" + typeid(FT).name());
 		}
-		throw AtError("Algorithm \"" + name + "\" not found");
+		return delegate<FT>();
 	}
 
-	std::string type()
+	std::string type() const
 	{
 		return type_;
 	}

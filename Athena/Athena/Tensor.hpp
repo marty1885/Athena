@@ -233,57 +233,57 @@ protected:
 	TensorImpl* pimpl_ = nullptr;
 };
 
-Tensor rand(float lEdge, float rEdge, const Shape& shape, Backend& backend)
+inline Tensor rand(float lEdge, float rEdge, const Shape& shape, Backend& backend)
 {
 	return Tensor(backend.rand(lEdge, rEdge ,shape));
 }
 
-Tensor normal(float mean, float stddev, const Shape& shape, Backend& backend)
+inline Tensor normal(float mean, float stddev, const Shape& shape, Backend& backend)
 {
 	return Tensor(backend.normal(mean, stddev, shape));
 }
 
-Tensor zeros(const Shape& shape, Backend& backend)
+inline Tensor zeros(const Shape& shape, Backend& backend)
 {
 	return backend.zeros(shape);
 }
 
-Tensor dot(const Tensor& a, const Tensor& b)
+inline Tensor dot(const Tensor& a, const Tensor& b)
 {
 	return Tensor(a.dot(b));
 }
 
-Tensor sqrt(const Tensor& t)
+inline Tensor sqrt(const Tensor& t)
 {
 	return t.sqrt();
 }
 
-Tensor abs(const Tensor& t)
+inline Tensor abs(const Tensor& t)
 {
 	return t.abs();
 }
 
-Tensor sum(const Tensor& t, intmax_t axis = 0)
+inline Tensor sum(const Tensor& t, intmax_t axis = 0)
 {
 	return t.sum(axis);
 }
 
-Tensor transpose(const Tensor& t)
+inline Tensor transpose(const Tensor& t)
 {
 	return t.transpose();
 }
 
-Tensor concatenate(const Tensor& t, const Tensor& q, intmax_t axis)
+inline Tensor concatenate(const Tensor& t, const Tensor& q, intmax_t axis)
 {
 	return t.concatenate(q, axis);
 }
 
-Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
+inline Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
 {
 	return t.stack(q, axis);
 }
 
-void osTensorRecursive (std::ostream& os, float* arr, Shape shape, int depth, bool nlAtLast=false)
+static void osTensorRecursive (std::ostream& os, float* arr, Shape shape, int depth, bool nlAtLast=false)
 {
 	if(shape.size() == 1)
 	{
@@ -308,7 +308,7 @@ void osTensorRecursive (std::ostream& os, float* arr, Shape shape, int depth, bo
 
 }
 
-std::ostream& operator<< (std::ostream& os, const Tensor& t)
+inline std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
 	std::vector<float> v(t.size());
 	t.host(&v[0]);
@@ -316,7 +316,7 @@ std::ostream& operator<< (std::ostream& os, const Tensor& t)
 	return os;
 }
 
-Tensor operator+(const Tensor& t, const Tensor& other)
+inline Tensor operator+(const Tensor& t, const Tensor& other)
 {
 	//assert(t.backend() == t.backend());
 	Tensor res(t.clone());
@@ -324,117 +324,117 @@ Tensor operator+(const Tensor& t, const Tensor& other)
 	return res;
 }
 
-Tensor operator-(const Tensor& t, const Tensor& other)
+inline Tensor operator-(const Tensor& t, const Tensor& other)
 {
 	Tensor res(t.clone());
 	res.pimpl()->subtract(other.pimpl());
 	return res;
 }
 
-Tensor operator*(const Tensor& t, const Tensor& other)
+inline Tensor operator*(const Tensor& t, const Tensor& other)
 {
 	Tensor res(t.clone());
 	res.pimpl()->mul(other.pimpl());
 	return res;
 }
 
-Tensor operator/(const Tensor& t, const Tensor& other)
+inline Tensor operator/(const Tensor& t, const Tensor& other)
 {
 	Tensor res(t.clone());
 	res.pimpl()->divide(other.pimpl());
 	return res;
 }
 
-void operator-=(Tensor& t, const Tensor& other)
+inline void operator-=(Tensor& t, const Tensor& other)
 {
 	t.pimpl()->subtract(other.pimpl());
 }
 
-void operator-=(Tensor& t, const float& x)
+inline void operator-=(Tensor& t, const float& x)
 {
 	t.add(-x);
 }
 
-void operator+=(Tensor& t, const Tensor& other)
+inline void operator+=(Tensor& t, const Tensor& other)
 {
 	t.pimpl()->add(other.pimpl());
 }
 
-void operator+=(Tensor& t, const float& x)
+inline void operator+=(Tensor& t, const float& x)
 {
 	t.add(x);
 }
 
-void operator*=(Tensor& t, const Tensor& other)
+inline void operator*=(Tensor& t, const Tensor& other)
 {
 	t.pimpl()->mul(other.pimpl());
 }
 
-void operator*=(Tensor& t, const float& x)
+inline void operator*=(Tensor& t, const float& x)
 {
 	t.mul(x);
 }
 
-void operator/=(Tensor& t, const Tensor& other)
+inline void operator/=(Tensor& t, const Tensor& other)
 {
 	t.pimpl()->divide(other.pimpl());
 }
 
-void operator/=(Tensor& t, const float& x)
+inline void operator/=(Tensor& t, const float& x)
 {
 	t.mul(1.f/x);
 }
 
-Tensor operator+(const Tensor& t, float val)
+inline Tensor operator+(const Tensor& t, float val)
 {
 	Tensor res(t.clone());
 	res.add(val);
 	return res;
 }
 
-Tensor operator-(const Tensor& t, float val)
+inline Tensor operator-(const Tensor& t, float val)
 {
 	Tensor res(t.clone());
 	res.add(-val);
 	return res;
 }
 
-Tensor operator*(const Tensor& t, float amp)
+inline Tensor operator*(const Tensor& t, float amp)
 {
 	Tensor res(t.clone());
 	res.mul(amp);
 	return res;
 }
 
-Tensor operator/(const Tensor& t, float amp)
+inline Tensor operator/(const Tensor& t, float amp)
 {
 	Tensor res(t.clone());
 	res.mul(1.f/amp);
 	return res;
 }
 
-Tensor operator+(float val, const Tensor& t)
+inline Tensor operator+(float val, const Tensor& t)
 {
 	Tensor res(t.clone());
 	res.add(val);
 	return res;
 }
 
-Tensor operator-(float val, const Tensor& t)
+inline Tensor operator-(float val, const Tensor& t)
 {
 	Tensor res(t.clone());
 	res.add(-val);
 	return res;
 }
 
-Tensor operator*(float val, const Tensor& t)
+inline Tensor operator*(float val, const Tensor& t)
 {
 	Tensor res(t.clone());
 	res.mul(val);
 	return res;
 }
 
-Tensor operator/(float amp, const Tensor& t)
+inline Tensor operator/(float amp, const Tensor& t)
 {
 	Tensor res(t.clone());
 	res.mul(amp);
