@@ -7,13 +7,21 @@
 
 using namespace At;
 
-NNPackBackend::NNPackBackend()
+NNPackBackend::~NNPackBackend()
+{
+	if(threadpool_ != nullptr)
+		pthreadpool_destroy(threadpool_);
+
+}
+
+NNPackBackend::NNPackBackend(intmax_t threads)
 {
 	auto status = nnp_initialize();
 	if(status != nnp_status_success)
 		throw AtError("Failed to initialize NNPACK.");
 
-	//TODO: implement parallel computing for NNPACK
+	if(threads > 1)
+		threadpool_ = pthreadpool_create(threads);
 
 	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
 	[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor

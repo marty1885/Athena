@@ -10,7 +10,8 @@ namespace At
 class NNPackBackend : public Backend
 {
 public:
-	NNPackBackend();
+	virtual ~NNPackBackend();
+	NNPackBackend(intmax_t threads = 1);
 
 protected:
 	pthreadpool_t threadpool_ = nullptr;
