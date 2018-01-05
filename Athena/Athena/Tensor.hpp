@@ -129,7 +129,7 @@ public:
 		return pimpl_->shape();
 	}
 
-	Tensor reshape(const Shape& s)
+	Tensor reshape(const Shape& s) const
 	{
 		Tensor t = clone();
 		t.resize(s);

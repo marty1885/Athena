@@ -193,13 +193,13 @@ public:
 		setType("activation");
 	}
 
-	virtual void setInputShape(const Shape& s)
+	virtual void setInputShape(const Shape& s) override
 	{
 		inputShape_ = s;
 		outputShape_ = s;
 	}
 
-	virtual void setOutputShape(const Shape& s)
+	virtual void setOutputShape(const Shape& s) override
 	{
 		inputShape_ = s;
 		outputShape_ = s;
@@ -305,18 +305,54 @@ public:
 		setOutputShape(targetShape);
 	}
 
-	/*virtual Tensor forward(const Tensor& x) override
+	virtual Tensor forward(const Tensor& x) override
 	{
-		return forwardAlgorithm_(x);
+		incomeShape_ = x.shape();
+		Shape target = outputShape();
+		target[0] = incomeShape_[0];
+		return x.reshape(target);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override
 	{
-		dx = backwardAlgorithm_(dy, y);
-	}*/
+		dx = dy.reshape(incomeShape_);
+	}
 
 protected:
+	Shape incomeShape_;
+};
+
+class FalattenLayer : public Layer
+{
+public:
+	FalattenLayer(Backend* backend = nullptr) : Layer(backend)
+	{
+		setType("flatten");
+	}
+
+	virtual void setInputShape(const Shape& s) override
+	{
+		inputShape_ = s;
+		outputShape_ = {s[0], s.volume()/s[0]};
+	}
+
+	virtual Tensor forward(const Tensor& x) override
+	{
+		incomeShape_ = x.shape();
+		Shape target = outputShape();
+		target[0] = incomeShape_[0];
+		return x.reshape(target);
+	}
+
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override
+	{
+		dx = dy.reshape(incomeShape_);
+	}
+
+protected:
+	Shape incomeShape_;
 };
 
 class RecurrentLayer : public Layer

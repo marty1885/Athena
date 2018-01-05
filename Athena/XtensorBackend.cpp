@@ -106,7 +106,7 @@ public:
 		arr_.reshape(s);
 	}
 
-	virtual TensorImpl* reshape(const Shape& wantedShape) override
+	virtual TensorImpl* reshape(const Shape& wantedShape) const override
 	{
 		auto s = as<std::vector<size_t>>(wantedShape);
 		xt::xarray<float> t = arr_;
