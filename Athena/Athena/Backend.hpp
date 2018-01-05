@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <typeinfo>
 #include <string>
+#include <array>
 
 #include <Athena/Error.hpp>
 #include <Athena/Shape.hpp>

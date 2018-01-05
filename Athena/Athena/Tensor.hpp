@@ -345,8 +345,7 @@ static int osTensorRecursive (std::ostream& os, float* arr, Shape shape, int dep
 
 inline std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
-	std::vector<float> v(t.size());
-	t.host(&v[0]);
+	std::vector<float> v = t.host();
 	osTensorRecursive(os, &v[0], t.shape(), 0, t.shape().size());
 	return os;
 }

@@ -2,6 +2,9 @@
 
 #include <Athena/Tensor.hpp>
 
+#include <unordered_map>
+#include <array>
+
 namespace At
 {
 
