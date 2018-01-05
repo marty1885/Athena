@@ -1,5 +1,10 @@
 #include <Athena/Model.hpp>
 
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <map>
+
 using namespace At;
 
 void SequentialNetwork::summary() const
