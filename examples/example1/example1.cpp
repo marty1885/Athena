@@ -13,7 +13,7 @@ int main()
 
 	net.add(At::FullyConnectedLayer(2,5));
 	net.add(At::SigmoidLayer());
-	net.add(At::FullyConnectedLayer(5,1));
+	net.add(At::FullyConnectedLayer(1));
 	net.add(At::SigmoidLayer());
 	net.compile();
 

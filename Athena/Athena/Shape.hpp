@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <iostream>
+#include <algorithm>
 
 namespace At
 {
@@ -11,6 +12,7 @@ namespace At
 class Shape : public std::vector<intmax_t>
 {
 public:
+	const static intmax_t None = -1;
 	Shape(std::initializer_list<intmax_t> l) : std::vector<intmax_t>(l)
 	{
 	}
@@ -31,14 +33,27 @@ public:
 			val *= operator[](i);
 		return val;
 	}
+
+	inline bool match(const Shape& s)
+	{
+		if(size() != s.size())
+			return false;
+		return std::equal(begin(), end(), s.begin(), [](auto a, auto b){return (a==-1||b==-1) || a==b;});
+	}
 };
+
+inline std::string to_string(const Shape& s)
+{
+	std::string res = "{";
+	for(auto it=s.begin();it!=s.end();it++)
+		res += (*it==Shape::None? "None" : std::to_string(*it)) + (it == s.end()-1 ? "" : ", ");
+	res += "}";
+	return res;
+}
 
 inline std::ostream& operator << (std::ostream& os, const Shape& s)
 {
-	os << "{";
-	for(auto it=s.begin();it!=s.end();it++)
-		os << *it << (it == s.end()-1 ? "" : ", ");
-	os << "}";
+	os << to_string(s);
 	return os;
 }
 

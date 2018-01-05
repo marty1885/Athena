@@ -68,7 +68,7 @@ int main()
 
 	net.add(At::FullyConnectedLayer(784,50));
 	net.add(At::SigmoidLayer());
-	net.add(At::FullyConnectedLayer(50,10));
+	net.add(At::FullyConnectedLayer(10));
 	net.add(At::SigmoidLayer());
 	net.compile();
 

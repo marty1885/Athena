@@ -66,7 +66,6 @@ int main()
 			-1,-1,-1,
 			-1, 8,-1,
 			-1,-1,-1}, {4,1,3,3}, backend);
-	std::cout << kernel << '\n';
 	At::Tensor conv = algo(img, kernel, bias, {{1,1}});
 
 	Mat res = tensor2Mat(conv.abs());

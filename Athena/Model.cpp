@@ -64,18 +64,32 @@ void SequentialNetwork::compile()
 {
 	std::map<std::string, int> layerTypeNum;
 
+	Layer* prevousLayer = nullptr;
+
 	for(auto& layer : layers_)
 	{
 		if(layer->name() == "")
 		{
 			auto layerType = layer->type();
-			//std::map initializes variable by default even  when accessing it
+			//std::map initializes variable by default even when accessing it
 			layer->setName(layerType + "_" + std::to_string(++layerTypeNum[layerType]));
 		}
 
 		if(layer->backend() == nullptr)
 			layer->setBackend(backend_);
 
+		if(layer->inputShape().empty() == true)
+			layer->setInputShape(prevousLayer->outputShape());
+		else if(prevousLayer != nullptr)
+		{
+			//NOTE:Maybe we don't want this in some cases.
+			if(layer->inputShape().match(prevousLayer->outputShape()) == false)
+				throw AtError("Layer input/output shape missmatch.\n"
+				"\t Upper layer: " + prevousLayer->name() + ", output shape: " + to_string(prevousLayer->outputShape()) + "\n"
+				"\t Lower layer: " + layer->name() + ", input shape: " + to_string(layer->inputShape()) + "\n");
+		}
+
 		layer->build();
+		prevousLayer = layer;
 	}
 }

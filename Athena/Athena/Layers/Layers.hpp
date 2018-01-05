@@ -34,22 +34,22 @@ public:
 	{
 	}
 
-	void setInputShape(const Shape& s)
+	virtual void setInputShape(const Shape& s)
 	{
 		inputShape_ = s;
 	}
 
-	void setOutputShape(const Shape& s)
+	virtual void setOutputShape(const Shape& s)
 	{
 		outputShape_ = s;
 	}
 
-	Shape inputShape()
+	virtual Shape inputShape()
 	{
 		return inputShape_;
 	}
 
-	Shape outputShape()
+	virtual Shape outputShape()
 	{
 		return outputShape_;
 	}
@@ -135,16 +135,22 @@ public:
 	}
 
 	FullyConnectedLayer(intmax_t input, intmax_t output, Backend* backend = nullptr)
-		:FullyConnectedLayer()
+		:FullyConnectedLayer(backend)
 	{
-		setInputShape(Shape({input}));
-		setOutputShape(Shape({output}));
+		setInputShape(Shape({Shape::None, input}));
+		setOutputShape(Shape({Shape::None, output}));
+	}
+
+	FullyConnectedLayer(intmax_t output, Backend* backend = nullptr)
+		:FullyConnectedLayer(backend)
+	{
+		setOutputShape(Shape({Shape::None, output}));
 	}
 
 	virtual void build() override
 	{
-		weights_.push_back(At::rand(-1,1, {inputShape()[0], outputShape()[0]}, *backend()));
-		weights_.push_back(At::rand(-1,1, outputShape(), *backend()));
+		weights_.push_back(At::rand(-1,1, {inputShape()[1], outputShape()[1]}, *backend()));
+		weights_.push_back(At::rand(-1,1, {outputShape()[1]}, *backend()));
 
 		forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
 		backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
@@ -178,10 +184,32 @@ protected:
 	Tensor dW;
 };
 
-class SigmoidLayer : public Layer
+//HACK: A way to get ActivationLayer's input shape == output shape
+class ActivationLayer : public Layer
 {
 public:
-	SigmoidLayer(Backend* backend = nullptr) : Layer(backend)
+	ActivationLayer(Backend* backend = nullptr) : Layer(backend)
+	{
+		setType("activation");
+	}
+
+	virtual void setInputShape(const Shape& s)
+	{
+		inputShape_ = s;
+		outputShape_ = s;
+	}
+
+	virtual void setOutputShape(const Shape& s)
+	{
+		inputShape_ = s;
+		outputShape_ = s;
+	}
+};
+
+class SigmoidLayer : public ActivationLayer
+{
+public:
+	SigmoidLayer(Backend* backend = nullptr) : ActivationLayer(backend)
 	{
 		setType("sigmoid");
 	}
@@ -208,10 +236,10 @@ protected:
 };
 
 
-class TanhLayer : public Layer
+class TanhLayer : public ActivationLayer
 {
 public:
-	TanhLayer(Backend* backend) : Layer(backend)
+	TanhLayer(Backend* backend) : ActivationLayer(backend)
 	{
 		setType("tanh");
 	}
@@ -238,10 +266,10 @@ protected:
 	delegate<TanhBackward> backwardAlgorithm_;
 };
 
-class ReluLayer : public Layer
+class ReluLayer : public ActivationLayer
 {
 public:
-	ReluLayer(Backend* backend = nullptr) : Layer(backend)
+	ReluLayer(Backend* backend = nullptr) : ActivationLayer(backend)
 	{
 		setType("relu");
 	}
