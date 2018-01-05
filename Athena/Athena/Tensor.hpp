@@ -9,6 +9,7 @@
 #include <vector>
 #include <numeric>
 #include <iostream>
+#include <sstream>
 
 namespace At
 {
@@ -283,27 +284,61 @@ inline Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
 	return t.stack(q, axis);
 }
 
-static void osTensorRecursive (std::ostream& os, float* arr, Shape shape, int depth, bool nlAtLast=false)
+static int osTensorRecursive (std::ostream& os, float* arr, Shape shape, int depth, int maxDepth, int maxLength=0)
 {
+	auto floatToStr = [&](float val)->std::string
+	{
+		std::stringstream ss;
+		ss << val;
+		return ss.str();
+	};
 	if(shape.size() == 1)
 	{
-		os << "{";
+		os << "{ ";
 		intmax_t size = shape[0];
+
 		for(intmax_t i=0;i<size;i++)
-			os << arr[i] << (i==size-1 ? "" : ", ");
-		os << "}" << (nlAtLast?"\n":"");
+		{
+			std::string str = floatToStr(arr[i]);
+			int len = maxLength-str.size();
+			for(int i=0;i<len;i++)
+				str += " ";
+			os << str << (i==size-1 ? "" : ", ");
+		}
+
+		os << "}";
+		return 1;
 	}
 	else
 	{
+		if(depth == 0)
+		{
+			for(int i=0;i<shape.volume();i++)
+				maxLength = std::max(maxLength, (int)floatToStr(arr[i]).size());
+		}
+
 		intmax_t size = shape[0];
 		shape.erase(shape.begin());
 		intmax_t vol = shape.volume();
-		if(depth == 0)
-			nlAtLast = size > 1;
+
 		os << "{";
+
+		int val;
 		for(intmax_t i=0;i<size;i++)
-			osTensorRecursive(os, arr+i*vol, shape,depth+i, nlAtLast);
+		{
+			val = osTensorRecursive(os, arr+i*vol, shape,depth+1, maxDepth, maxLength);
+			os << (i==size-1 ? "" : ", ");
+			if(i != size-1)
+			{
+				for(int j=0;j<val;j++)
+					os << '\n';
+				for(int j=0;j<maxDepth-val;j++)
+					os << ' ';
+			}
+
+		}
 		os << "}";
+		return val+1;
 	}
 
 }
@@ -312,7 +347,7 @@ inline std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
 	std::vector<float> v(t.size());
 	t.host(&v[0]);
-	osTensorRecursive(os, &v[0], t.shape(), 0);
+	osTensorRecursive(os, &v[0], t.shape(), 0, t.shape().size());
 	return os;
 }
 
