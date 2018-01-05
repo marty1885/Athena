@@ -17,3 +17,4 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto -march=native"
 include_directories(Athena)
 add_subdirectory(Athena)
 add_subdirectory(examples)
+add_subdirectory(expermental)
