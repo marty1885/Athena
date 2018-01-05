@@ -78,8 +78,8 @@ public:
 				Tensor x = input.slice({(intmax_t)j}, {(intmax_t)batchSize});
 				Tensor y = desireOutput.slice({(intmax_t)j} ,{(intmax_t)batchSize});
 
-				x.reshape(inputShape);
-				y.reshape(outputShape);
+				x.resize(inputShape);
+				y.resize(outputShape);
 
 				layerOutputs[0] = x.clone();
 

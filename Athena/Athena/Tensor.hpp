@@ -129,9 +129,16 @@ public:
 		return pimpl_->shape();
 	}
 
-	void reshape(const Shape& s)
+	Tensor reshape(const Shape& s)
 	{
-		pimpl_->reshape(s);
+		Tensor t = clone();
+		t.resize(s);
+		return t;
+	}
+
+	void resize(const Shape& s)
+	{
+		pimpl_->resize(s);
 	}
 
 	Tensor concatenate(const Tensor& other, intmax_t axis) const
@@ -151,13 +158,13 @@ public:
 
 	void flat()
 	{
-		reshape({(intmax_t)size()});
+		resize({(intmax_t)size()});
 	}
 
 	Tensor flatten()
 	{
 		Tensor t = std::move(clone());
-		t.reshape({(intmax_t)t.size()});
+		t.resize({(intmax_t)t.size()});
 		return t;
 	}
 

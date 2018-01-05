@@ -24,7 +24,8 @@ public:
 	virtual void mul(const TensorImpl* other) = 0;
 	virtual void subtract(const TensorImpl* other) = 0;
 	virtual void divide(const TensorImpl* other) = 0;
-	virtual void reshape(const Shape& wantedShape) = 0;
+	virtual void resize(const Shape& wantedShape) = 0;
+	virtual TensorImpl* reshape(const Shape& wantedShape) = 0;
 
 	virtual TensorImpl* dot(const TensorImpl* other) const = 0;
 	virtual TensorImpl* sqrt() const = 0;

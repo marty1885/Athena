@@ -79,7 +79,11 @@ void SequentialNetwork::compile()
 			layer->setBackend(backend_);
 
 		if(layer->inputShape().empty() == true)
+		{
+			if(prevousLayer == nullptr)
+				throw AtError("Input shape of the first layer not set.");
 			layer->setInputShape(prevousLayer->outputShape());
+		}
 		else if(prevousLayer != nullptr)
 		{
 			//NOTE:Maybe we don't want this in some cases.

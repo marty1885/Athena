@@ -296,6 +296,29 @@ protected:
 	delegate<ReluBackward> backwardAlgorithm_;
 };
 
+class ReshapeLayer : public Layer
+{
+public:
+	ReshapeLayer(Shape targetShape, Backend* backend = nullptr) : Layer(backend)
+	{
+		setType("reshape");
+		setOutputShape(targetShape);
+	}
+
+	/*virtual Tensor forward(const Tensor& x) override
+	{
+		return forwardAlgorithm_(x);
+	}
+
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override
+	{
+		dx = backwardAlgorithm_(dy, y);
+	}*/
+
+protected:
+};
+
 class RecurrentLayer : public Layer
 {
 public:

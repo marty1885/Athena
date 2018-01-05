@@ -100,10 +100,18 @@ public:
 		return new XtensorTensorImpl(arr_, (XtensorBackend*) backend());
 	}
 
-	virtual void reshape(const Shape& wantedShape) override
+	virtual void resize(const Shape& wantedShape) override
 	{
 		auto s = as<std::vector<size_t>>(wantedShape);
 		arr_.reshape(s);
+	}
+
+	virtual TensorImpl* reshape(const Shape& wantedShape) override
+	{
+		auto s = as<std::vector<size_t>>(wantedShape);
+		xt::xarray<float> t = arr_;
+		t.reshape(s);
+		return new XtensorTensorImpl(std::move(t), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* dot(const TensorImpl* other) const override
