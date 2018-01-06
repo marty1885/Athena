@@ -44,8 +44,10 @@ int main()
 	At::NNPackBackend nnpBackend;
 
 	backend.useAlgorithm<At::Conv2DForward>("conv2DForward",nnpBackend); //Works!
+	backend.useAlgorithm<At::Conv2DBackward>("conv2DBackward",nnpBackend);
 
 	auto algo = backend.getAlgorithm<At::Conv2DForward>("conv2DForward");
+	auto back = backend.getAlgorithm<At::Conv2DBackward>("conv2DBackward");
 
 	Mat image = loadImage("banner_640199_gc3lf.jpg");
 	At::Tensor img = mat2Tensor(image, backend);
@@ -67,6 +69,11 @@ int main()
 			-1, 8,-1,
 			-1,-1,-1}, {4,1,3,3}, backend);
 	At::Tensor conv = algo(img, kernel, bias, {{1,1}});
+
+	//Backprop
+	// At::Tensor dW(kernel.shape(), backend);
+	// At::Tensor db(bias.shape(), backend);
+	// At::Tensor tconv = back(img, kernel, dW, db, conv, {{0,0}});
 
 	Mat res = tensor2Mat(conv.abs());
 	imshow("display", res);
