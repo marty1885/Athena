@@ -57,6 +57,7 @@ int main()
 	//Use the NNPACK backend to accelerate things. Remove if NNPACK is not avliable
 	At::NNPackBackend nnpBackend;
 	backend.useAlgorithm<At::FCForwardFunction>("fullyconnectedForward", nnpBackend);
+	backend.useAlgorithm<At::FCBackwardFunction>("fullyconnectedBackward", nnpBackend);
 
 	At::SequentialNetwork net(&backend);
 

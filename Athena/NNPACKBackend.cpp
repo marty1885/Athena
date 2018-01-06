@@ -71,6 +71,43 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		return in.backend()->createTensor(std::move(res), resShape);
 	});
 
+	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
+	[this](const Tensor& dx, const Tensor& weight)->Tensor
+	{
+		const float* input = dx.hostPtr();
+		const float* weights = weight.hostPtr();
+
+		assert(input != nullptr);
+		assert(weights != nullptr);
+
+		intmax_t batchSize = dx.shape()[0];
+		intmax_t inVecSize = dx.shape()[1];
+		intmax_t outVecSize = weight.shape()[0];
+
+		assert((intmax_t)weight.size() == inVecSize*outVecSize);
+
+		Shape resShape({batchSize, outVecSize});
+		std::vector<float> res(resShape.volume());
+
+		//use inference mode when batch size is small
+		if(batchSize < 64)
+		{
+			for(intmax_t i=0;i<batchSize;i++)
+			{
+				const float* inPtr = input+i*inVecSize;
+				float* outPtr = &res[0]+i*outVecSize;
+				nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
+			}
+		}
+		else
+		{
+			nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res[0], threadpool_, nullptr);
+		}
+
+		return dx.backend()->createTensor(std::move(res), resShape);
+	});
+
+
 	addAlgorithm<Conv2DForward>("conv2DForward",
 		[this](const Tensor& x, const Tensor& kernel, const Tensor& bias, std::array<intmax_t, 2> strides)->Tensor
 	{
