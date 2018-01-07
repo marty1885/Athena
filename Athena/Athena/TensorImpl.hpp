@@ -14,6 +14,7 @@ public:
 	virtual ~TensorImpl(){}
 
 	virtual void host(float* ptr) const = 0;
+	virtual void device(const float* ptr) = 0;
 	virtual size_t size() const = 0;
 	virtual Shape shape() const = 0;
 	virtual TensorImpl* clone() const = 0;

@@ -50,6 +50,11 @@ public:
 		std::copy(arr_.begin(), arr_.end(), ptr);
 	}
 
+	virtual void device(const float* ptr) override
+	{
+		memcpy(&arr_[0], ptr, arr_.size()*sizeof(float));
+	}
+
 	virtual size_t size() const override
 	{
 		return arr_.size();
