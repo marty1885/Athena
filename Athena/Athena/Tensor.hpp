@@ -99,6 +99,11 @@ public:
 		return pimpl_->sum(axis);
 	}
 
+	Tensor sum(const std::vector<intmax_t>& axis) const
+	{
+		return pimpl_->sum(axis);
+	}
+
 	Tensor pow(float e)
 	{
 		return pimpl_->pow(e);

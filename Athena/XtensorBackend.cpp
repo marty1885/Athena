@@ -141,6 +141,12 @@ public:
 		return new XtensorTensorImpl(xt::sum(arr_, {axis}), (XtensorBackend*)backend());
 	}
 
+	virtual TensorImpl* sum(const std::vector<intmax_t>& axis) const override
+	{
+		auto s = as<xt::xarray<float>::shape_type>(axis);
+		return new XtensorTensorImpl(xt::sum(arr_, s), (XtensorBackend*)backend());
+	}
+
 	virtual TensorImpl* pow(float val) const override
 	{
 		return new XtensorTensorImpl(xt::pow(arr_, val), (XtensorBackend*)backend());
