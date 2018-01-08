@@ -312,16 +312,16 @@ XtensorBackend::XtensorBackend()
 			{
 				for(intmax_t c=0;c<inputChannels;c++)
 				{
-					for(intmax_t y=0;y<outputHeight;y+=strideY)
+					for(intmax_t y=0;y<outputHeight;y++)
 					{
-						for(intmax_t x=0;x<outputWidth;x+=strideX)
+						for(intmax_t x=0;x<outputWidth;x++)
 						{
 							for(int dy=0;dy<filterWidth;dy++)
 							{
-								intmax_t ry = y+dy;
+								intmax_t ry = (y*strideY)+dy;
 								for(int dx=0;dx<filterWidth;dx++)
 								{
-									intmax_t rx = x+dx;
+									intmax_t rx = x*strideX+dx;
 									tmpBuffer[n*intermedChannelSize+(y*outputWidth+x)*filterChannlelSize+c*filterSufaceSize+dy*filterWidth+dx]
 										= t[n*inputCubeSize+c*inputChannelSize+ry*inputWidth+rx];
 								}
