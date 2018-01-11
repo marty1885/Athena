@@ -91,6 +91,10 @@ public:
 					layerOutputs[++index] = std::move(out);
 				}
 
+				if(layerOutputs.back().shape() != y.shape())
+					throw AtError("Expecting model output with shape " + to_string(y.shape())
+						+ " but get " + to_string(layerOutputs.back().shape()));
+
 				Tensor E = layerOutputs.back() - y;
 				Tensor l = loss.f(layerOutputs.back(), y);
 				Tensor dE = E*l;

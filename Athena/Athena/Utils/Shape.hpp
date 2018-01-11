@@ -34,6 +34,18 @@ public:
 		return val;
 	}
 
+	bool operator ==(const Shape& other) const
+	{
+		if(size() != other.size())
+			return false;
+		for(size_t i=0;i<size();i++)
+		{
+			if(operator[](i) != other[i])
+				return false;
+		}
+		return true;
+	}
+
 	inline bool match(const Shape& s)
 	{
 		if(size() != s.size())

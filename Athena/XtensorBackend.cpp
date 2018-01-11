@@ -291,7 +291,7 @@ inline xt::xarray<float> col2im(const xt::xarray<float>& in, const Shape& imgSiz
 	intmax_t intermedChannelSize = convImageSize*filterChannlelSize;
 	xt::xarray<float> res = xt::zeros<float>({inputNums, inputChannels, inputHeight, inputWidth});
 
-	//im2col
+	//col2im
 	for(intmax_t n=0;n<inputNums;n++)
 	{
 		for(intmax_t c=0;c<inputChannels;c++)

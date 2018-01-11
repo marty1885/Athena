@@ -185,6 +185,11 @@ public:
 		return v;
 	}
 
+	intmax_t dimension() const
+	{
+		return shape().volume();
+	}
+
 	//TODO: Implement this
 	// Tensor transfer(Backend* otherBackend)
 	// {
