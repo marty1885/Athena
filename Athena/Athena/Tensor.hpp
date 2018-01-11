@@ -3,6 +3,7 @@
 #include <Athena/Backend.hpp>
 #include <Athena/Utils/ReferenceCounter.hpp>
 #include <Athena/TensorImpl.hpp>
+#include <Athena/Utils/Error.hpp>
 
 #include <assert.h>
 
@@ -142,13 +143,19 @@ public:
 	Tensor reshape(const Shape& s) const
 	{
 		Tensor t = clone();
-		t.resize(s);
+		if(s.contains(Shape::None))
+			t.resize(solveUnknownDim(shape(), s));
+		else
+			t.resize(s);
 		return t;
 	}
 
 	void resize(const Shape& s)
 	{
-		pimpl_->resize(s);
+		if(s.contains(Shape::None))
+			pimpl_->resize(solveUnknownDim(shape(), s));
+		else
+			pimpl_->resize(s);
 	}
 
 	Tensor concatenate(const Tensor& other, intmax_t axis) const
@@ -248,6 +255,31 @@ protected:
 	inline void setReferenceCounter(ReferenceCounter* ptr)
 	{
 		referenceCounter_ = ptr;
+	}
+
+	static Shape solveUnknownDim(const Shape in, const Shape& s)
+	{
+		int unknownCount = 0;
+		intmax_t index = -1;
+		intmax_t volume = 1;
+		for(intmax_t i=0;i<(intmax_t)s.size();i++)
+		{
+			if(s[i] == Shape::None)
+			{
+				unknownCount++;
+				index = i;
+			}
+			else
+				volume *= s[i];
+		}
+		if(unknownCount == 1)
+		{
+			Shape res = s;
+			res[index] = in.volume()/volume;
+			return res;
+		}
+
+		throw AtError("Shape" + to_string(s) + " has more then 1 unknown dimentions. Cannot solve for unknown");
 	}
 
 	ReferenceCounter* referenceCounter_ = nullptr;

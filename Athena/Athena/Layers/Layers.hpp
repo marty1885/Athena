@@ -308,9 +308,7 @@ public:
 	virtual Tensor forward(const Tensor& x) override
 	{
 		incomeShape_ = x.shape();
-		Shape target = outputShape();
-		target[0] = incomeShape_[0];
-		return x.reshape(target);
+		return x.reshape(outputShape());
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -340,9 +338,7 @@ public:
 	virtual Tensor forward(const Tensor& x) override
 	{
 		incomeShape_ = x.shape();
-		Shape target = outputShape();
-		target[0] = incomeShape_[0];
-		return x.reshape(target);
+		return x.reshape(outputShape());
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,

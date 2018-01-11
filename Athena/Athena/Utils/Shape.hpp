@@ -52,6 +52,16 @@ public:
 			return false;
 		return std::equal(begin(), end(), s.begin(), [](auto a, auto b){return (a==-1||b==-1) || a==b;});
 	}
+
+	inline bool contains(intmax_t val) const
+	{
+		for(const auto& v : *this)
+		{
+			if(v == val)
+				return true;
+		}
+		return false;
+	}
 };
 
 inline std::string to_string(const Shape& s)
