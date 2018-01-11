@@ -430,15 +430,6 @@ public:
 	}
 };
 
-class RecurrentLayer : public Layer
-{
-public:
-
-protected:
-
-	Tensor hiddenState_;
-};
-
 }
 
 
