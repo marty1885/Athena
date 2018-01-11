@@ -1,7 +1,7 @@
 #include <Athena/NNPACKBackend.hpp>
 #include <Athena/Tensor.hpp>
 #include <Athena/Backend.hpp>
-#include <Athena/Error.hpp>
+#include <Athena/Utils/Error.hpp>
 
 #include <cstdint>
 

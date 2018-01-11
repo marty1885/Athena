@@ -3,7 +3,7 @@
 
 #include <Athena/Backend.hpp>
 #include <Athena/Tensor.hpp>
-#include <Athena/Shape.hpp>
+#include <Athena/Utils/Shape.hpp>
 
 namespace At
 {

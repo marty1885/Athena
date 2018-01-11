@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Athena/Backend.hpp>
-#include <Athena/ReferenceCounter.hpp>
+#include <Athena/Utils/ReferenceCounter.hpp>
 #include <Athena/TensorImpl.hpp>
 
 #include <assert.h>

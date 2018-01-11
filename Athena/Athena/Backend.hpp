@@ -6,9 +6,9 @@
 #include <string>
 #include <array>
 
-#include <Athena/Error.hpp>
-#include <Athena/Shape.hpp>
-#include <Athena/Delegate.hpp>
+#include <Athena/Utils/Error.hpp>
+#include <Athena/Utils/Shape.hpp>
+#include <Athena/Utils/Delegate.hpp>
 #include <Athena/TensorImpl.hpp>
 
 namespace At
