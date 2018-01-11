@@ -141,9 +141,9 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		return x.backend()->createTensor(std::move(res), outputShape);
 	});
 
-	/*addAlgorithm<Conv2DBackward>("conv2DBackward",
-		[this](const Tensor& prevOut, const Tensor& kernel, const Tensor& dW, const Tensor& db , const Tensor& currDelta,
-			std::array<intmax_t, 2> strides)->Tensor
+	addAlgorithm<Conv2DBackward>("conv2DBackward",
+	[this](const Tensor& prevOut, const Tensor& kernel, Tensor& dW, Tensor& db , const Tensor& currDelta,
+		std::array<intmax_t, 2> strides)->Tensor
 	{
 		assert(strides[0] == 1 && strides[1] == 1);//Limitation of NNPACK
 		auto algorithm = nnp_convolution_algorithm_auto;
@@ -155,10 +155,19 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		nnp_size kernelSize = {(size_t)kernel.shape()[2], (size_t)kernel.shape()[3]};
 		const float* gradOutput = currDelta.hostPtr();
 		const float* kernelPtr = kernel.hostPtr();
+		const float* inputPtr = prevOut.hostPtr();
+
+		assert(inputChannels == kernel.shape()[1]);
 
 		Shape resShape = prevOut.shape();
 		std::vector<float> res(resShape.volume());
 		float* gradInput = &res[0];
+
+		std::vector<float> gradKernel(kernel.shape().volume());
+		float* gradKernelPtr = &gradKernel[0];
+
+		db = currDelta.sum({0, 2, 3});
+		db.resize({db.shape()[0], db.shape().volume()/db.shape()[0]});
 
 		nnp_convolution_input_gradient(
 			algorithm,
@@ -173,7 +182,23 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			gradInput,
 			threadpool_,
 			nullptr);
+
+		nnp_convolution_kernel_gradient(
+			algorithm,
+			batchSize,
+			inputChannels,
+			outputChannels,
+			inputSize,
+			inputPadding,
+			kernelSize,
+			inputPtr,
+			gradOutput,
+			gradKernelPtr,
+			threadpool_,
+			nullptr);
+		dW = currDelta.backend()->createTensor(std::move(gradKernel), kernel.shape());
+
 		return currDelta.backend()->createTensor(std::move(res), resShape);
-	});*/
+	});
 
 }

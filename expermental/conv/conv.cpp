@@ -43,15 +43,22 @@ void testConv(At::Backend& backend)
 	using At::Tensor;
 	At::AdaGradOptimizer optimizer;
 	optimizer.alpha_ = 0.3f;
+
+	At::NNPackBackend nnpBackend;
+	// backend.useAlgorithm<At::Conv2DForward>("conv2DForward",nnpBackend); //Works!
+
+	auto algo = backend.getAlgorithm<At::Conv2DForward>("conv2DForward");
 	auto forward = backend.getAlgorithm<At::Conv2DForward>("conv2DForward");
 	auto backword = backend.getAlgorithm<At::Conv2DBackward>("conv2DBackward");
+
+	backend.useAlgorithm<At::Conv2DBackward>("conv2DBackward",nnpBackend);
+	auto backword2 = backend.getAlgorithm<At::Conv2DBackward>("conv2DBackward");
 
 	Tensor x({1,2,3,4,5,6,7,8,9},{1,1,3,3}, backend);
 	Tensor k = At::ones({1,1,3,3}, backend);
 	Tensor b = At::zeros({1}, backend);
 	Tensor dO({1}, {1}, backend);
 
-	//for(int i=0;i<300;i++)
 	{
 		Tensor res = forward(x, k, b, {{1,1}});
 		Tensor dE = res - dO;
@@ -60,28 +67,32 @@ void testConv(At::Backend& backend)
 		std::cout << res << '\n';
 		std::cout << foo << '\n';
 		std::cout << dW << '\n';
+		std::cout << db << '\n' << '\n';
+	}
+
+	{
+		std::cout << "NNPACK: " << '\n';
+		Tensor res = forward(x, k, b, {{1,1}});
+		Tensor dE = res - dO;
+		Tensor dW, db;
+		Tensor foo = backword2(x, k, dW, db, dE, {{1,1}});
+		std::cout << res << '\n';
+		std::cout << foo << '\n';
+		std::cout << dW << '\n';
 		std::cout << db << '\n';
-		// optimizer.update(kernel, dW);
-		// optimizer.update(kernel, db);
-                //
-		// dE = dE.flatten();
-		// res = res.flatten();
-		// std::cout << "Loss = " << dE << '\n';
 	}
 }
 
 int main()
 {
 	At::XtensorBackend backend;
-	At::NNPackBackend nnpBackend;
 
-	// backend.useAlgorithm<At::Conv2DForward>("conv2DForward",nnpBackend); //Works!
-	//backend.useAlgorithm<At::Conv2DBackward>("conv2DBackward",nnpBackend);
+	//backend.useAlgorithm<At::Conv2DForward>("conv2DForward",nnpBackend); //Works!
+	// backend.useAlgorithm<At::Conv2DBackward>("conv2DBackward",nnpBackend);
 
-	auto algo = backend.getAlgorithm<At::Conv2DForward>("conv2DForward");
-	auto back = backend.getAlgorithm<At::Conv2DBackward>("conv2DBackward");
+	testConv(backend);
 
-	Mat image = loadImage("banner_640199_gc3lf.jpg");
+	/*Mat image = loadImage("banner_640199_gc3lf.jpg");
 	At::Tensor img = mat2Tensor(image, backend);
 	At::Tensor bias({0,0,0,0}, {4}, backend);
 	At::Tensor kernel({
@@ -111,7 +122,5 @@ int main()
 
 	Mat res = tensor2Mat(conv.abs());
 	imshow("display", res);
-	waitKey(0);
-
-	testConv(backend);
+	waitKey(0);*/
 }
