@@ -113,4 +113,24 @@ public:
 	float alpha_ = 0.01;
 };
 
+class RMSPropOptimizer : public StatefulOptimizer<1>
+{
+public:
+	RMSPropOptimizer() : alpha_(0.0001f), momentum_(0.99f)
+	{
+	}
+
+	virtual void update(Tensor& weight, const Tensor& grad) override
+	{
+		auto& g = get<0>(weight);
+		g = momentum_*g+(1.f-momentum_)*grad*grad;
+		weight -= alpha_*grad/sqrt(g+epsilon_);
+	}
+
+	float alpha_;
+	float momentum_;
+protected:
+	static const constexpr float epsilon_ = 1e-8f;
+};
+
 }

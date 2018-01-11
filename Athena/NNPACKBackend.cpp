@@ -14,12 +14,18 @@ NNPackBackend::~NNPackBackend()
 
 }
 
+intmax_t NNPackBackend::threads() const
+{
+	return numThreads_;
+}
+
 NNPackBackend::NNPackBackend(intmax_t threads)
 {
 	auto status = nnp_initialize();
 	if(status != nnp_status_success)
 		throw AtError("Failed to initialize NNPACK.");
 
+	numThreads_ =  threads;
 	if(threads > 1)
 		threadpool_ = pthreadpool_create(threads);
 
