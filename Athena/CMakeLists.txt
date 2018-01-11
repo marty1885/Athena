@@ -14,3 +14,9 @@ endif()
 
 add_library(Athena SHARED ${ATHENA_SRC})
 target_link_libraries(Athena ${ATHENA_LIB})
+
+install(TARGETS Athena
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin)
+install(DIRECTORY Athena/ DESTINATION include/Athena)
