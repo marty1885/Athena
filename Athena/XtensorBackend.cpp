@@ -438,6 +438,7 @@ XtensorBackend::XtensorBackend()
 
 		});
 
+		//TODO: Optimize this function. It is super slow now.
 		addAlgorithm<Conv2DBackward>("conv2DBackward",
 			[this](const Tensor& prevOut, const Tensor& kernel, Tensor& dW, Tensor& db , const Tensor& currDelta,
 				std::array<intmax_t, 2> strides)->Tensor

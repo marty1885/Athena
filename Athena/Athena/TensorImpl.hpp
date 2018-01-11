@@ -10,7 +10,7 @@ class Backend;
 class TensorImpl
 {
 public:
-	TensorImpl(Backend* backend) : backend_(backend) {};
+	TensorImpl(Backend* backend) : backend_(backend) {}
 	virtual ~TensorImpl(){}
 
 	virtual void host(float* ptr) const = 0;

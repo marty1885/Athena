@@ -343,7 +343,7 @@ static int osTensorRecursive (std::ostream& os, float* arr, Shape shape, int dep
 
 		os << "{";
 
-		int val;
+		int val = 0;
 		for(intmax_t i=0;i<size;i++)
 		{
 			val = osTensorRecursive(os, arr+i*vol, shape,depth+1, maxDepth, maxLength);
