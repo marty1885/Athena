@@ -31,6 +31,7 @@ public:
 	virtual TensorImpl* dot(const TensorImpl* other) const = 0;
 	virtual TensorImpl* sqrt() const = 0;
 	virtual TensorImpl* transpose() const = 0;
+	virtual TensorImpl* transpose(const std::vector<intmax_t>& axis) const = 0;
 	virtual TensorImpl* sum(intmax_t axis) const = 0;
 	virtual TensorImpl* sum(const std::vector<intmax_t>& axis) const = 0;
 	virtual TensorImpl* pow(float val) const = 0;

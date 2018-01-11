@@ -89,6 +89,11 @@ public:
 		return pimpl_->transpose();
 	}
 
+	Tensor transpose(const std::vector<intmax_t>& axis) const
+	{
+		return pimpl_->transpose(axis);
+	}
+
 	Tensor clone() const
 	{
 		return Tensor(pimpl_->clone());
@@ -229,8 +234,6 @@ public:
 		return pimpl_->backend();
 	}
 
-
-
 protected:
 	inline ReferenceCounter* referenceCounter() const
 	{
@@ -259,6 +262,11 @@ inline Tensor normal(float mean, float stddev, const Shape& shape, Backend& back
 inline Tensor zeros(const Shape& shape, Backend& backend)
 {
 	return backend.zeros(shape);
+}
+
+inline Tensor ones(const Shape& shape, Backend& backend)
+{
+	return backend.ones(shape);
 }
 
 inline Tensor dot(const Tensor& a, const Tensor& b)
