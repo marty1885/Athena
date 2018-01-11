@@ -136,6 +136,13 @@ public:
 		return new XtensorTensorImpl(xt::transpose(arr_), (XtensorBackend*)backend());
 	}
 
+	virtual TensorImpl* transpose(const std::vector<intmax_t>& axis) const override
+	{
+		auto a = as<xt::xarray<float>::shape_type>(axis);
+		return new XtensorTensorImpl(xt::transpose(arr_, a), (XtensorBackend*)backend());
+	}
+
+
 	virtual TensorImpl* sum(intmax_t axis) const override
 	{
 		return new XtensorTensorImpl(xt::sum(arr_, {axis}), (XtensorBackend*)backend());
@@ -201,6 +208,114 @@ inline const xt::xarray<float>& get(const Tensor& t)
 	return ((const XtensorTensorImpl*)t.pimpl())->get();
 }
 
+inline xt::xarray<float> im2col(const xt::xarray<float>& img, std::array<intmax_t, 2> window, std::array<intmax_t, 2> stride)
+{
+	intmax_t strideY = stride[0];
+	intmax_t strideX = stride[1];
+
+	intmax_t inputNums = img.shape()[0];
+	intmax_t inputChannels = img.shape()[1];
+	intmax_t inputHeight = img.shape()[2];
+	intmax_t inputWidth = img.shape()[3];
+
+	intmax_t inputImageSize = inputHeight*inputWidth;
+	intmax_t inputChannelSize = inputChannels*inputImageSize;
+
+	intmax_t filterChannels = inputChannels;
+	intmax_t filterHeight = window[0];
+	intmax_t filterWidth = window[1];
+
+	intmax_t filterSufaceSize = filterHeight*filterWidth;
+	intmax_t filterChannlelSize = filterHeight*filterWidth*filterChannels;
+
+	intmax_t outputHeight = (inputHeight-filterHeight)/strideY+1;
+	intmax_t outputWidth = (inputWidth-filterWidth)/strideX+1;
+	intmax_t convImageSize = outputHeight*outputWidth;
+
+	intmax_t intermedChannelSize = convImageSize*filterChannlelSize;
+	xt::xarray<float> res = xt::zeros<float>({inputNums, convImageSize, filterChannlelSize});
+
+	//im2col
+	for(intmax_t n=0;n<inputNums;n++)
+	{
+		for(intmax_t c=0;c<inputChannels;c++)
+		{
+			for(int dy=0;dy<filterWidth;dy++)
+			{
+
+				for(int dx=0;dx<filterWidth;dx++)
+				{
+					for(intmax_t y=0;y<outputHeight;y++)
+					{
+						intmax_t ry = (y*strideY)+dy;
+						for(intmax_t x=0;x<outputWidth;x++)
+						{
+							intmax_t rx = x*strideX+dx;
+							res[n*intermedChannelSize+(y*outputWidth+x)*filterChannlelSize+c*filterSufaceSize+dy*filterWidth+dx]
+								= img[n*inputChannelSize+c*inputImageSize+ry*inputWidth+rx];
+						}
+					}
+				}
+			}
+		}
+	}
+	return res;
+}
+
+inline xt::xarray<float> col2im(const xt::xarray<float>& in, const Shape& imgSize, std::array<intmax_t, 2> window, std::array<intmax_t, 2> stride)
+{
+	intmax_t strideY = stride[0];
+	intmax_t strideX = stride[1];
+	xt::xarray<float> col = xt::transpose(in);
+
+	intmax_t inputNums = imgSize[0];
+	intmax_t inputChannels = imgSize[1];
+	intmax_t inputHeight = imgSize[2];
+	intmax_t inputWidth = imgSize[3];
+	//assert(col.shape()[1]%(window[0]*window[1]) == 0);
+
+	intmax_t inputImageSize = inputHeight*inputWidth;
+	intmax_t inputChannelSize = inputChannels*inputImageSize;
+
+	intmax_t filterChannels = inputChannels;
+	intmax_t filterHeight = window[0];
+	intmax_t filterWidth = window[1];
+
+	intmax_t filterSufaceSize = filterHeight*filterWidth;
+	intmax_t filterChannlelSize = filterHeight*filterWidth*filterChannels;
+
+	intmax_t outputHeight = (inputHeight-filterHeight)/strideY+1;
+	intmax_t outputWidth = (inputWidth-filterWidth)/strideX+1;
+	intmax_t convImageSize = outputHeight*outputWidth;
+
+	intmax_t intermedChannelSize = convImageSize*filterChannlelSize;
+	xt::xarray<float> res = xt::zeros<float>({inputNums, inputChannels, inputHeight, inputWidth});
+
+	//im2col
+	for(intmax_t n=0;n<inputNums;n++)
+	{
+		for(intmax_t c=0;c<inputChannels;c++)
+		{
+			for(int dy=0;dy<filterWidth;dy++)
+			{
+				for(intmax_t y=0;y<outputHeight;y++)
+				{
+					for(intmax_t x=0;x<outputWidth;x++)
+					{
+						intmax_t ry = (y*strideY)+dy;
+						for(int dx=0;dx<filterWidth;dx++)
+						{
+							intmax_t rx = x*strideX+dx;
+							res[n*inputChannelSize+c*inputImageSize+ry*inputWidth+rx]
+								+= col[n*intermedChannelSize+(y*outputWidth+x)*filterChannlelSize+c*filterSufaceSize+dy*filterWidth+dx];
+						}
+					}
+				}
+			}
+		}
+	}
+	return res;
+}
 
 XtensorBackend::XtensorBackend()
 {
@@ -280,77 +395,78 @@ XtensorBackend::XtensorBackend()
 			const auto& kernels = get(weights);
 			const auto& b = get(bias);
 
-			intmax_t strideY = strides[0];
-			intmax_t strideX = strides[1];
-
 			intmax_t inputNums = x.shape()[0];
 			intmax_t inputChannels = x.shape()[1];
 			intmax_t inputHeight = x.shape()[2];
 			intmax_t inputWidth = x.shape()[3];
-
-			intmax_t inputImageSize = inputHeight*inputWidth;
-			intmax_t inputChannelSize = inputChannels*inputImageSize;
-			intmax_t inputCubeSize = inputChannelSize*inputChannels;
 
 			intmax_t filterNums =  kernels.shape()[0];
 			intmax_t filterChannels = kernels.shape()[1];
 			intmax_t filterHeight = kernels.shape()[2];
 			intmax_t filterWidth = kernels.shape()[3];
 
-			intmax_t filterSufaceSize = filterHeight*filterWidth;
+			assert(inputChannels == filterChannels);
+
 			intmax_t filterChannlelSize = filterHeight*filterWidth*filterChannels;
 
-			intmax_t outputHeight = (inputHeight-filterHeight)/strideY+1;
-			intmax_t outputWidth = (inputWidth-filterWidth)/strideX+1;
-			intmax_t convImageSize = outputHeight*outputWidth;
+			intmax_t outputHeight = (inputHeight-filterHeight)/strides[0]+1;
+			intmax_t outputWidth = (inputWidth-filterWidth)/strides[1]+1;
 
-			intmax_t intermedChannelSize = convImageSize*filterChannlelSize;
-			xt::xarray<float> tmpBuffer = xt::zeros<float>({inputNums, convImageSize, filterChannlelSize});
+			xt::xarray<float> tmpBuffer = im2col(t, {{filterHeight, filterWidth}}, strides);
 
-			//im2col
-			for(intmax_t n=0;n<inputNums;n++)
-			{
-				for(intmax_t c=0;c<inputChannels;c++)
-				{
-					for(intmax_t y=0;y<outputHeight;y++)
-					{
-						for(intmax_t x=0;x<outputWidth;x++)
-						{
-							for(int dy=0;dy<filterWidth;dy++)
-							{
-								intmax_t ry = (y*strideY)+dy;
-								for(int dx=0;dx<filterWidth;dx++)
-								{
-									intmax_t rx = x*strideX+dx;
-									tmpBuffer[n*intermedChannelSize+(y*outputWidth+x)*filterChannlelSize+c*filterSufaceSize+dy*filterWidth+dx]
-										= t[n*inputCubeSize+c*inputChannelSize+ry*inputWidth+rx];
-								}
-							}
-						}
-					}
-				}
-			}
-
-			xt::xarray<float> convKernel = xt::transpose(kernels);
-			convKernel.reshape({(size_t)filterChannlelSize, (size_t)filterNums});
+			xt::xarray<float> convKernel = kernels;
+			convKernel.reshape({(size_t)filterNums, (size_t)filterChannlelSize});
+			convKernel = xt::transpose(convKernel);
 			xt::xarray<float> res = xt::linalg::dot(tmpBuffer, convKernel);
-			res = xt::transpose(res);//Don't know why I need to transpose. Maybe some bug in im2col
+			res = xt::transpose(res);
 			res.reshape({(size_t)inputNums, (size_t)filterNums, (size_t)outputHeight, (size_t)outputWidth});
 
-			intmax_t outputCubeSize = filterNums*convImageSize;
+			intmax_t outputCubeSize = filterNums*outputHeight*outputWidth;
+			intmax_t outputSurfaceSize = outputHeight*outputWidth;
 
 			//Apply bias
 			for(intmax_t n=0;n<inputNums;n++)
 			{
 				for(intmax_t c=0;c<filterNums;c++)
 				{
-					for(intmax_t i=0;i<convImageSize;i++)
-						res[n*outputCubeSize+c*convImageSize+i] += b[c];
+					for(intmax_t i=0;i<outputSurfaceSize;i++)
+						res[n*outputCubeSize+c*outputSurfaceSize+i] += b[c];
 				}
 			}
 
 			return createTensor(res);
 
+		});
+
+		addAlgorithm<Conv2DBackward>("conv2DBackward",
+			[this](const Tensor& prevOut, const Tensor& kernel, Tensor& dW, Tensor& db , const Tensor& currDelta,
+				std::array<intmax_t, 2> strides)->Tensor
+		{
+			intmax_t batchSize = prevOut.shape()[0];
+			intmax_t numFilters = kernel.shape()[0];
+
+			const auto& dout = get(currDelta);
+			const auto& x = get(prevOut);
+			const auto& w = get(kernel);
+
+			db = currDelta.sum({0, 2, 3});
+			db.resize({db.shape()[0], db.shape().volume()/db.shape()[0]});
+
+			xt::xarray<float> xCol = im2col(x, {{kernel.shape()[2], kernel.shape()[3]}}, strides);
+
+			xt::xarray<float> doutReshaped = xt::transpose(dout, {1, 2, 3, 0});
+			doutReshaped.reshape({(size_t)batchSize, (size_t)numFilters, (size_t)currDelta.size()/(numFilters*batchSize)});
+			xt::xarray<float> tmp = xt::linalg::dot(doutReshaped, xt::transpose(xCol));
+			tmp.reshape(w.shape());
+			dW = createTensor(tmp);
+
+			xt::xarray<float> wReshape = w;
+			wReshape.reshape({(size_t)numFilters, w.size()/numFilters});
+			xt::xarray<float> dxCol = xt::linalg::dot(xt::transpose(wReshape), doutReshaped);
+			xt::xarray<float>  res = col2im(dxCol, prevOut.shape()
+				,{{kernel.shape()[2], kernel.shape()[3]}}, strides);
+
+			return createTensor(res);
 		});
 
 

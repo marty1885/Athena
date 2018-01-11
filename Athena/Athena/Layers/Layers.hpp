@@ -355,6 +355,81 @@ protected:
 	Shape incomeShape_;
 };
 
+class Conv2DLayer : public Layer
+{
+public:
+	Conv2DLayer(intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides={{1,1}}, Backend* backend=nullptr)
+		: Layer(backend)
+	{
+		outputChannels_ = outputChannels;
+		windowSize_ = windowSize;
+		strides_ = strides;
+
+		setType("conv2D");
+	}
+
+	virtual Tensor forward(const Tensor& x) override
+	{
+		return forwardAlgorithm_(x, weights_[0], weights_[1], strides_);
+	}
+
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override
+	{
+		dx = backwardAlgorithm_(x, weights_[0], dW_, db_, dy, strides_);
+	}
+
+	virtual void setInputShape(const Shape& s) override
+	{
+		inputShape_ = s;
+		outputShape_ = {s[0], outputChannels_, (s[2]-windowSize_[0])/strides_[0]+1, (s[3]-windowSize_[1])/strides_[1]+1};
+	}
+
+	virtual void build() override
+	{
+		intmax_t inputChannels = inputShape()[1];
+		weights_.push_back(At::rand(-1, 1, {outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}, *backend()));
+		weights_.push_back(At::rand(-1, 1, {outputChannels_}, *backend()));
+		forwardAlgorithm_ = backend()->getAlgorithm<Conv2DForward>("conv2DForward");
+		backwardAlgorithm_ = backend()->getAlgorithm<Conv2DBackward>("conv2DBackward");
+	}
+
+	virtual void update(Optimizer* optimizer) override
+	{
+		optimizer->update(weights_[0], dW_);
+		optimizer->update(weights_[1], db_);
+	}
+
+protected:
+
+	intmax_t outputChannels_;
+	Shape windowSize_;
+	std::array<intmax_t, 2> strides_;
+
+	delegate<Conv2DForward> forwardAlgorithm_;
+	delegate<Conv2DBackward> backwardAlgorithm_;
+
+	Tensor dW_;
+	Tensor db_;
+};
+
+class InputLayer : public Layer
+{
+public:
+	InputLayer(Shape s, Backend* backend=nullptr) : Layer(backend)
+	{
+		setInputShape(s);
+		setOutputShape(s);
+
+		setType("input");
+	}
+
+	virtual Tensor forward(const Tensor& x) override
+	{
+		return x;
+	}
+};
+
 class RecurrentLayer : public Layer
 {
 public:

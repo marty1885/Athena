@@ -141,11 +141,11 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		return x.backend()->createTensor(std::move(res), outputShape);
 	});
 
-	addAlgorithm<Conv2DBackward>("conv2DBackward",
+	/*addAlgorithm<Conv2DBackward>("conv2DBackward",
 		[this](const Tensor& prevOut, const Tensor& kernel, const Tensor& dW, const Tensor& db , const Tensor& currDelta,
 			std::array<intmax_t, 2> strides)->Tensor
 	{
-		//assert(strides[0] == 1 && strides[1] == 1);//Limitation of NNPACK
+		assert(strides[0] == 1 && strides[1] == 1);//Limitation of NNPACK
 		auto algorithm = nnp_convolution_algorithm_auto;
 		intmax_t batchSize = prevOut.shape()[0];
 		intmax_t inputChannels = prevOut.shape()[1];
@@ -174,6 +174,6 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			threadpool_,
 			nullptr);
 		return currDelta.backend()->createTensor(std::move(res), resShape);
-	});
+	});*/
 
 }
