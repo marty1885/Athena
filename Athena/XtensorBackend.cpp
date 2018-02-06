@@ -296,7 +296,7 @@ inline xt::xarray<float> col2im(const xt::xarray<float>& in, const Shape& imgSiz
 	{
 		for(intmax_t c=0;c<inputChannels;c++)
 		{
-			for(int dy=0;dy<filterWidth;dy++)
+			for(intmax_t dy=0;dy<filterWidth;dy++)
 			{
 				for(intmax_t y=0;y<outputHeight;y++)
 				{
