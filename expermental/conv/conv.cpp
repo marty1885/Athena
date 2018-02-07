@@ -52,6 +52,8 @@ void testConv(At::Backend& backend)
 	auto backword = backend.getAlgorithm<At::Conv2DBackward>("conv2DBackward");
 
 	backend.useAlgorithm<At::Conv2DBackward>("conv2DBackward",nnpBackend);
+	backend.useAlgorithm<At::Conv2DForward>("conv2DForward",nnpBackend);
+	auto forward2 = backend.getAlgorithm<At::Conv2DForward>("conv2DForward");
 	auto backword2 = backend.getAlgorithm<At::Conv2DBackward>("conv2DBackward");
 
 	Tensor x({1,2,3,4,5,6,7,8,9},{1,1,3,3}, backend);
@@ -72,7 +74,7 @@ void testConv(At::Backend& backend)
 
 	{
 		std::cout << "NNPACK: " << '\n';
-		Tensor res = forward(x, k, b, {{1,1}});
+		Tensor res = forward2(x, k, b, {{1,1}});
 		Tensor dE = res - dO;
 		Tensor dW, db;
 		Tensor foo = backword2(x, k, dW, db, dE, {{1,1}});
