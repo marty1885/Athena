@@ -173,7 +173,6 @@ protected:
 	Tensor dW;
 };
 
-//HACK: A way to get ActivationLayer's input shape == output shape
 class ActivationLayer : public Layer
 {
 public:
@@ -277,20 +276,25 @@ protected:
 	delegate<ReluForward> forwardAlgorithm_;
 	delegate<ReluBackward> backwardAlgorithm_;
 };
-/*
+
 class ReshapeLayer : public Layer
 {
 public:
 	ReshapeLayer(Shape targetShape, Backend* backend = nullptr) : Layer(backend)
 	{
 		setType("reshape");
-		setOutputShape(targetShape);
+		outputShape_ = targetShape;
+	}
+
+	virtual Shape outputShape(const Shape& s) override
+	{
+		return outputShape_;
 	}
 
 	virtual Tensor forward(const Tensor& x) override
 	{
 		incomeShape_ = x.shape();
-		return x.reshape(outputShape());
+		return x.reshape(outputShape_);
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -301,6 +305,7 @@ public:
 
 protected:
 	Shape incomeShape_;
+	Shape outputShape_;
 };
 
 class FalattenLayer : public Layer
@@ -311,16 +316,15 @@ public:
 		setType("flatten");
 	}
 
-	virtual void setInputShape(const Shape& s) override
+	virtual Shape outputShape(const Shape& s) override
 	{
-		inputShape_ = s;
-		outputShape_ = {s[0], s.volume()/s[0]};
+		return {s[0], s.volume()/s[0]};
 	}
 
 	virtual Tensor forward(const Tensor& x) override
 	{
 		incomeShape_ = x.shape();
-		return x.reshape(outputShape());
+		return x.reshape(outputShape(x.shape()));
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -336,10 +340,11 @@ protected:
 class Conv2DLayer : public Layer
 {
 public:
-	Conv2DLayer(intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides={{1,1}}, Backend* backend=nullptr)
+	Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides={{1,1}}, Backend* backend=nullptr)
 		: Layer(backend)
 	{
 		outputChannels_ = outputChannels;
+		inputChannels_ = inputChannels;
 		windowSize_ = windowSize;
 		strides_ = strides;
 
@@ -357,15 +362,14 @@ public:
 		dx = backwardAlgorithm_(x, weights_[0], dW_, db_, dy, strides_);
 	}
 
-	virtual void setInputShape(const Shape& s) override
+	virtual Shape outputShape(const Shape& s) override
 	{
-		inputShape_ = s;
-		outputShape_ = {s[0], outputChannels_, (s[2]-windowSize_[0])/strides_[0]+1, (s[3]-windowSize_[1])/strides_[1]+1};
+		return {s[0], outputChannels_, (s[2]-windowSize_[0])/strides_[0]+1, (s[3]-windowSize_[1])/strides_[1]+1};
 	}
 
 	virtual void build() override
 	{
-		intmax_t inputChannels = inputShape()[1];
+		intmax_t inputChannels = inputChannels_;
 		weights_.push_back(At::rand(-1, 1, {outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}, *backend()));
 		weights_.push_back(At::rand(-1, 1, {outputChannels_}, *backend()));
 		forwardAlgorithm_ = backend()->getAlgorithm<Conv2DForward>("conv2DForward");
@@ -381,6 +385,7 @@ public:
 protected:
 
 	intmax_t outputChannels_;
+	intmax_t inputChannels_;
 	Shape windowSize_;
 	std::array<intmax_t, 2> strides_;
 
@@ -390,7 +395,7 @@ protected:
 	Tensor dW_;
 	Tensor db_;
 };
-
+/*
 class InputLayer : public Layer
 {
 public:
