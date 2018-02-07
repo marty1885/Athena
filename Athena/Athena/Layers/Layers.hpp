@@ -33,26 +33,9 @@ public:
 		Tensor& dx, const Tensor& dy)
 	{
 	}
-
-	virtual void setInputShape(const Shape& s)
-	{
-		inputShape_ = s;
-	}
-
-	virtual void setOutputShape(const Shape& s)
-	{
-		outputShape_ = s;
-	}
-
-	virtual Shape inputShape()
-	{
-		return inputShape_;
-	}
-
-	virtual Shape outputShape()
-	{
-		return outputShape_;
-	}
+	
+	//Caclulate the output shape given a input shape
+	virtual Shape outputShape(const Shape& s) = 0;
 
 	bool trainable() const
 	{
@@ -117,8 +100,6 @@ protected:
 	}
 
 	std::vector<Tensor> weights_;
-	Shape inputShape_;
-	Shape outputShape_;
 	std::string type_;
 	std::string name_;
 	Backend* backend_;
@@ -137,20 +118,25 @@ public:
 	FullyConnectedLayer(intmax_t input, intmax_t output, Backend* backend = nullptr)
 		:FullyConnectedLayer(backend)
 	{
-		setInputShape(Shape({Shape::None, input}));
-		setOutputShape(Shape({Shape::None, output}));
+		inputSize_ = input;
+		outputSize_ = output;
 	}
 
 	FullyConnectedLayer(intmax_t output, Backend* backend = nullptr)
 		:FullyConnectedLayer(backend)
 	{
-		setOutputShape(Shape({Shape::None, output}));
+		outputSize_ = output;
+	}
+
+	virtual Shape outputShape(const Shape& s)
+	{
+		return Shape({Shape::None, outputSize_});
 	}
 
 	virtual void build() override
 	{
-		weights_.push_back(At::rand(-1,1, {inputShape()[1], outputShape()[1]}, *backend()));
-		weights_.push_back(At::rand(-1,1, {outputShape()[1]}, *backend()));
+		weights_.push_back(At::rand(-1,1, {inputSize_, outputSize_}, *backend()));
+		weights_.push_back(At::rand(-1,1, {outputSize_}, *backend()));
 
 		forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
 		backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
@@ -180,6 +166,9 @@ protected:
 	delegate<FCForwardFunction> forwardAlgorithm_;
 	delegate<FCBackwardFunction> backwardAlgorithm_;
 
+	intmax_t inputSize_ = 0;
+	intmax_t outputSize_ = 0;
+
 	Tensor dE;
 	Tensor dW;
 };
@@ -193,16 +182,9 @@ public:
 		setType("activation");
 	}
 
-	virtual void setInputShape(const Shape& s) override
+	virtual Shape outputShape(const Shape& s) override
 	{
-		inputShape_ = s;
-		outputShape_ = s;
-	}
-
-	virtual void setOutputShape(const Shape& s) override
-	{
-		inputShape_ = s;
-		outputShape_ = s;
+		return s;
 	}
 };
 
@@ -295,7 +277,7 @@ protected:
 	delegate<ReluForward> forwardAlgorithm_;
 	delegate<ReluBackward> backwardAlgorithm_;
 };
-
+/*
 class ReshapeLayer : public Layer
 {
 public:
@@ -424,7 +406,7 @@ public:
 	{
 		return x;
 	}
-};
+};*/
 
 }
 

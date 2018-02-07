@@ -7,7 +7,7 @@
 
 using namespace At;
 
-void SequentialNetwork::summary() const
+void SequentialNetwork::summary(const Shape& inputShape) const
 {
 	auto repeat = [](const std::string& str, int n) {std::ostringstream os;for(int i=0;i<n;i++)os << str; return os.str();};
 	auto trimString = [](const std::string& str, size_t n){
@@ -23,6 +23,7 @@ void SequentialNetwork::summary() const
 	std::cout << repeat("─",80) << '\n';
 	std::cout << trimString("Layer (type)",23) << " " << trimString("Output shape", 15) << " " << trimString("Params #", 16) << '\n';
 	size_t trainableWeights = 0;
+	Shape currentInputShape = inputShape;
 	for(size_t i=0;i<depth();i++)
 	{
 		if(i == 0)
@@ -32,7 +33,8 @@ void SequentialNetwork::summary() const
 		const auto& l = layers_[i];
 		std::cout << trimString(l->name()+" ("+l->type()+")", 23) << " ";
 
-		const auto& shape = l->outputShape();
+		const auto& shape = l->outputShape(currentInputShape);
+		currentInputShape = shape;
 		std::ostringstream stream;
 		stream << shape;
 		std::string str =  stream.str();
@@ -64,8 +66,6 @@ void SequentialNetwork::compile()
 {
 	std::map<std::string, int> layerTypeNum;
 
-	Layer* prevousLayer = nullptr;
-
 	for(auto& layer : layers_)
 	{
 		if(layer->name() == "")
@@ -78,22 +78,6 @@ void SequentialNetwork::compile()
 		if(layer->backend() == nullptr)
 			layer->setBackend(backend_);
 
-		if(layer->inputShape().empty() == true)
-		{
-			if(prevousLayer == nullptr)
-				throw AtError("Input shape of the first layer not set.");
-			layer->setInputShape(prevousLayer->outputShape());
-		}
-		else if(prevousLayer != nullptr)
-		{
-			//NOTE:Maybe we don't want this in some cases.
-			if(layer->inputShape().match(prevousLayer->outputShape()) == false)
-				throw AtError("Layer input/output shape missmatch.\n"
-				"\t Upper layer: " + prevousLayer->name() + ", output shape: " + to_string(prevousLayer->outputShape()) + "\n"
-				"\t Lower layer: " + layer->name() + ", input shape: " + to_string(layer->inputShape()) + "\n");
-		}
-
 		layer->build();
-		prevousLayer = layer;
 	}
 }

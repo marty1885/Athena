@@ -156,7 +156,7 @@ public:
 	}
 
 	void compile();
-	void summary() const;
+	void summary(const Shape& inputShape) const;
 
 protected:
 	std::vector<Layer*> layers_;

@@ -13,11 +13,11 @@ int main()
 
 	net.add(At::FullyConnectedLayer(2,5));
 	net.add(At::SigmoidLayer());
-	net.add(At::FullyConnectedLayer(1));
+	net.add(At::FullyConnectedLayer(5,1));
 	net.add(At::SigmoidLayer());
 	net.compile();
 
-	net.summary();
+	net.summary({At::Shape::None, 2});
 
 	At::Tensor X({0,0, 1,0, 0,1, 1,1}, {4,2}, backend);
 	At::Tensor Y({0,1,1,0}, {4,1}, backend);

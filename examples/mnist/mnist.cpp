@@ -69,11 +69,11 @@ int main()
 
 	net.add(At::FullyConnectedLayer(784,50));
 	net.add(At::SigmoidLayer());
-	net.add(At::FullyConnectedLayer(10));
+	net.add(At::FullyConnectedLayer(50,10));
 	net.add(At::SigmoidLayer());
 	net.compile();
 
-	net.summary();
+	net.summary({At::Shape::None, 784});
 
 	At::NestrovOptimizer opt;
 	opt.alpha_ = 0.1f;
