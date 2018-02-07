@@ -353,6 +353,8 @@ public:
 
 	virtual Tensor forward(const Tensor& x) override
 	{
+		if(x.dimension() != 4)
+			throw AtError("Conv2D expecting a 4D tensor but got " + std::to_string(x.dimension()) + "D. Shape = " + to_string(x.shape()));
 		return forwardAlgorithm_(x, weights_[0], weights_[1], strides_);
 	}
 

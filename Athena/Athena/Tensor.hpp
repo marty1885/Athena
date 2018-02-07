@@ -194,6 +194,11 @@ public:
 
 	intmax_t dimension() const
 	{
+		return shape().size();
+	}
+
+	intmax_t volume() const
+	{
 		return shape().volume();
 	}
 
