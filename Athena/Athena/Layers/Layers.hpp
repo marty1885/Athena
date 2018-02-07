@@ -395,23 +395,6 @@ protected:
 	Tensor dW_;
 	Tensor db_;
 };
-/*
-class InputLayer : public Layer
-{
-public:
-	InputLayer(Shape s, Backend* backend=nullptr) : Layer(backend)
-	{
-		setInputShape(s);
-		setOutputShape(s);
-
-		setType("input");
-	}
-
-	virtual Tensor forward(const Tensor& x) override
-	{
-		return x;
-	}
-};*/
 
 }
 
