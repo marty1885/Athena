@@ -522,9 +522,22 @@ static int osTensorRecursive (std::ostream& os, float* arr, Shape shape, int dep
 
 inline std::ostream& operator<< (std::ostream& os, const Tensor& t)
 {
+	if(t.pimpl() == nullptr)
+	{
+		os << "{}";
+		return os;
+	}
+
 	std::vector<float> v = t.host();
 	osTensorRecursive(os, &v[0], t.shape(), 0, t.shape().size());
 	return os;
+}
+
+inline std::string to_string(const Tensor& t)
+{
+	std::stringstream ss;
+	ss << t;
+	return ss.str();
 }
 
 inline Tensor operator+(const Tensor& t, const Tensor& other)
