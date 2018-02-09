@@ -341,7 +341,7 @@ class Conv2DLayer : public Layer
 {
 public:
 	Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides={{1,1}}, Backend* backend=nullptr)
-		: Layer(backend)
+		: Layer(backend, true)
 	{
 		outputChannels_ = outputChannels;
 		inputChannels_ = inputChannels;
