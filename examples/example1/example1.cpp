@@ -9,6 +9,7 @@ using namespace std::chrono;
 int main()
 {
 	At::XtensorBackend backend;
+	At::Tensor::setDefaultBackend(&backend);
 	At::SequentialNetwork net(&backend);
 
 	net.add(At::FullyConnectedLayer(2,5));
@@ -19,8 +20,8 @@ int main()
 
 	net.summary({At::Shape::None, 2});
 
-	At::Tensor X({0,0, 1,0, 0,1, 1,1}, {4,2}, backend);
-	At::Tensor Y({0,1,1,0}, {4,1}, backend);
+	At::Tensor X({0,0, 1,0, 0,1, 1,1}, {4,2});
+	At::Tensor Y({0,1,1,0}, {4,1});
 
 	At::NestrovOptimizer opt;
 	At::MSELoss loss;

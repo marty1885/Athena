@@ -37,6 +37,16 @@ public:
 	{
 	}
 
+	Tensor(const Shape& shape)
+	: Tensor(defaultBackend()->createTensor(shape))
+	{
+	}
+
+	Tensor(const std::vector<float>& vec, const Shape& shape)
+		: Tensor(defaultBackend()->createTensor(vec, shape))
+	{
+	}
+
 	Tensor(const Tensor& t)
 	{
 		if(this == &t)
@@ -251,6 +261,16 @@ public:
 		return pimpl_->backend();
 	}
 
+	static void setDefaultBackend(Backend* backend)
+	{
+		defaultBackend_ = backend;
+	}
+
+	static Backend* defaultBackend()
+	{
+		return defaultBackend_;
+	}
+
 protected:
 	inline ReferenceCounter* referenceCounter() const
 	{
@@ -289,6 +309,8 @@ protected:
 
 	ReferenceCounter* referenceCounter_ = nullptr;
 	TensorImpl* pimpl_ = nullptr;
+
+	static Backend* defaultBackend_;
 };
 
 inline Tensor rand(float lEdge, float rEdge, const Shape& shape, Backend& backend)
@@ -310,6 +332,28 @@ inline Tensor ones(const Shape& shape, Backend& backend)
 {
 	return backend.ones(shape);
 }
+
+
+inline Tensor rand(float lEdge, float rEdge, const Shape& shape)
+{
+	return rand(lEdge, rEdge, shape, *Tensor::defaultBackend());
+}
+
+inline Tensor normal(float mean, float stddev, const Shape& shape)
+{
+	return normal(mean, stddev, shape, *Tensor::defaultBackend());
+}
+
+inline Tensor zeros(const Shape& shape)
+{
+	return zeros(shape, *Tensor::defaultBackend());
+}
+
+inline Tensor ones(const Shape& shape )
+{
+	return ones(shape, *Tensor::defaultBackend());
+}
+
 
 inline Tensor dot(const Tensor& a, const Tensor& b)
 {
