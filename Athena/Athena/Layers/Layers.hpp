@@ -144,6 +144,9 @@ public:
 
 	virtual Tensor forward(const Tensor& x) override
 	{
+		if(x.dimension() != 2)
+			throw AtError("Expecting a 2D tensor for a Fully Connected layer. But get " + std::to_string(x.dimension())
+			+ "D. shape = " + to_string(x.shape()));
 		return forwardAlgorithm_(x, weights_[0], weights_[1]);
 	}
 
