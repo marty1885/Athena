@@ -4,35 +4,14 @@
 #include <Athena/Utils/ReferenceCounter.hpp>
 #include <Athena/TensorImpl.hpp>
 #include <Athena/Utils/Error.hpp>
+#include <Athena/Utils/Type.hpp>
 
 #include <assert.h>
 
-#include <type_traits>
 #include <vector>
 #include <numeric>
 #include <iostream>
 #include <sstream>
-
-template<typename Test, template<typename...> class Ref>
-struct is_specialization : std::false_type {};
-
-template<template<typename...> class Ref, typename... Args>
-struct is_specialization<Ref<Args...>, Ref>: std::true_type {};
-
-template <class T, std::size_t I>
-struct nested_initializer_list
-{
-	using type = std::initializer_list<typename nested_initializer_list<T, I - 1>::type>;
-};
-
-template <class T>
-struct nested_initializer_list<T, 0>
-{
-	using type = T;
-};
-
-template <class T, std::size_t I>
-using nested_initializer_list_t = typename nested_initializer_list<T, I>::type;
 
 namespace At
 {
@@ -361,14 +340,14 @@ protected:
 	}
 
 	template<typename T>
-	Shape shapeFromInitalizer(T l)
+	static Shape shapeFromInitalizer(T l)
 	{
 		Shape s;
 		return shapeFromInitalizerInternal(l ,s);
 	}
 
 	template<typename T>
-	Shape shapeFromInitalizerInternal(T l, Shape& s, size_t depth = 0)
+	static Shape shapeFromInitalizerInternal(T l, Shape& s, size_t depth = 0)
 	{
 		if constexpr(is_specialization<T, std::initializer_list>::value)
 		{
