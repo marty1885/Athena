@@ -353,22 +353,45 @@ protected:
 	void initWithIniter(T l)
 	{
 		std::vector<float> data;
-		Shape shape;
-		data.reserve(2048);
-		processList(l, data, shape);
+		Shape shape = shapeFromInitalizer(l);
+		data.reserve(shape.volume());//Preallocate space for speed
+		initlistToVector(l, data);
 		//Dirty code
 		*this = Tensor(data, shape, *defaultBackend());
 	}
 
 	template<typename T>
-	static void processList(T l, std::vector<float>& data, Shape& shape, size_t depth = 0)
+	Shape shapeFromInitalizer(T l)
+	{
+		Shape s;
+		return shapeFromInitalizerInternal(l ,s);
+	}
+
+	template<typename T>
+	Shape shapeFromInitalizerInternal(T l, Shape& s, size_t depth = 0)
 	{
 		if constexpr(is_specialization<T, std::initializer_list>::value)
 		{
-			if(shape.size() <= depth)
-				shape.push_back(l.size());
+			if(s.size() <= depth)
+				s.push_back(l.size());
+			else
+			{
+				if(s[depth] != (intmax_t)l.size())
+					throw AtError("Un-uniform shape in initalizer.");
+			}
 			for(auto&& e : l)
-				processList(e, data, shape, depth+1);
+				shapeFromInitalizerInternal(e, s, depth+1);
+		}
+		return s;
+	}
+
+	template<typename T>
+	static void initlistToVector(T l, std::vector<float>& data)
+	{
+		if constexpr(is_specialization<T, std::initializer_list>::value)
+		{
+			for(auto&& e : l)
+				initlistToVector(e, data);
 		}
 		else
 		{

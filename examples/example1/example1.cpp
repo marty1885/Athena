@@ -20,8 +20,9 @@ int main()
 
 	net.summary({At::Shape::None, 2});
 
-	At::Tensor X({0,0, 1,0, 0,1, 1,1}, {4,2});
-	At::Tensor Y({0,1,1,0}, {4,1});
+	At::Tensor X = {{0,0}, {1,0}, {0,1}, {1,1}};
+	At::Tensor Y = {{0,1,1,0}};
+	Y = Y.transpose();
 
 	At::NestrovOptimizer opt;
 	At::MSELoss loss;
