@@ -56,12 +56,6 @@ public:
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
 		size_t batchSize, size_t epoch, OnBatchEnumerate onBatchEnumerate, OnEpochEnumerate onEpochEnumerate)
 	{
-		if(input.shape()[0]%batchSize != 0)
-			throw AtError("Error: batch size cannot divide the number of datasets perfectly.");
-
-		if(input.shape()[0]<(intmax_t)batchSize)
-			throw AtError("Error: batch size is larger than the number of datasets");
-
 		size_t datasetSize = input.shape()[0];
 
 		auto inputShape = input.shape();
@@ -75,8 +69,9 @@ public:
 			float epochLoss = 0;
 			for(size_t j=0;j<datasetSize;j+=batchSize)
 			{
-				Tensor x = input.slice({(intmax_t)j}, {(intmax_t)batchSize});
-				Tensor y = desireOutput.slice({(intmax_t)j} ,{(intmax_t)batchSize});
+				intmax_t sliceSize = std::min((intmax_t)batchSize, (intmax_t)(datasetSize-j));
+				Tensor x = input.slice({(intmax_t)j}, {sliceSize});
+				Tensor y = desireOutput.slice({(intmax_t)j} ,{sliceSize});
 
 				x.resize(inputShape);
 				y.resize(outputShape);
