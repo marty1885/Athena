@@ -58,3 +58,4 @@ CTestTestfile.cmake
 #editor data
 .vscode
 *.~
+CMakeLists.txt.user
