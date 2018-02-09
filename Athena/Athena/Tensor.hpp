@@ -7,10 +7,32 @@
 
 #include <assert.h>
 
+#include <type_traits>
 #include <vector>
 #include <numeric>
 #include <iostream>
 #include <sstream>
+
+template<typename Test, template<typename...> class Ref>
+struct is_specialization : std::false_type {};
+
+template<template<typename...> class Ref, typename... Args>
+struct is_specialization<Ref<Args...>, Ref>: std::true_type {};
+
+template <class T, std::size_t I>
+struct nested_initializer_list
+{
+	using type = std::initializer_list<typename nested_initializer_list<T, I - 1>::type>;
+};
+
+template <class T>
+struct nested_initializer_list<T, 0>
+{
+	using type = T;
+};
+
+template <class T, std::size_t I>
+using nested_initializer_list_t = typename nested_initializer_list<T, I>::type;
 
 namespace At
 {
@@ -37,14 +59,34 @@ public:
 	{
 	}
 
-	Tensor(const Shape& shape)
-	: Tensor(defaultBackend()->createTensor(shape))
-	{
-	}
-
 	Tensor(const std::vector<float>& vec, const Shape& shape)
 		: Tensor(defaultBackend()->createTensor(vec, shape))
 	{
+	}
+
+	Tensor(nested_initializer_list_t<float, 1> l)
+	{
+		initWithIniter(l);
+	}
+	
+	Tensor(nested_initializer_list_t<float, 2> l)
+	{
+		initWithIniter(l);
+	}
+
+	Tensor(nested_initializer_list_t<float, 3> l)
+	{
+		initWithIniter(l);
+	}
+
+	Tensor(nested_initializer_list_t<float, 4> l)
+	{
+		initWithIniter(l);
+	}
+
+	Tensor(nested_initializer_list_t<float, 5> l)
+	{
+		initWithIniter(l);
 	}
 
 	Tensor(const Tensor& t)
@@ -305,6 +347,33 @@ protected:
 		}
 
 		throw AtError("Shape" + to_string(s) + " has more then 1 unknown dimentions. Cannot solve for unknown");
+	}
+
+	template<typename T>
+	void initWithIniter(T l)
+	{
+		std::vector<float> data;
+		Shape shape;
+		data.reserve(2048);
+		processList(l, data, shape);
+		//Dirty code
+		*this = Tensor(data, shape, *defaultBackend());
+	}
+
+	template<typename T>
+	static void processList(T l, std::vector<float>& data, Shape& shape, size_t depth = 0)
+	{
+		if constexpr(is_specialization<T, std::initializer_list>::value)
+		{
+			if(shape.size() <= depth)
+				shape.push_back(l.size());
+			for(auto&& e : l)
+				processList(e, data, shape, depth+1);
+		}
+		else
+		{
+			data.push_back(l);
+		}
 	}
 
 	ReferenceCounter* referenceCounter_ = nullptr;
