@@ -14,6 +14,8 @@
 
 #include <string.h>
 
+#define _unused(x) ((void)(x))
+
 using namespace At;
 
 //Converts between different containers
@@ -67,12 +69,12 @@ public:
 
 	virtual void add(float val) override
 	{
-		arr_ = arr_ + val;
+		arr_ += val;
 	}
 
 	virtual void mul(float val) override
 	{
-		arr_ = arr_ * val;
+		arr_ *= val;
 	}
 
 	//TODO: Check if the incoming impl is a XtensorTensorImpl
@@ -406,6 +408,7 @@ XtensorBackend::XtensorBackend()
 			intmax_t filterWidth = kernels.shape()[3];
 
 			assert(inputChannels == filterChannels);
+			_unused(inputChannels);
 
 			intmax_t filterChannlelSize = filterHeight*filterWidth*filterChannels;
 
