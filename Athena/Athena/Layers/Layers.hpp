@@ -311,10 +311,10 @@ protected:
 	Shape outputShape_;
 };
 
-class FalattenLayer : public Layer
+class FlattenLayer : public Layer
 {
 public:
-	FalattenLayer(Backend* backend = nullptr) : Layer(backend)
+	FlattenLayer(Backend* backend = nullptr) : Layer(backend)
 	{
 		setType("flatten");
 	}
@@ -358,13 +358,18 @@ public:
 	{
 		if(x.dimension() != 4)
 			throw AtError("Conv2D expecting a 4D tensor but got " + std::to_string(x.dimension()) + "D. Shape = " + to_string(x.shape()));
-		return forwardAlgorithm_(x, weights_[0], weights_[1], strides_);
+		Tensor t = forwardAlgorithm_(x, weights_[0], weights_[1], strides_);
+		std::cout << t << std::endl;
+		std::cin.get();
+		return t;
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override
 	{
 		dx = backwardAlgorithm_(x, weights_[0], dW_, db_, dy, strides_);
+		// std::cout << weights_[0] << std::endl;
+		//std::cin.get();
 	}
 
 	virtual Shape outputShape(const Shape& s) override

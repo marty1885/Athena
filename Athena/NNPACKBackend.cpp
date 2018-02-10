@@ -58,14 +58,19 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			{
 				const float* inPtr = input+i*inVecSize;
 				float* outPtr = &res[0]+i*outVecSize;
-				nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
+				auto status = nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
+				if(status != nnp_status_success)
+					throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
 				for(int j=0;j<outVecSize;j++)
 					outPtr[j] += biases[j];
 			}
 		}
 		else
 		{
-			nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res[0], threadpool_, nullptr);
+			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res[0], threadpool_, nullptr);
+
+			if(status != nnp_status_success)
+				throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
 
 			for(intmax_t i=0;i<batchSize;i++)
 			{
@@ -102,12 +107,16 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			{
 				const float* inPtr = input+i*inVecSize;
 				float* outPtr = &res[0]+i*outVecSize;
-				nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
+				auto status = nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
+				if(status != nnp_status_success)
+					throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
 			}
 		}
 		else
 		{
-			nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res[0], threadpool_, nullptr);
+			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res[0], threadpool_, nullptr);
+			if(status != nnp_status_success)
+				throw AtError("nnp_fully_connected_output execution failed. error " + std::to_string(status));
 		}
 
 		return dx.backend()->createTensor(std::move(res), resShape);
@@ -117,7 +126,11 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 	addAlgorithm<Conv2DForward>("conv2DForward",
 		[this](const Tensor& x, const Tensor& kernel, const Tensor& bias, std::array<intmax_t, 2> strides)->Tensor
 	{
-		assert(strides[0] == 1 && strides[1] == 1);//Limitation of NNPACK
+		if(strides[0] != 1 || strides[1] != 1)//Limitation of NNPACK
+		{
+			Shape s = {strides[0], strides[1]};
+			throw AtError("Strides in NNPACK conv2DForward must be {1,1}, but get " + to_string(s));
+		}
 
 		//assuming input format of NCHW
 		auto algorithm = nnp_convolution_algorithm_auto;
@@ -128,10 +141,17 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		nnp_padding inputPadding = {0, 0, 0, 0};
 		Shape outputShape({batchSize, kernel.shape()[0], x.shape()[2]-kernel.shape()[2]+1, x.shape()[3]-kernel.shape()[3]+1});
 		std::vector<float> res(outputShape.volume());
+		std::array<intmax_t,2> kernelShape = {kernel.shape()[2], kernel.shape()[3]};
+
+		if(kernelShape[0] > 16 || kernelShape[1] > 16)
+		{
+			Shape s = {kernelShape[0], kernelShape[1]};
+			throw AtError("NNPACK can only support convulute kernel upto {16,16}, but get " + to_string(s));
+		}
 
 		nnp_size kernelSize = {(size_t)kernel.shape()[2], (size_t)kernel.shape()[3]};
 
-		nnp_convolution_output(algorithm,
+		auto status = nnp_convolution_output(algorithm,
 			batchSize,
 			inputChannels,
 			outputChannels,
@@ -144,6 +164,8 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			&res[0],
 			threadpool_,
 			nullptr);
+		if(status != nnp_status_success)
+			throw AtError("nnp_convolution_output execution failed. Error " + std::to_string(status));
 		return x.backend()->createTensor(std::move(res), outputShape);
 	});
 
@@ -175,7 +197,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		db = currDelta.sum({0, 2, 3});
 		db.resize({db.shape()[0], db.shape().volume()/db.shape()[0]});
 
-		nnp_convolution_input_gradient(
+		auto status = nnp_convolution_input_gradient(
 			algorithm,
 			batchSize,
 			inputChannels,
@@ -188,8 +210,10 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			gradInput,
 			threadpool_,
 			nullptr);
+		if(status != nnp_status_success)
+			throw AtError("nnp_convolution_input_gradient execution failed. Error " + std::to_string(status));
 
-		nnp_convolution_kernel_gradient(
+		status = nnp_convolution_kernel_gradient(
 			algorithm,
 			batchSize,
 			inputChannels,
@@ -202,6 +226,8 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			gradKernelPtr,
 			threadpool_,
 			nullptr);
+		if(status != nnp_status_success)
+			throw AtError("nnp_convolution_input_gradient execution failed. Error " + std::to_string(status));
 		dW = currDelta.backend()->createTensor(std::move(gradKernel), kernel.shape());
 
 		return currDelta.backend()->createTensor(std::move(res), resShape);
