@@ -23,8 +23,13 @@ public:
 	{
 	}
 
-	Tensor(const Shape& shape, Backend& backend)
-		: Tensor(backend.createTensor(shape))
+	// Tensor(const Shape& shape, Backend& backend)
+	// 	: Tensor(backend.createTensor(shape))
+	// {
+	// }
+
+	Tensor(const std::vector<float>& vec, Backend& backend)
+		: Tensor(backend.createTensor(vec, Shape({1, (intmax_t)vec.size()})))
 	{
 	}
 
@@ -40,6 +45,11 @@ public:
 
 	Tensor(const std::vector<float>& vec, const Shape& shape)
 		: Tensor(defaultBackend()->createTensor(vec, shape))
+	{
+	}
+
+	Tensor(const std::vector<float>& vec)
+		: Tensor(defaultBackend()->createTensor(vec, Shape({1, (intmax_t)vec.size()})))
 	{
 	}
 
@@ -209,7 +219,7 @@ public:
 		resize({(intmax_t)size()});
 	}
 
-	Tensor flatten()
+	Tensor flatten() const
 	{
 		Tensor t = std::move(clone());
 		t.resize({(intmax_t)t.size()});

@@ -46,7 +46,7 @@ public:
 		return true;
 	}
 
-	inline bool match(const Shape& s)
+	inline bool match(const Shape& s) const
 	{
 		if(size() != s.size())
 			return false;
