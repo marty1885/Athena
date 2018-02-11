@@ -49,7 +49,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		assert((intmax_t)weight.size() == inVecSize*outVecSize);
 
 		Shape resShape({batchSize, outVecSize});
-		std::vector<float> res(resShape.volume());
+		Tensor res = in.backend()->createTensor(resShape);
 
 		//use inference mode when batch size is small
 		if(batchSize < 64)
@@ -57,7 +57,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			for(intmax_t i=0;i<batchSize;i++)
 			{
 				const float* inPtr = input+i*inVecSize;
-				float* outPtr = &res[0]+i*outVecSize;
+				float* outPtr = res.hostPtr()+i*outVecSize;
 				auto status = nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
 				if(status != nnp_status_success)
 					throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
@@ -67,7 +67,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		}
 		else
 		{
-			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res[0], threadpool_, nullptr);
+			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res.hostPtr()[0], threadpool_, nullptr);
 
 			if(status != nnp_status_success)
 				throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
@@ -75,11 +75,11 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			for(intmax_t i=0;i<batchSize;i++)
 			{
 				for(int j=0;j<outVecSize;j++)
-					res[i*outVecSize+j] += biases[j];
+					res.hostPtr()[i*outVecSize+j] += biases[j];
 			}
 		}
 
-		return in.backend()->createTensor(std::move(res), resShape);
+		return res;
 	});
 
 	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
@@ -98,7 +98,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		assert((intmax_t)weight.size() == inVecSize*outVecSize);
 
 		Shape resShape({batchSize, outVecSize});
-		std::vector<float> res(resShape.volume());
+		Tensor res = dx.backend()->createTensor(resShape);
 
 		//use inference mode when batch size is small
 		if(batchSize < 64)
@@ -106,7 +106,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			for(intmax_t i=0;i<batchSize;i++)
 			{
 				const float* inPtr = input+i*inVecSize;
-				float* outPtr = &res[0]+i*outVecSize;
+				float* outPtr = res.hostPtr()+i*outVecSize;
 				auto status = nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
 				if(status != nnp_status_success)
 					throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
@@ -114,12 +114,12 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		}
 		else
 		{
-			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res[0], threadpool_, nullptr);
+			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, res.hostPtr(), threadpool_, nullptr);
 			if(status != nnp_status_success)
 				throw AtError("nnp_fully_connected_output execution failed. error " + std::to_string(status));
 		}
 
-		return dx.backend()->createTensor(std::move(res), resShape);
+		return res;
 	});
 
 
