@@ -1,6 +1,7 @@
 #ifndef LAYERS_HPP
 #define LAYERS_HPP
 
+#include <Athena/Optimizer.hpp>
 #include <Athena/Backend.hpp>
 #include <Athena/Tensor.hpp>
 #include <Athena/Utils/Shape.hpp>
@@ -109,61 +110,15 @@ protected:
 class FullyConnectedLayer : public Layer
 {
 public:
-	FullyConnectedLayer(Backend* backend = nullptr)
-		:Layer(backend, true)
-	{
-		setType("fullyConnected");
-	}
-
-	FullyConnectedLayer(intmax_t input, intmax_t output, Backend* backend = nullptr)
-		:FullyConnectedLayer(backend)
-	{
-		inputSize_ = input;
-		outputSize_ = output;
-	}
-
-	FullyConnectedLayer(intmax_t output, Backend* backend = nullptr)
-		:FullyConnectedLayer(backend)
-	{
-		outputSize_ = output;
-	}
-
-	virtual Shape outputShape(const Shape& s)
-	{
-		return Shape({Shape::None, outputSize_});
-	}
-
-	virtual void build() override
-	{
-		weights_.push_back(At::rand(-1,1, {inputSize_, outputSize_}, *backend()));
-		weights_.push_back(At::rand(-1,1, {outputSize_}, *backend()));
-
-		forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
-		backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
-	}
-
-	virtual Tensor forward(const Tensor& x) override
-	{
-		if(x.dimension() != 2)
-			throw AtError("Expecting a 2D tensor for a Fully Connected layer. But get " + std::to_string(x.dimension())
-			+ "D. shape = " + to_string(x.shape()));
-		return forwardAlgorithm_(x, weights_[0], weights_[1]);
-	}
-
+	FullyConnectedLayer(Backend* backend = nullptr);
+	FullyConnectedLayer(intmax_t input, intmax_t output, Backend* backend = nullptr);
+	FullyConnectedLayer(intmax_t output, Backend* backend = nullptr);
+	virtual Shape outputShape(const Shape& s);
+	virtual void build() override;
+	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
-		Tensor& dx, const Tensor& dy) override
-	{
-		dx = backwardAlgorithm_(dy, weights_[0]);
-
-		dE = dy;
-		dW = dot(x.transpose(), dy);
-	}
-
-	virtual void update(Optimizer* optimizer) override
-	{
-		optimizer->update(weights_[0], dW);
-		optimizer->update(weights_[1], dE.sum(0));
-	}
+		Tensor& dx, const Tensor& dy) override;
+	virtual void update(Optimizer* optimizer) override;
 
 protected:
 	delegate<FCForwardFunction> forwardAlgorithm_;
@@ -193,27 +148,11 @@ public:
 class SigmoidLayer : public ActivationLayer
 {
 public:
-	SigmoidLayer(Backend* backend = nullptr) : ActivationLayer(backend)
-	{
-		setType("sigmoid");
-	}
-
-	virtual void build() override
-	{
-		forwardAlgorithm_ = backend()->getAlgorithm<SigmoidForward>("sigmoidForward");
-		backwardAlgorithm_ = backend()->getAlgorithm<SigmoidBackward>("sigmoidBackward");
-	}
-
-	virtual Tensor forward(const Tensor& x) override
-	{
-		return forwardAlgorithm_(x);
-	}
-
+	SigmoidLayer(Backend* backend = nullptr);
+	virtual void build() override;
+	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
-		Tensor& dx, const Tensor& dy) override
-	{
-		dx = backwardAlgorithm_(dy, y);
-	}
+		Tensor& dx, const Tensor& dy) override;
 protected:
 	delegate<SigmoidForward> forwardAlgorithm_;
 	delegate<SigmoidBackward> backwardAlgorithm_;
@@ -223,28 +162,11 @@ protected:
 class TanhLayer : public ActivationLayer
 {
 public:
-	TanhLayer(Backend* backend) : ActivationLayer(backend)
-	{
-		setType("tanh");
-	}
-
-	virtual void build() override
-	{
-		forwardAlgorithm_ = backend()->getAlgorithm<TanhForward>("tanhForward");
-		backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("tanhBackward");
-	}
-
-	virtual Tensor forward(const Tensor& x) override
-	{
-		return forwardAlgorithm_(x);
-	}
-
+	TanhLayer(Backend* backend = nullptr);
+	virtual void build() override;
+	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
-		Tensor& dx, const Tensor& dy) override
-	{
-		dx = backwardAlgorithm_(dy, y);
-	}
-
+		Tensor& dx, const Tensor& dy) override;
 protected:
 	delegate<TanhForward> forwardAlgorithm_;
 	delegate<TanhBackward> backwardAlgorithm_;
@@ -253,27 +175,11 @@ protected:
 class ReluLayer : public ActivationLayer
 {
 public:
-	ReluLayer(Backend* backend = nullptr) : ActivationLayer(backend)
-	{
-		setType("relu");
-	}
-
-	virtual void build() override
-	{
-		forwardAlgorithm_ = backend()->getAlgorithm<TanhForward>("reluForward");
-		backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("reluBackward");
-	}
-
-	virtual Tensor forward(const Tensor& x) override
-	{
-		return forwardAlgorithm_(x);
-	}
-
+	ReluLayer(Backend* backend = nullptr);
+	virtual void build() override;
+	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
-		Tensor& dx, const Tensor& dy) override
-	{
-		dx = backwardAlgorithm_(dy, y);
-	}
+		Tensor& dx, const Tensor& dy) override;
 
 protected:
 	delegate<ReluForward> forwardAlgorithm_;
@@ -343,56 +249,13 @@ protected:
 class Conv2DLayer : public Layer
 {
 public:
-	Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides={{1,1}}, Backend* backend=nullptr)
-		: Layer(backend, true)
-	{
-		outputChannels_ = outputChannels;
-		inputChannels_ = inputChannels;
-		windowSize_ = windowSize;
-		strides_ = strides;
-
-		setType("conv2D");
-	}
-
-	virtual Tensor forward(const Tensor& x) override
-	{
-		if(x.dimension() != 4)
-			throw AtError("Conv2D expecting a 4D tensor but got " + std::to_string(x.dimension()) + "D. Shape = " + to_string(x.shape()));
-		if(x.shape()[1] != inputChannels_)
-			throw AtError("Expecting " + std::to_string(inputChannels_) + " input channes, but get " + std::to_string(x.shape()[1]));
-		Tensor t = forwardAlgorithm_(x, weights_[0], weights_[1], strides_);
-		return t;
-	}
-
+	Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides={{1,1}}, Backend* backend=nullptr);
+	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
-		Tensor& dx, const Tensor& dy) override
-	{
-		dx = backwardAlgorithm_(x, weights_[0], dW_, db_, dy, strides_);
-	}
-
-	virtual Shape outputShape(const Shape& s) override
-	{
-		return {s[0], outputChannels_, (s[2]-windowSize_[0])/strides_[0]+1, (s[3]-windowSize_[1])/strides_[1]+1};
-	}
-
-	virtual void build() override
-	{
-		BoxedValues config;
-		intmax_t inputChannels = inputChannels_;
-		weights_.push_back(At::rand(-1, 1, {outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}, *backend()));
-		weights_.push_back(At::rand(-1, 1, {outputChannels_}, *backend()));
-		config.set<Shape>("kernelShape", weights_[0].shape());
-		config.set<Shape>("stride", Shape({strides_[0], strides_[1]}));
-
-		forwardAlgorithm_ = backend()->getAlgorithm<Conv2DForward>("conv2DForward", config);
-		backwardAlgorithm_ = backend()->getAlgorithm<Conv2DBackward>("conv2DBackward", config);
-	}
-
-	virtual void update(Optimizer* optimizer) override
-	{
-		optimizer->update(weights_[0], dW_);
-		optimizer->update(weights_[1], db_);
-	}
+		Tensor& dx, const Tensor& dy) override;
+	virtual Shape outputShape(const Shape& s) override;
+	virtual void build() override;
+	virtual void update(Optimizer* optimizer) override;
 
 protected:
 
