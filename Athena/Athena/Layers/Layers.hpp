@@ -358,9 +358,9 @@ public:
 	{
 		if(x.dimension() != 4)
 			throw AtError("Conv2D expecting a 4D tensor but got " + std::to_string(x.dimension()) + "D. Shape = " + to_string(x.shape()));
+		if(x.shape()[1] != inputChannels_)
+			throw AtError("Expecting " + std::to_string(inputChannels_) + " input channes, but get " + std::to_string(x.shape()[1]));
 		Tensor t = forwardAlgorithm_(x, weights_[0], weights_[1], strides_);
-		std::cout << t << std::endl;
-		std::cin.get();
 		return t;
 	}
 
@@ -368,8 +368,6 @@ public:
 		Tensor& dx, const Tensor& dy) override
 	{
 		dx = backwardAlgorithm_(x, weights_[0], dW_, db_, dy, strides_);
-		// std::cout << weights_[0] << std::endl;
-		//std::cin.get();
 	}
 
 	virtual Shape outputShape(const Shape& s) override
@@ -379,11 +377,15 @@ public:
 
 	virtual void build() override
 	{
+		BoxedValues config;
 		intmax_t inputChannels = inputChannels_;
 		weights_.push_back(At::rand(-1, 1, {outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}, *backend()));
 		weights_.push_back(At::rand(-1, 1, {outputChannels_}, *backend()));
-		forwardAlgorithm_ = backend()->getAlgorithm<Conv2DForward>("conv2DForward");
-		backwardAlgorithm_ = backend()->getAlgorithm<Conv2DBackward>("conv2DBackward");
+		config.set<Shape>("kernelShape", weights_[0].shape());
+		config.set<Shape>("stride", Shape({strides_[0], strides_[1]}));
+
+		forwardAlgorithm_ = backend()->getAlgorithm<Conv2DForward>("conv2DForward", config);
+		backwardAlgorithm_ = backend()->getAlgorithm<Conv2DBackward>("conv2DBackward", config);
 	}
 
 	virtual void update(Optimizer* optimizer) override

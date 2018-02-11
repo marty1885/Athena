@@ -167,6 +167,12 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		if(status != nnp_status_success)
 			throw AtError("nnp_convolution_output execution failed. Error " + std::to_string(status));
 		return x.backend()->createTensor(std::move(res), outputShape);
+	}, [](const BoxedValues& config)->bool
+	{
+		Shape kernelShape = config.get<Shape>("kernelShape");
+		Shape stride = config.get<Shape>("stride");
+		return (kernelShape[2] <= 16 && kernelShape[2] <= 16 &&
+			stride[0] == 1 && stride[1] == 1);
 	});
 
 	addAlgorithm<Conv2DBackward>("conv2DBackward",
@@ -231,6 +237,12 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		dW = currDelta.backend()->createTensor(std::move(gradKernel), kernel.shape());
 
 		return currDelta.backend()->createTensor(std::move(res), resShape);
+	},[](const BoxedValues& config)->bool
+	{
+		Shape kernelShape = config.get<Shape>("kernelShape");
+		Shape stride = config.get<Shape>("stride");
+		return (kernelShape[2] <= 16 && kernelShape[2] <= 16 &&
+			stride[0] == 1 && stride[1] == 1);
 	});
 
 }
