@@ -84,7 +84,7 @@ public:
 		name_ = name;
 	}
 
-	std::string name()
+	std::string name() const
 	{
 		return name_;
 	}
@@ -103,7 +103,7 @@ protected:
 	std::vector<Tensor> weights_;
 	std::string type_;
 	std::string name_;
-	Backend* backend_;
+	Backend* backend_ = nullptr;
 	bool trainable_ = false;
 };
 

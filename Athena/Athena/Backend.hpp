@@ -82,7 +82,7 @@ struct FunctoinWrapper
 	{
 	}
 
-	virtual bool sutiable(const BoxedValues& config)
+	bool sutiable(const BoxedValues& config)
 	{
 		return selector_(config);
 	}
@@ -115,19 +115,19 @@ iterate_backwards<T> backwards(const T &t)
 template<typename FT>
 struct FunctionContainer : public FunctoinWrapper
 {
-	delegate<FT> func;
-	FunctionContainer(delegate<FT> f) : func(std::move(f))
+	delegate<FT> func_;
+	FunctionContainer(delegate<FT> f) : func_(std::move(f))
 	{
 	}
 
 	FunctionContainer(delegate<FT> f, AlgorithmSelector selector)
-		: FunctoinWrapper(selector), func(std::move(f))
+		: FunctoinWrapper(selector), func_(std::move(f))
 	{
 	}
 
 	inline delegate<FT> get() const
 	{
-		return func;
+		return func_;
 	}
 };
 
@@ -177,7 +177,6 @@ public:
 		if(it != algorithms_.end())
 		{
 			//Remove RTTI if it turns out to be too slow
-			//Use the last entry as default
 			for(auto& algo : backwards(it->second))
 			{
 				FunctionContainer<FT>* container = dynamic_cast<FunctionContainer<FT>*>(algo);
