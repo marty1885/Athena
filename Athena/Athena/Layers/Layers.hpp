@@ -19,12 +19,22 @@ public:
 	virtual Tensor create(const Shape& shape , intmax_t fanIn, intmax_t fanOut, Backend* backend) const = 0;
 };
 
+//TODO: Need to check if these are right. But they seems to work fine
 class Xavier : public WeightInitalizer
 {
 public:
 	virtual Tensor create(const Shape& shape , intmax_t fanIn, intmax_t fanOut, Backend* backend) const override
 	{
-		return normal(0, 1, shape, *backend) / std::sqrt((float)fanIn);
+		return normal(0, 1, shape, *backend) / std::sqrt((float)fanIn+(float)fanOut);
+	}
+};
+
+class He : public WeightInitalizer
+{
+public:
+	virtual Tensor create(const Shape& shape , intmax_t fanIn, intmax_t fanOut, Backend* backend) const override
+	{
+		return normal(0, 1, shape, *backend) / std::sqrt(2.f/(float)fanIn);
 	}
 };
 
