@@ -48,6 +48,12 @@ struct BoxedValue : public BoxedValueBase
 class BoxedValues : public std::map<std::string, BoxedValueBase*>
 {
 public:
+	virtual ~BoxedValues()
+	{
+		for(auto& e : *this)
+			delete e.second;
+	}
+
 	template<typename T>
 	inline void set(const std::string& name, const T& value)
 	{
