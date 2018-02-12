@@ -77,6 +77,26 @@ public:
 	{
 		initWithIniter(l);
 	}
+	
+	Tensor(nested_vector_t<float, 2> l)
+	{
+		initWithIniter(l);
+	}
+
+	Tensor(nested_vector_t<float, 3> l)
+	{
+		initWithIniter(l);
+	}
+
+	Tensor(nested_vector_t<float, 4> l)
+	{
+		initWithIniter(l);
+	}
+
+	Tensor(nested_vector_t<float, 5> l)
+	{
+		initWithIniter(l);
+	}
 
 	Tensor(const Tensor& t)
 	{
@@ -359,14 +379,15 @@ protected:
 	template<typename T>
 	static Shape shapeFromInitalizerInternal(T l, Shape& s, size_t depth = 0)
 	{
-		if constexpr(is_specialization<T, std::initializer_list>::value)
+		if constexpr(!std::is_scalar<T>::value)
 		{
 			if(s.size() <= depth)
 				s.push_back(l.size());
 			else
 			{
 				if(s[depth] != (intmax_t)l.size())
-					throw AtError("Un-uniform shape in initalizer.");
+					throw AtError("Un-uniform shape in initalizer. Expecting size of "
+						+ std::to_string(s[depth]) + ", but get " + std::to_string(l.size()));
 			}
 			for(auto&& e : l)
 				shapeFromInitalizerInternal(e, s, depth+1);
@@ -377,7 +398,7 @@ protected:
 	template<typename T>
 	static void initlistToVector(T l, std::vector<float>& data)
 	{
-		if constexpr(is_specialization<T, std::initializer_list>::value)
+		if constexpr(!std::is_scalar<T>::value)
 		{
 			for(auto&& e : l)
 				initlistToVector(e, data);
