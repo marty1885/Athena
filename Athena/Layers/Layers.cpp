@@ -28,8 +28,8 @@ Shape FullyConnectedLayer::outputShape(const Shape& s)
 
 void FullyConnectedLayer::build()
 {
-	weights_.push_back(At::rand(-1,1, {inputSize_, outputSize_}, *backend()));
-	weights_.push_back(At::rand(-1,1, {outputSize_}, *backend()));
+	weights_.push_back(weightInitalizer_->create({inputSize_, outputSize_}, inputSize_, outputSize_, backend()));
+	weights_.push_back(At::zeros({outputSize_}, *backend()));
 
 	forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
 	backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
@@ -160,8 +160,11 @@ void Conv2DLayer::build()
 {
 	BoxedValues config;
 	intmax_t inputChannels = inputChannels_;
-	weights_.push_back(At::rand(-1, 1, {outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}, *backend()));
-	weights_.push_back(At::rand(-1, 1, {outputChannels_}, *backend()));
+	//TODO: Check this is a good idea
+	Tensor kernel = weightInitalizer_->create({outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}
+		, windowSize_[0]*windowSize_[1], 1, backend());
+	weights_.push_back(kernel);
+	weights_.push_back(At::zeros({outputChannels_}, *backend()));
 	config.set<Shape>("kernelShape", weights_[0].shape());
 	config.set<Shape>("stride", Shape({strides_[0], strides_[1]}));
 

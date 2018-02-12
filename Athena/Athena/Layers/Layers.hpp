@@ -6,8 +6,27 @@
 #include <Athena/Tensor.hpp>
 #include <Athena/Utils/Shape.hpp>
 
+#include <memory>
+
+#include <cmath>
+
 namespace At
 {
+
+class WeightInitalizer
+{
+public:
+	virtual Tensor create(const Shape& shape , intmax_t fanIn, intmax_t fanOut, Backend* backend) const = 0;
+};
+
+class Xavier : public WeightInitalizer
+{
+public:
+	virtual Tensor create(const Shape& shape , intmax_t fanIn, intmax_t fanOut, Backend* backend) const override
+	{
+		return normal(0, 1, shape, *backend) / std::sqrt((float)fanIn);
+	}
+};
 
 class Layer
 {
@@ -16,12 +35,13 @@ public:
 	{
 	}
 
-	Layer()
+	Layer():
+		weightInitalizer_(std::make_shared<Xavier>())
 	{
 	}
 
 	Layer(Backend* backend=nullptr, bool trainable=false):
-		backend_(backend), trainable_(trainable)
+		weightInitalizer_(std::make_shared<Xavier>()), backend_(backend), trainable_(trainable)
 	{
 	}
 
@@ -103,6 +123,7 @@ protected:
 	std::vector<Tensor> weights_;
 	std::string type_;
 	std::string name_;
+	std::shared_ptr<WeightInitalizer> weightInitalizer_;
 	Backend* backend_ = nullptr;
 	bool trainable_ = false;
 };
