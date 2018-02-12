@@ -158,4 +158,16 @@ protected:
 	Backend* backend_;
 };
 
+template<typename ActivationType>
+inline SequentialNetwork makeMLP(std::vector<intmax_t> layerSize, Backend& backend)
+{
+	SequentialNetwork net(backend);
+	if(layerSize.size() < 2)
+		throw AtError("A MLP must have at least 2 layers, got " + std::to_string(layerSize.size()));
+	for(size_t i=1;i<layerSize.size();i++)
+		net << FullyConnectedLayer(layerSize[i-1], layerSize[i]) << ActivationType();
+	net.compile();
+	return net;
+}
+
 }
