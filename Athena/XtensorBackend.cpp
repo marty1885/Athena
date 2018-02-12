@@ -186,6 +186,11 @@ public:
 		return new XtensorTensorImpl(std::move(xt::concatenate(xtuple(arr_, impl->get()), axis)), (XtensorBackend*)backend());
 	}
 
+	virtual TensorImpl* exp() const override
+	{
+		return new XtensorTensorImpl(std::move(xt::exp(arr_)), (XtensorBackend*)backend());
+	}
+
 	virtual float* hostPtr() override
 	{
 		return &arr_[0];

@@ -39,6 +39,7 @@ public:
 	virtual TensorImpl* abs() const = 0;
 	virtual TensorImpl* stack(const TensorImpl* other, int axis) const = 0;
 	virtual TensorImpl* concatenate(const TensorImpl* other, int axis) const = 0;
+	virtual TensorImpl* exp() const = 0;
 
 	virtual float* hostPtr() = 0;
 	virtual const float* hostPtr() const = 0;

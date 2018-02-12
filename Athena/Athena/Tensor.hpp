@@ -224,6 +224,11 @@ public:
 		return pimpl_->concatenate(other.pimpl(), axis);
 	}
 
+	Tensor exp() const
+	{
+		return pimpl_->exp();
+	}
+
 	size_t size() const
 	{
 		return pimpl_->size();
@@ -694,6 +699,11 @@ inline Tensor operator/(float amp, const Tensor& t)
 	Tensor res(t.clone());
 	res.mul(amp);
 	return res;
+}
+
+inline Tensor exp(const Tensor& t)
+{
+	return t.exp();
 }
 
 
