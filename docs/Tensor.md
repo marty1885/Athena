@@ -1,5 +1,31 @@
 Tensors in Athena are modeled after numpy's `ndarray`.
 
+## Initializing a Tensor
+A Tensor can be initalized from (nested) initalizer_list. Like so:
+```C++
+At::Tensor t = {{1,2,3},{1,2,3}};
+```
+
+Be aware that all initalizer_list in the same axis must have the same amount of elements. Otherwire an exceptions will be thrown.<br>
+For example. This won't work.
+
+```C++
+//Throws an error
+At::Tensor t = {{1,2,3},{1,2}};;//Missing one value in the second vector
+```
+
+Also be aware that trying to initalize with the last axis having only 1 element will cause ambiguous constructor call. In that case, initalize the tensor with a valid method then reshape it.<br>
+Ex:
+
+```C++
+//This won't compile
+At::Tensor t = {{0},{1},{1},{0}};
+
+//Do this
+At::Tensor t = {{0,1,1,0}};
+t = t.reshape({4,1});
+```
+
 ## Getting the shape/volume of a Tensor
 Getting the shape of a tensor can be done by calling the shape() method. Which when called. Will return a `Shape` variable (`vector<intmax_t>` with extra fratures). The volume of a tensor can be calculated by calling volume().
 ```C++
@@ -18,7 +44,7 @@ std::cout << tensor << std::endl;
 std::string = At::to_string(tensor);
 ```
 
-## reshaping a Tensor
+## Reshaping a Tensor
 Reshaping works the same way aas it works in numpy. The data it self isn't cahnged but the shape is.<br>
 Tensor reshaping in Athena also supports solving a missing dimention. <br>
 For example:<br>
@@ -38,7 +64,7 @@ std::vector<std::vector<float>> data = {{0,1,2}, {3,4,5}};
 At::Tensor t = data;
 ```
 
-Be aware that all vectors in the same axis must have the same amount of elements. Otherwire an exceptions will be thrown.<br>
+Be aware like the case of initalizer_list, all vectors in the same axis must have the same amount of elements. Otherwire an exceptions will be thrown.<br>
 For example. This won't work.
 
 ```C++
