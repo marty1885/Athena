@@ -207,7 +207,11 @@ public:
 		if(s.contains(Shape::None))
 			t.resize(solveUnknownDim(shape(), s));
 		else
+		{
+			if(s.volume() != volume())
+				throw AtError("Cannot reshape from " + to_string(shape()) + " to " + to_string(s));
 			t.resize(s);
+		}
 		return t;
 	}
 
@@ -216,7 +220,11 @@ public:
 		if(s.contains(Shape::None))
 			pimpl_->resize(solveUnknownDim(shape(), s));
 		else
+		{
+			if(s.volume() != volume())
+				throw AtError("Cannot resize from " + to_string(shape()) + " to " + to_string(s));
 			pimpl_->resize(s);
+		}
 	}
 
 	Tensor concatenate(const Tensor& other, intmax_t axis) const
@@ -361,6 +369,9 @@ protected:
 		if(unknownCount == 1)
 		{
 			Shape res = s;
+			if(in.volume()%volume != 0)
+				throw AtError("Cannot solve unknow dimension for " + std::to_string(in.volume()) +" elements"
+					+ " with shape " + to_string(s) + ". Cannot divide.");
 			res[index] = in.volume()/volume;
 			return res;
 		}
