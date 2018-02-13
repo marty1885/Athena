@@ -4,6 +4,7 @@
 #include <Athena/Utils/Error.hpp>
 
 #include <cstdint>
+#include <thread>
 
 using namespace At;
 
@@ -25,9 +26,13 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 	if(status != nnp_status_success)
 		throw AtError("Failed to initialize NNPACK.");
 
-	numThreads_ =  threads;
-	if(threads > 1)
-		threadpool_ = pthreadpool_create(threads);
+	intmax_t numThreads = threads;
+	if(numThreads == -1)//Use all core
+		numThreads = (intmax_t)std::thread::hardware_concurrency();
+
+	if(numThreads > 1)
+		threadpool_ = pthreadpool_create(numThreads);
+	numThreads_ =  numThreads;
 
 	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
 	[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor
