@@ -60,8 +60,6 @@ public:
 
 		auto inputShape = input.shape();
 		auto outputShape = desireOutput.shape();
-		inputShape[0] = batchSize;
-		outputShape[0] = batchSize;
 		std::vector<Tensor> layerOutputs(layers_.size()+1);
 
 		for(size_t i=0;i<epoch;i++)
@@ -72,6 +70,9 @@ public:
 				intmax_t sliceSize = std::min((intmax_t)batchSize, (intmax_t)(datasetSize-j));
 				Tensor x = input.slice({(intmax_t)j}, {sliceSize});
 				Tensor y = desireOutput.slice({(intmax_t)j} ,{sliceSize});
+
+				inputShape[0] = sliceSize;
+				outputShape[0] = sliceSize;
 
 				x.resize(inputShape);
 				y.resize(outputShape);
@@ -106,7 +107,7 @@ public:
 				}
 				float batchLoss = l.host()[0];
 				onBatchEnumerate(batchLoss);
-				epochLoss += batchLoss*(float)(batchSize)/datasetSize;
+				epochLoss += batchLoss*((float)(sliceSize)/datasetSize);
 			}
 			onEpochEnumerate(epochLoss);
 
