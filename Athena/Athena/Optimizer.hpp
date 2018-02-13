@@ -133,4 +133,33 @@ protected:
 	static const constexpr float epsilon_ = 1e-8f;
 };
 
+class AdamOptimizer : public StatefulOptimizer<2>
+{
+public:
+	AdamOptimizer() : alpha_(0.001f), b1_(0.9), b2_(0.999)
+		, b1T_(0.9), b2T_(0.999) 
+	{
+	}
+
+	virtual void update(Tensor& weight, const Tensor& grad) override
+	{
+		auto& mt = get<0>(weight);
+		auto& vt = get<1>(weight);
+
+		mt = b1_*mt + (1.f-b1_)*grad;
+		vt = b2_*vt + (1.f-b2_)*grad*grad;
+
+		weight -= alpha_*(mt/(1.f - b1T_) /
+			sqrt(vt/(1.f - b2T_)) + epsilon_);
+	}
+
+	float alpha_;
+	float b1_;
+	float b2_;
+	float b1T_;
+	float b2T_;
+protected:
+	static const constexpr float epsilon_ = 1e-8f;	
+};
+
 }
