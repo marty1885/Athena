@@ -229,6 +229,11 @@ public:
 		return pimpl_->exp();
 	}
 
+	Tensor log() const
+	{
+		return pimpl_->log();
+	}
+
 	size_t size() const
 	{
 		return pimpl_->size();
@@ -706,5 +711,9 @@ inline Tensor exp(const Tensor& t)
 	return t.exp();
 }
 
+inline Tensor log(const Tensor& t)
+{
+	return t.log();
+}
 
 }
