@@ -1,6 +1,7 @@
 #include <Athena/ArrayFireBackend.hpp>
 #include <Athena/Utils/Shape.hpp>
 #include <Athena/TensorImpl.hpp>
+#include <Athena/Tensor.hpp>
 
 #include <array>
 #include <random>
@@ -241,10 +242,52 @@ protected:
 	Shape arrShape_;
 };
 
+inline af::array& get(Tensor& t)
+{
+	return ((AFTensorImpl*)t.pimpl())->get();
+}
+
+inline const af::array& get(const Tensor& t)
+{
+	return ((const AFTensorImpl*)t.pimpl())->get();
+}
+
 ArrayFireBackend::ArrayFireBackend()
 {
 	//Enable brodcasting
 	af::gforSet(true);
+
+	addAlgorithm<SigmoidForward>("sigmoidForward",
+		[this](const Tensor& x)->Tensor
+		{
+			const auto& t = get(x);
+			return createTensor(1/(1+af::exp(-t)), x.shape());
+		});
+
+	addAlgorithm<SigmoidBackward>("sigmoidBackward",
+		[this](const Tensor& a, const Tensor& b)->Tensor
+		{
+			const auto& dy = get(a);
+			const auto& y = get(b);
+			return createTensor(dy*(y*(1-y)), b.shape());
+		});
+
+	addAlgorithm<TanhForward>("tanhForward",
+		[this](const Tensor& x)->Tensor
+		{
+			const auto& t = get(x);
+			auto res = af::tanh(t);
+			return createTensor(std::move(res), x.shape());
+		});
+
+	addAlgorithm<TanhBackward>("tanhBackward",
+		[this](const Tensor& a, const Tensor& b)->Tensor
+		{
+			const auto& dy = get(a);
+			const auto& y = get(b);
+			auto res = dy * (1 - af::pow(af::tanh(y), 2));
+			return createTensor(std::move(res), b.shape());
+		});
 }
 
 TensorImpl* ArrayFireBackend::createTensor(const Shape& dims)
