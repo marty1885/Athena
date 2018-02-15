@@ -122,6 +122,11 @@ public:
 		arr_ = arr_ / impl->get();
 	}
 
+	virtual void reciprocate() override
+	{
+		arr_ = 1.f/arr_;
+	}
+
 	virtual TensorImpl* clone() const override
 	{
 		return new AFTensorImpl(arr_, arrShape_, (ArrayFireBackend*) backend());
@@ -144,7 +149,8 @@ public:
 	virtual TensorImpl* dot(const TensorImpl* other) const override
 	{
 		const auto& o = ((AFTensorImpl*)other)->get();
-		af::array res = af::matmulTT(arr_, o);
+		//TODO: Find a way to not need this transpose
+		af::array res = af::transpose(af::matmulTT(arr_, o));
 		int size = std::max(arr_.numdims(), o.numdims());
 		if(size != 2)
 			throw AtError("ArrayFire backend can only support 2D dot product now");
@@ -240,6 +246,12 @@ ArrayFireBackend::ArrayFireBackend()
 	//Enable brodcasting
 	af::gforSet(true);
 }
+
+TensorImpl* ArrayFireBackend::createTensor(const Shape& dims)
+{
+	return this->zeros(dims);
+}
+
 
 TensorImpl* ArrayFireBackend::createTensor(const af::array& arr, const Shape& s)
 {

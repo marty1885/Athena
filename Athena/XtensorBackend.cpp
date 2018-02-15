@@ -102,6 +102,11 @@ public:
 		arr_ = arr_ / impl->get();
 	}
 
+	virtual void reciprocate() override
+	{
+		arr_ = 1.f/arr_;
+	}
+
 	virtual TensorImpl* clone() const override
 	{
 		return new XtensorTensorImpl(arr_, (XtensorBackend*) backend());

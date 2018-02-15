@@ -40,13 +40,18 @@ Tensor FullyConnectedLayer::forward(const Tensor& x)
 	if(x.dimension() != 2)
 		throw AtError("Expecting a 2D tensor for a Fully Connected layer. But get " + std::to_string(x.dimension())
 		+ "D. shape = " + to_string(x.shape()));
+	if(!forwardAlgorithm_)
+		return x.dot(weights_[0])+weights_[1];
 	return forwardAlgorithm_(x, weights_[0], weights_[1]);
 }
 
 void FullyConnectedLayer::backword(const Tensor& x, const Tensor& y,
 	Tensor& dx, const Tensor& dy)
 {
-	dx = backwardAlgorithm_(dy, weights_[0]);
+	if(backwardAlgorithm_)
+		dx = backwardAlgorithm_(dy, weights_[0]);
+	else
+		dx = dy.dot(transpose(weights_[0]));
 
 	dE = dy;
 	dW = dot(x.transpose(), dy);
@@ -71,13 +76,18 @@ void SigmoidLayer::build()
 
 Tensor SigmoidLayer::forward(const Tensor& x)
 {
-	return forwardAlgorithm_(x);
+	if(forwardAlgorithm_)
+		return forwardAlgorithm_(x);
+	return 1/(1+exp(-x));
 }
 
 void SigmoidLayer::backword(const Tensor& x, const Tensor& y,
 	Tensor& dx, const Tensor& dy)
 {
-	dx = backwardAlgorithm_(dy, y);
+	if(backwardAlgorithm_)
+		dx = backwardAlgorithm_(dy, y);
+	else
+		dx = dy*(y*(1-y));
 }
 
 TanhLayer::TanhLayer(Backend* backend) : ActivationLayer(backend)
