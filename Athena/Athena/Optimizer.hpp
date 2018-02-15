@@ -133,6 +133,7 @@ protected:
 	static const constexpr float epsilon_ = 1e-8f;
 };
 
+//FIXME: Seems to be faulty, gives nan sometimes
 class AdamOptimizer : public StatefulOptimizer<2>
 {
 public:

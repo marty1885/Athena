@@ -281,10 +281,10 @@ public:
 		return shape().volume();
 	}
 
-	//TODO: Implement this
-	// Tensor transfer(Backend* otherBackend)
-	// {
-	// }
+	Tensor withBackend(Backend& other)
+	{
+		return other.createTensor(host(), shape());//Optimize this
+	}
 
 	float* hostPtr()
 	{
