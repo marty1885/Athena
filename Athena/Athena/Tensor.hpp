@@ -141,6 +141,11 @@ public:
 		pimpl_->mul(val);
 	}
 
+	inline void reciprocate()
+	{
+		pimpl_->reciprocate();
+	}
+
 	Tensor slice(const Shape& begin, const Shape& size={1}) const
 	{
 		return pimpl_->slice(begin, size);
@@ -592,6 +597,18 @@ inline std::string to_string(const Tensor& t)
 	return ss.str();
 }
 
+inline Tensor operator*(float val, const Tensor& t)
+{
+	Tensor res(t.clone());
+	res.mul(val);
+	return res;
+}
+
+inline Tensor operator-(const Tensor& t)
+{
+	return -1.f*t;
+}
+
 inline Tensor operator+(const Tensor& t, const Tensor& other)
 {
 	//assert(t.backend() == t.backend());
@@ -698,28 +715,18 @@ inline Tensor operator+(float val, const Tensor& t)
 
 inline Tensor operator-(float val, const Tensor& t)
 {
-	Tensor res(t.clone());
-	res.add(-val);
-	return res;
-}
-
-inline Tensor operator*(float val, const Tensor& t)
-{
-	Tensor res(t.clone());
-	res.mul(val);
+	Tensor res = -t;
+	res.add(val);
 	return res;
 }
 
 inline Tensor operator/(float amp, const Tensor& t)
 {
 	Tensor res(t.clone());
-	res.mul(amp);
+	res.reciprocate();
+	if(amp != 1.f)
+		res.mul(amp);
 	return res;
-}
-
-inline Tensor operator-(const Tensor& t)
-{
-	return -1.f*t;
 }
 
 inline Tensor exp(const Tensor& t)
