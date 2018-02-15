@@ -717,6 +717,11 @@ inline Tensor operator/(float amp, const Tensor& t)
 	return res;
 }
 
+inline Tensor operator-(const Tensor& t)
+{
+	return -1.f*t;
+}
+
 inline Tensor exp(const Tensor& t)
 {
 	return t.exp();
