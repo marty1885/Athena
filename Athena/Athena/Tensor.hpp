@@ -375,7 +375,7 @@ protected:
 			res[index] = in.volume()/volume;
 			return res;
 		}
-
+		assert(unknownCount != 0);//Should not call this function with no unknowns
 		throw AtError("Shape" + to_string(s) + " has more then 1 unknown dimentions. Cannot solve for unknown");
 	}
 
