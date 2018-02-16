@@ -400,10 +400,12 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<ReluBackward>("reluBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
+			const auto& dy = get(a);
 			const auto& y = get(b);
-			xt::xarray<float> res = 1.f*(y>0);
+			xt::xarray<float> res = dy*(y>0);
 			return createTensor(std::move(res));
 		});
+
 	addAlgorithm<Conv2DForward>("conv2DForward",
 		[this](const Tensor& x, const Tensor& weights, const Tensor& bias, std::array<intmax_t, 2> strides)->Tensor
 		{
