@@ -119,8 +119,8 @@ ReluLayer::ReluLayer(Backend* backend) : ActivationLayer(backend)
 
 void ReluLayer::build()
 {
-	forwardAlgorithm_ = backend()->getAlgorithm<TanhForward>("reluForward");
-	backwardAlgorithm_ = backend()->getAlgorithm<TanhBackward>("reluBackward");
+	forwardAlgorithm_ = backend()->getAlgorithm<ReluForward>("reluForward");
+	backwardAlgorithm_ = backend()->getAlgorithm<ReluBackward>("reluBackward");
 }
 
 Tensor ReluLayer::forward(const Tensor& x)
@@ -186,4 +186,27 @@ void Conv2DLayer::update(Optimizer* optimizer)
 {
 	optimizer->update(weights_[0], dW_);
 	optimizer->update(weights_[1], db_);
+}
+
+LeakyReluLayer::LeakyReluLayer(float alpha, Backend* backend)
+	: ActivationLayer(backend), alpha_(alpha)
+{
+	setType("leakyRelu");
+}
+
+void LeakyReluLayer::build()
+{
+	forwardAlgorithm_ = backend()->getAlgorithm<LeakyReluForward>("leakyReluForward");
+	backwardAlgorithm_ = backend()->getAlgorithm<LeakyReluBackward>("leakyReluBackward");
+}
+
+Tensor LeakyReluLayer::forward(const Tensor& x)
+{
+	return forwardAlgorithm_(x, alpha_);
+}
+
+void LeakyReluLayer::backword(const Tensor& x, const Tensor& y,
+	Tensor& dx, const Tensor& dy)
+{
+	dx = backwardAlgorithm_(dy, y, alpha_);
 }

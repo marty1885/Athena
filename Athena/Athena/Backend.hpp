@@ -29,6 +29,8 @@ using ReluForward = FuncType<Tensor(const Tensor&)>;
 using ReluBackward = FuncType<Tensor(const Tensor&, const Tensor&)>;
 using Conv2DForward = FuncType<Tensor(const Tensor&, const Tensor&, const Tensor&, std::array<intmax_t, 2>)>;
 using Conv2DBackward = FuncType<Tensor(const Tensor& , const Tensor& , Tensor& , Tensor& , const Tensor& ,std::array<intmax_t, 2>)>;
+using LeakyReluForward = FuncType<Tensor(const Tensor& x, float alpha)>;
+using LeakyReluBackward = FuncType<Tensor(const Tensor& a, const Tensor& b, float alpha)>;
 
 struct BoxedValueBase
 {

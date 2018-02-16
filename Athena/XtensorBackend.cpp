@@ -5,6 +5,7 @@
 #include <xtensor/xarray.hpp>
 #include <xtensor/xrandom.hpp>
 #include <xtensor/xio.hpp>
+#include <xtensor/xvectorize.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xstrided_view.hpp>
 
@@ -405,7 +406,26 @@ XtensorBackend::XtensorBackend()
 			xt::xarray<float> res = dy*(y>0);
 			return createTensor(std::move(res));
 		});
+	
+	addAlgorithm<LeakyReluForward>("leakyReluForward",
+		[this](const Tensor& x, float alpha)->Tensor
+		{
+			const auto& t = get(x);
+			auto f = xt::vectorize([&](float v){return (v>0?v:v*alpha);});
+			xt::xarray<float> res = f(t);
+			return createTensor(std::move(res));
+		});
 
+	addAlgorithm<LeakyReluBackward>("leakyReluBackward",
+		[this](const Tensor& a, const Tensor& b, float alpha)->Tensor
+		{
+			const auto& dy = get(a);
+			const auto& y = get(b);
+			auto f = xt::vectorize([&](float y, float dy){return dy*(y>0?1.f:alpha);});
+			xt::xarray<float> res = f(y, dy);
+			return createTensor(std::move(res));
+		});
+	
 	addAlgorithm<Conv2DForward>("conv2DForward",
 		[this](const Tensor& x, const Tensor& weights, const Tensor& bias, std::array<intmax_t, 2> strides)->Tensor
 		{

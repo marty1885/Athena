@@ -302,6 +302,21 @@ protected:
 	Tensor db_;
 };
 
+class LeakyReluLayer : public ActivationLayer
+{
+public:
+	LeakyReluLayer(float alpha = 0.1f, Backend* backend = nullptr);
+	virtual void build() override;
+	virtual Tensor forward(const Tensor& x) override;
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override;
+
+protected:
+	delegate<LeakyReluForward> forwardAlgorithm_;
+	delegate<LeakyReluBackward> backwardAlgorithm_;
+	float alpha_;
+};
+
 }
 
 
