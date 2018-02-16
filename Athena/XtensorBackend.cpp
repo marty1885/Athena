@@ -511,7 +511,7 @@ XtensorBackend::XtensorBackend()
 		});
 
 
-	setType("Xtensor");
+	setType("xtensor");
 }
 
 

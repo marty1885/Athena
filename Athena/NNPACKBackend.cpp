@@ -250,4 +250,5 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			stride[0] == 1 && stride[1] == 1);
 	});
 
+	setType("nnpack");
 }
