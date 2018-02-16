@@ -262,6 +262,28 @@ ArrayFireBackend::ArrayFireBackend()
 	//Enable brodcasting
 	af::gforSet(true);
 
+	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
+	[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor
+		{
+			const auto& i = get(in);
+			const auto& w = get(weight);
+			const auto& b = get(bias);
+			af::array res = af::transpose(af::matmulTT(i, w)) + b;
+			assert(res.numdims() == 1 || res.numdims() == 2);
+			return createTensor(std::move(res), shapeFromDim4(res.dims(), 2));
+		});
+
+	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
+		[this](const Tensor& dx, const Tensor& weight)->Tensor
+		{
+			const auto& i = get(dx);
+			const auto& w = get(weight);
+			//Not the most effective way
+			af::array res = af::transpose(af::matmulTT(i, af::transpose(w)));
+			return createTensor(
+				std::move(res), shapeFromDim4(res.dims(), 2));
+		});
+
 	addAlgorithm<SigmoidForward>("sigmoidForward",
 		[this](const Tensor& x)->Tensor
 		{
@@ -332,11 +354,9 @@ TensorImpl* ArrayFireBackend::ones(const Shape& shape)
 TensorImpl* ArrayFireBackend::rand(float lEdge, float rEdge, const Shape& shape)
 {
 	auto dims = shapeToDim4(shape);
-	af::array arr = af::randu(dims);
-	//af::randu genrates float between 0 and 1, map it to the requested range
-
 	float span = rEdge - lEdge;
-	arr = (arr*span)-lEdge;
+	//af::randu genrates float between 0 and 1, map it to the requested range
+	af::array arr = arr = (af::randu(dims)*span)-lEdge;
 	return createTensor(arr, shape);
 }
 
