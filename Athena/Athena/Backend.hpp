@@ -115,7 +115,7 @@ private:
 template <typename T>
 iterate_backwards<T> backwards(const T &t)
 {
-	return iterate_backwards(t);
+	return iterate_backwards<T>(t);
 }
 
 template<typename FT>
