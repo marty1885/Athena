@@ -172,7 +172,7 @@ public:
 
 	virtual TensorImpl* transpose(const std::vector<intmax_t>& axis) const override
 	{
-		throw AtError("Fuck off");
+		throw AtError("Not supported now");
 	}
 
 	virtual TensorImpl* sum(intmax_t axis) const override
@@ -183,7 +183,7 @@ public:
 
 	virtual TensorImpl* sum(const std::vector<intmax_t>& axis) const override
 	{
-		throw AtError("Fuck off");
+		throw AtError("Not supported now");
 	}
 
 	virtual TensorImpl* pow(float val) const override
@@ -227,6 +227,7 @@ public:
 		return new AFTensorImpl(std::move(af::log(arr_)), arrShape_, (ArrayFireBackend*)backend());
 	}
 
+	//Direct data access is not avliable for ArrayFire
 	virtual float* hostPtr() override
 	{
 		return nullptr;
