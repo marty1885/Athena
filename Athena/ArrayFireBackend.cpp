@@ -48,14 +48,16 @@ public:
 	{
 	}
 
-	AFTensorImpl(const af::array& arr, const Shape& s, ArrayFireBackend* backend) : TensorImpl(backend)
+	//AFTensorImpl owns the array, pass a copy if don't want the array be modified
+	//ArrayFire's array are referenced by default
+	AFTensorImpl(af::array arr, const Shape& s, ArrayFireBackend* backend) : TensorImpl(backend)
 	{
 		if(s.size() > 4)
 			throw AtError("ArrayFire backend onlt supports upto 4D Tensor, got " + std::to_string(s.size()) + "D.");
 		arrShape_ = s;
 		if(arr.type() != f32)
 			throw AtError("ArrayFire backend only works with floats. Please convert into floats.");
-		arr_ = arr.copy();
+		arr_ = arr;
 	}
 
 	const af::array& get() const
@@ -130,7 +132,7 @@ public:
 
 	virtual TensorImpl* clone() const override
 	{
-		return new AFTensorImpl(arr_, arrShape_, (ArrayFireBackend*) backend());
+		return new AFTensorImpl(arr_.copy(), arrShape_, (ArrayFireBackend*) backend());
 	}
 
 	virtual void resize(const Shape& wantedShape) override
