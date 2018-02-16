@@ -254,6 +254,8 @@ inline const af::array& get(const Tensor& t)
 
 ArrayFireBackend::ArrayFireBackend()
 {
+	setType("arrayfire");
+
 	//Enable brodcasting
 	af::gforSet(true);
 
