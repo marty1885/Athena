@@ -363,7 +363,7 @@ TensorImpl* ArrayFireBackend::rand(float lEdge, float rEdge, const Shape& shape)
 TensorImpl* ArrayFireBackend::normal(float mean, float stddev, const Shape& shape)
 {
 	//Should use arrayfire's af::randn all the way
-	if(mean == 0.f && stddev == 0)
+	if(mean == 0.f && stddev == 1)
 	{
 		auto dims = shapeToDim4(shape);
 		return createTensor(af::randn(dims), shape);
