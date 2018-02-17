@@ -20,6 +20,40 @@ intmax_t NNPackBackend::threads() const
 	return numThreads_;
 }
 
+inline Tensor reluWithNegSlope(const Tensor& x, float negSlope, pthreadpool_t threadpool)
+{
+	const float* in = x.hostPtr();
+	int batchSize = x.shape()[0];
+	int channelNum = x.shape()[1];
+	Tensor res = x.backend()->createTensor(x.shape());
+	float* out = res.hostPtr();
+	auto status = nnp_relu_output(
+		batchSize, channelNum, 
+		in, out,
+		negSlope, threadpool);
+	if(status != nnp_status_success)
+		throw AtError("nnp_relu_output execution failed.");
+	return res;
+}
+
+inline Tensor reluGradientWithNegSlope(const Tensor& a, const Tensor& b, float negSlope, pthreadpool_t threadpool)
+{
+	Tensor res = a.backend()->createTensor(a.shape());
+	int batchSize = b.shape()[0];
+	int channelNum = b.shape()[1];
+	float* out = res.hostPtr();
+	const float* grad = a.hostPtr();
+	const float* originalOut = b.hostPtr();
+	auto status = nnp_relu_input_gradient(
+		batchSize, channelNum, 
+		grad, originalOut, out
+		, negSlope, threadpool
+	);
+	if(status != nnp_status_success)
+		throw AtError("nnp_relu_input_gradient execution failed.");
+	return res;
+}
+
 NNPackBackend::NNPackBackend(intmax_t threads)
 {
 	auto status = nnp_initialize();
@@ -253,72 +287,24 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 	addAlgorithm<ReluForward>("reluForward",
 		[this](const Tensor& x)->Tensor
 		{
-			const float* in = x.hostPtr();
-			int batchSize = x.shape()[0];
-			int channelNum = x.shape()[1];
-			Tensor res = x.backend()->createTensor(x.shape());
-			float* out = res.hostPtr();
-			auto status = nnp_relu_output(
-				batchSize, channelNum, 
-				in, out,
-				0.0f, threadpool_);
-			if(status != nnp_status_success)
-				throw AtError("nnp_relu_output execution failed.");
-			return res;
+			return reluWithNegSlope(x, 0.0, threadpool_);
 		});
 
 	addAlgorithm<ReluBackward>("reluBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const float* dy = a.hostPtr();
-			const float* y = b.hostPtr();
-			Tensor res = a.backend()->createTensor(a.shape());
-			int batchSize = b.shape()[0];
-			int channelNum = b.shape()[1];
-			float* out = res.hostPtr();
-			const float* grad = a.hostPtr();
-			const float* originalOut = b.hostPtr();
-			auto status = nnp_relu_input_gradient(
-				batchSize, channelNum, 
-				grad, originalOut, out
-				, 0.0f, threadpool_
-			);
-			return res;
+			return reluGradientWithNegSlope(a, b, 0.0f, threadpool_);
 		});
 	
 	addAlgorithm<LeakyReluForward>("leakyReluForward",
 		[this](const Tensor& x, float alpha)->Tensor
 		{
-			const float* in = x.hostPtr();
-			int batchSize = x.shape()[0];
-			int channelNum = x.shape()[1];
-			Tensor res = x.backend()->createTensor(x.shape());
-			float* out = res.hostPtr();
-			auto status = nnp_relu_output(
-				batchSize, channelNum, 
-				in, out,
-				alpha, threadpool_);
-			if(status != nnp_status_success)
-				throw AtError("nnp_relu_output execution failed.");
-			return res;
+			return reluWithNegSlope(x, alpha, threadpool_);
 		});
 	addAlgorithm<LeakyReluBackward>("leakyReluBackward",
 		[this](const Tensor& a, const Tensor& b, float alpha)->Tensor
 		{
-			const float* dy = a.hostPtr();
-			const float* y = b.hostPtr();
-			Tensor res = a.backend()->createTensor(a.shape());
-			int batchSize = b.shape()[0];
-			int channelNum = b.shape()[1];
-			float* out = res.hostPtr();
-			const float* grad = a.hostPtr();
-			const float* originalOut = b.hostPtr();
-			auto status = nnp_relu_input_gradient(
-				batchSize, channelNum, 
-				grad, originalOut, out
-				, alpha, threadpool_
-			);
-			return res;
+			return reluGradientWithNegSlope(a, b, alpha, threadpool_);
 		});
 
 	setType("nnpack");
