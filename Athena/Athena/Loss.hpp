@@ -64,6 +64,11 @@ public:
 			-t*log(y) - (1.f-t)*log(1-y)
 		);
 	}
+
+	virtual Tensor df(const Tensor& y, const Tensor& t) override
+	{
+		return (y-t)/(y*(1-t));
+	}
 };
 
 }
