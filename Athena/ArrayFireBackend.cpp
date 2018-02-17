@@ -279,7 +279,7 @@ ArrayFireBackend::ArrayFireBackend()
 			const auto& i = get(dx);
 			const auto& w = get(weight);
 			//Not the most effective way
-			af::array res = af::transpose(af::matmulTT(i, af::transpose(w)));
+			af::array res = af::transpose(af::matmulTN(i, w));
 			return createTensor(
 				std::move(res), shapeFromDim4(res.dims(), 2));
 		});
