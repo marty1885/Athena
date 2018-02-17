@@ -33,6 +33,7 @@ public:
 
 using L2Loss = MSELoss;
 
+//Implement the df for these loss
 class AbsoluteLoss : public LossFunction
 {
 public:

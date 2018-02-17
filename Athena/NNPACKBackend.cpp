@@ -250,5 +250,76 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			stride[0] == 1 && stride[1] == 1);
 	});
 
+	addAlgorithm<ReluForward>("reluForward",
+		[this](const Tensor& x)->Tensor
+		{
+			const float* in = x.hostPtr();
+			int batchSize = x.shape()[0];
+			int channelNum = x.shape()[1];
+			Tensor res = x.backend()->createTensor(x.shape());
+			float* out = res.hostPtr();
+			auto status = nnp_relu_output(
+				batchSize, channelNum, 
+				in, out,
+				0.0f, threadpool_);
+			if(status != nnp_status_success)
+				throw AtError("nnp_relu_output execution failed.");
+			return res;
+		});
+
+	addAlgorithm<ReluBackward>("reluBackward",
+		[this](const Tensor& a, const Tensor& b)->Tensor
+		{
+			const float* dy = a.hostPtr();
+			const float* y = b.hostPtr();
+			Tensor res = a.backend()->createTensor(a.shape());
+			int batchSize = b.shape()[0];
+			int channelNum = b.shape()[1];
+			float* out = res.hostPtr();
+			const float* grad = a.hostPtr();
+			const float* originalOut = b.hostPtr();
+			auto status = nnp_relu_input_gradient(
+				batchSize, channelNum, 
+				grad, originalOut, out
+				, 0.0f, threadpool_
+			);
+			return res;
+		});
+	
+	addAlgorithm<LeakyReluForward>("leakyReluForward",
+		[this](const Tensor& x, float alpha)->Tensor
+		{
+			const float* in = x.hostPtr();
+			int batchSize = x.shape()[0];
+			int channelNum = x.shape()[1];
+			Tensor res = x.backend()->createTensor(x.shape());
+			float* out = res.hostPtr();
+			auto status = nnp_relu_output(
+				batchSize, channelNum, 
+				in, out,
+				alpha, threadpool_);
+			if(status != nnp_status_success)
+				throw AtError("nnp_relu_output execution failed.");
+			return res;
+		});
+	addAlgorithm<LeakyReluBackward>("leakyReluBackward",
+		[this](const Tensor& a, const Tensor& b, float alpha)->Tensor
+		{
+			const float* dy = a.hostPtr();
+			const float* y = b.hostPtr();
+			Tensor res = a.backend()->createTensor(a.shape());
+			int batchSize = b.shape()[0];
+			int channelNum = b.shape()[1];
+			float* out = res.hostPtr();
+			const float* grad = a.hostPtr();
+			const float* originalOut = b.hostPtr();
+			auto status = nnp_relu_input_gradient(
+				batchSize, channelNum, 
+				grad, originalOut, out
+				, alpha, threadpool_
+			);
+			return res;
+		});
+
 	setType("nnpack");
 }
