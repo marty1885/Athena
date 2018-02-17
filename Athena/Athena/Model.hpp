@@ -77,7 +77,8 @@ public:
 				x.resize(inputShape);
 				y.resize(outputShape);
 
-				layerOutputs[0] = x.clone();
+				//This variable should not be modified, no need to clone
+				layerOutputs[0] = x;
 
 				int index = 0;
 				for(auto& layer : layers_)
