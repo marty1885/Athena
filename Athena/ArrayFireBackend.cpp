@@ -356,7 +356,7 @@ TensorImpl* ArrayFireBackend::rand(float lEdge, float rEdge, const Shape& shape)
 	auto dims = shapeToDim4(shape);
 	float span = rEdge - lEdge;
 	//af::randu genrates float between 0 and 1, map it to the requested range
-	af::array arr = arr = (af::randu(dims)*span)-lEdge;
+	af::array arr = (af::randu(dims)*span)-lEdge;
 	return createTensor(arr, shape);
 }
 
