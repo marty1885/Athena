@@ -202,6 +202,36 @@ public:
 		return new XtensorTensorImpl(std::move(xt::log(arr_)), (XtensorBackend*)backend());
 	}
 
+	virtual TensorImpl* graterThan(float val) const override
+	{
+		return new XtensorTensorImpl(std::move(arr_ > val), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* lesserThan(float val) const override
+	{
+		return new XtensorTensorImpl(std::move(arr_ < val), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* greaterOrEqual(float val) const override
+	{
+		return new XtensorTensorImpl(std::move(arr_ >= val), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* lesserOrEqual(float val) const override
+
+	{
+		return new XtensorTensorImpl(std::move(arr_ <= val), (XtensorBackend*)backend());
+	}
+
+	virtual TensorImpl* equalTo(float val) const override
+	{
+		//xtensor does not have a equality operator as the time of implementing this
+		xt::xarray<float> arr = xt::zeros<float>(arr_.shape());
+		for(size_t i=0;i<arr.size();i++)
+			arr[i] = (arr_[i] == val ? 1 : 0);
+		return new XtensorTensorImpl(std::move(arr), (XtensorBackend*)backend());
+	}
+
 	virtual float* hostPtr() override
 	{
 		return &arr_[0];

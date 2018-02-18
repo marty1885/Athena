@@ -229,6 +229,32 @@ public:
 		return new AFTensorImpl(std::move(af::log(arr_)), arrShape_, (ArrayFireBackend*)backend());
 	}
 
+	virtual TensorImpl* graterThan(float val) const override
+	{
+		return new AFTensorImpl(std::move(arr_ > val), arrShape_, (ArrayFireBackend*)backend());
+	}
+
+	virtual TensorImpl* lesserThan(float val) const override
+	{
+		return new AFTensorImpl(std::move(arr_ < val), arrShape_, (ArrayFireBackend*)backend());
+	}
+
+	virtual TensorImpl* greaterOrEqual(float val) const override
+	{
+		return new AFTensorImpl(std::move(arr_ >= val), arrShape_, (ArrayFireBackend*)backend());
+	}
+
+	virtual TensorImpl* lesserOrEqual(float val) const override
+
+	{
+		return new AFTensorImpl(std::move(arr_ <= val), arrShape_, (ArrayFireBackend*)backend());
+	}
+
+	virtual TensorImpl* equalTo(float val) const override
+	{
+		return new AFTensorImpl(std::move(arr_ == val), arrShape_, (ArrayFireBackend*)backend());
+	}
+
 	//Direct data access is not avliable for ArrayFire
 	virtual float* hostPtr() override
 	{
