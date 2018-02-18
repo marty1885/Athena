@@ -10,6 +10,8 @@
 #include <xtensor/xstrided_view.hpp>
 
 #include <random>
+#include <chrono>
+
 #include <Athena/TensorImpl.hpp>
 #include <Athena/Tensor.hpp>
 
@@ -592,7 +594,8 @@ TensorImpl* XtensorBackend::normal(float mean, float stddev, const Shape& shape)
 {
 	//XXX: Xtensor does not support normal distrobution. Use C++'s normal distrobution
 	//until Xtensor has it.
-	std::minstd_rand eng; //Should be good enoguh for our purpose
+	auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+	static std::minstd_rand eng(seed); //Should be good enoguh for our purpose
 	std::normal_distribution<float> dist(mean, stddev);
 	std::vector<float> vec;
 

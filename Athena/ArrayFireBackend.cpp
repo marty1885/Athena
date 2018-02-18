@@ -268,6 +268,8 @@ public:
 
 protected:
 	af::array arr_;
+	//A seprate variable to track the shape of the array
+	//due to AF alwas have a 4D array and is not in C order
 	Shape arrShape_;
 };
 
