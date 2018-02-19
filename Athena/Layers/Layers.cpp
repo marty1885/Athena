@@ -206,11 +206,16 @@ void LeakyReluLayer::build()
 
 Tensor LeakyReluLayer::forward(const Tensor& x)
 {
-	return forwardAlgorithm_(x, alpha_);
+	if(forwardAlgorithm_)
+		return forwardAlgorithm_(x, alpha_);
+	return (x>0)*x + (x<0)*x*alpha_;
 }
 
 void LeakyReluLayer::backword(const Tensor& x, const Tensor& y,
 	Tensor& dx, const Tensor& dy)
 {
-	dx = backwardAlgorithm_(dy, y, alpha_);
+	if(backwardAlgorithm_)
+		dx = backwardAlgorithm_(dy, y, alpha_);
+	else
+		dx = dy*(y>0) + alpha_*dy*(y<0);
 }

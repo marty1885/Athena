@@ -347,6 +347,40 @@ ArrayFireBackend::ArrayFireBackend()
 			auto res = dy * (1 - af::pow(af::tanh(y), 2));
 			return createTensor(std::move(res), b.shape());
 		});
+	
+	addAlgorithm<ReluForward>("reluForward",
+		[this](const Tensor& x)->Tensor
+		{
+			const auto& t = get(x);
+			af::array res = (t>0)*t;
+			return createTensor(std::move(res), x.shape());
+		});
+	
+	addAlgorithm<ReluBackward>("reluBackward",
+		[this](const Tensor& a, const Tensor& b)->Tensor
+		{
+			const auto& dy = get(a);
+			const auto& y = get(b);
+			af::array res = dy*(y>0);
+			return createTensor(std::move(res), a.shape());
+		});
+	
+	addAlgorithm<LeakyReluForward>("leakyReluForward",
+		[this](const Tensor& x, float alpha)->Tensor
+		{
+			const auto& t = get(x);
+			af::array res = t*(t>0) + alpha*t*(t<0);
+			return createTensor(std::move(res), x.shape());
+		});
+
+	addAlgorithm<LeakyReluBackward>("leakyReluBackward",
+		[this](const Tensor& a, const Tensor& b, float alpha)->Tensor
+		{
+			const auto& dy = get(a);
+			const auto& y = get(b);
+			af::array res = dy*(y>0) + alpha*dy*(y<0);
+			return createTensor(std::move(res), a.shape());
+		});
 }
 
 TensorImpl* ArrayFireBackend::createTensor(const Shape& dims)
