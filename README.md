@@ -15,9 +15,11 @@
 `Athena` handles tensor like how a game engine handles shaders and meshes. The `Tensor` class does not creare nor operate a tensor itself. Instead it calls a `Backend` that does all the job. This design allows `Athena` to load backends at runtime and even utilize multiple backened at once.<br>
 Backends in `Athena` can do more than performing tensor operations. So called `Algoritms` can be inserted into a backend then quary at runtime to perforem specific tasks if the uderlying library has a way to do it faster then using tensor operations.
 
-Currently there are 2 backends avliable. `XtensorBackend` using the `xtensor` and `NNPackBackend` using `NNPACK`. XtensorBackend is aimed at providing full fledged tensor operators and useable algorithms. And the NNPackBackend provides fast algorithms for other backends if running on sutable machine.
+Currently there are 3 backends avliable. `XtensorBackend` using the `xtensor`, `NNPackBackend` using `NNPACK`, `ArrayFireBackend` using `ArrayFire`. XtensorBackend is aimed at providing full fledged tensor operators and useable algorithms. And the NNPackBackend provides fast algorithms for other backends if running on sutable machine.
 
-More backends built on faster libraries like `Eigen`, `MIOpen` and `ArrayFire` are planed.
+The ArrayFireBackend is capable of using the CPU the GPU to compute. But it have sevier limits. Like tensors created from ArrayFireBackend can only have at mose 4 dimentions. And the ArrayFireBackend suffers from performance and stablity issue caused by ArrayFire. This is under addressing now. Use it at your own risk.
+
+More backends built on faster libraries like `Eigen` and, `MIOpen` are planed.
 
 ## Examples
 
