@@ -232,6 +232,31 @@ public:
 		}
 	}
 
+	Tensor greaterThan(float val) const
+	{
+		return pimpl_->greaterThan(val);
+	}
+
+	Tensor lesserThan(float val) const
+	{
+		return pimpl_->lesserThan(val);
+	}
+
+	Tensor greaterOrEqual(float val) const
+	{
+		return pimpl_->greaterOrEqual(val);
+	}
+
+	Tensor lesserOrEqual(float val) const
+	{
+		return pimpl_->lesserOrEqual(val);
+	}
+
+	Tensor equalTo(float val) const
+	{
+		return pimpl_->equalTo(val);
+	}
+
 	Tensor concatenate(const Tensor& other, intmax_t axis) const
 	{
 		return pimpl_->concatenate(other.pimpl(), axis);
@@ -718,6 +743,31 @@ inline Tensor operator-(float val, const Tensor& t)
 	Tensor res = -t;
 	res.add(val);
 	return res;
+}
+
+inline Tensor operator>(const Tensor& t, float val)
+{
+	return t.greaterThan(val);
+}
+
+inline Tensor operator<(const Tensor& t, float val)
+{
+	return t.lesserThan(val);
+}
+
+inline Tensor operator>=(const Tensor& t, float val)
+{
+	return t.greaterOrEqual(val);
+}
+
+inline Tensor operator<=(const Tensor& t, float val)
+{
+	return t.lesserOrEqual(val);
+}
+
+inline Tensor operator==(const Tensor& t, float val)
+{
+	return t.equalTo(val);
 }
 
 inline Tensor operator/(float amp, const Tensor& t)

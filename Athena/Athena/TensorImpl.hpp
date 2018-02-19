@@ -43,7 +43,7 @@ public:
 	virtual TensorImpl* exp() const = 0;
 	virtual TensorImpl* log() const = 0;
 
-	virtual TensorImpl* graterThan(float val) const = 0;
+	virtual TensorImpl* greaterThan(float val) const = 0;
 	virtual TensorImpl* lesserThan(float val) const = 0;
 	virtual TensorImpl* greaterOrEqual(float val) const = 0;
 	virtual TensorImpl* lesserOrEqual(float val) const = 0;

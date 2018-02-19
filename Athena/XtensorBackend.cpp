@@ -204,7 +204,7 @@ public:
 		return new XtensorTensorImpl(std::move(xt::log(arr_)), (XtensorBackend*)backend());
 	}
 
-	virtual TensorImpl* graterThan(float val) const override
+	virtual TensorImpl* greaterThan(float val) const override
 	{
 		return new XtensorTensorImpl(std::move(arr_ > val), (XtensorBackend*)backend());
 	}

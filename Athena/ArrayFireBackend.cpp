@@ -229,7 +229,7 @@ public:
 		return new AFTensorImpl(std::move(af::log(arr_)), arrShape_, (ArrayFireBackend*)backend());
 	}
 
-	virtual TensorImpl* graterThan(float val) const override
+	virtual TensorImpl* greaterThan(float val) const override
 	{
 		return new AFTensorImpl(std::move(arr_ > val), arrShape_, (ArrayFireBackend*)backend());
 	}

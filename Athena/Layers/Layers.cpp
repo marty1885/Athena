@@ -125,13 +125,17 @@ void ReluLayer::build()
 
 Tensor ReluLayer::forward(const Tensor& x)
 {
-	return forwardAlgorithm_(x);
+	if(forwardAlgorithm_)
+		return forwardAlgorithm_(x);
+	return x*(x>0.f);
 }
 
 void ReluLayer::backword(const Tensor& x, const Tensor& y,
 	Tensor& dx, const Tensor& dy)
 {
-	dx = backwardAlgorithm_(dy, y);
+	if(backwardAlgorithm_)
+		dx = backwardAlgorithm_(dy, y);
+	dx = dy*(y>0);
 }
 
 Conv2DLayer::Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides, Backend* backend)
