@@ -53,7 +53,7 @@ public:
 	AFTensorImpl(af::array arr, const Shape& s, ArrayFireBackend* backend) : TensorImpl(backend)
 	{
 		if(s.size() > 4)
-			throw AtError("ArrayFire backend onlt supports upto 4D Tensor, got " + std::to_string(s.size()) + "D.");
+			throw AtError("ArrayFire backend only supports upto 4D Tensor, got " + std::to_string(s.size()) + "D.");
 		arrShape_ = s;
 		if(arr.type() != f32)
 			throw AtError("ArrayFire backend only works with floats. Please convert into floats.");
