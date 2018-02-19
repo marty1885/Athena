@@ -42,14 +42,12 @@ public:
 		return sum(abs(y-t));
 	}
 
-	// virtual void df(const Tensor& y, const Tensor& t, Tensor& d) override
-	// {
-	// 	d.reshape(t.shape());
-	// 	float factor = 1.f/(float)t.size();
-	// 	auto func = [factor](float x)->float{return x < 0.f? -factor : (x > 0.f ? factor : 0.f);};
-        //
-	// 	d = xt::vectorize(func)(y-t);
-	// }
+	virtual Tensor df(const Tensor& y, const Tensor& t) override
+	{
+		float factor = 1.f/(float)t.size();
+		Tensor diff = y-t;
+		return (diff>0)*factor + (diff<0)*(-factor);
+	}
 };
 
 using L1Loss = AbsoluteLoss;
