@@ -14,7 +14,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2 -Wextra -Wno-unused-parameter -Wno-unused-but-set-parameter")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto -march=native")
 
+option(BUILD_EXAMPLES "Build the examples" ON)
+
 include_directories(Athena)
 add_subdirectory(Athena)
-add_subdirectory(examples)
-add_subdirectory(expermental)
+
+if(BUILD_EXAMPLES)
+	add_subdirectory(examples)
+	add_subdirectory(expermental)
+endif()
