@@ -57,7 +57,7 @@ public:
 		arrShape_ = s;
 		if(arr.type() != f32)
 			throw AtError("ArrayFire backend only works with floats. Please convert into floats.");
-		arr_ = arr;
+		arr_ = std::move(arr);
 	}
 
 	const af::array& get() const
@@ -211,11 +211,13 @@ public:
 
 	TensorImpl* stack(const TensorImpl* other, int axis) const override
 	{
+		throw AtError("stack not implemented now");
 		return nullptr;
 	}
 
 	TensorImpl* concatenate(const TensorImpl* other, int axis) const override
 	{
+		throw AtError("concat not implemented now");
 		return nullptr;
 	}
 
@@ -258,11 +260,13 @@ public:
 	//Direct data access is not avliable for ArrayFire
 	virtual float* hostPtr() override
 	{
+		throw AtError("hostPtr not implemented now");
 		return nullptr;
 	}
 
 	virtual const float* hostPtr() const override
 	{
+		throw AtError("const hostPtr not implemented now");
 		return nullptr;
 	}
 
@@ -370,13 +374,13 @@ TensorImpl* ArrayFireBackend::createTensor(const std::vector<float>& vec, const 
 TensorImpl* ArrayFireBackend::zeros(const Shape& shape)
 {
 	auto dims = shapeToDim4(shape);
-	return new AFTensorImpl(af::constant(0, dims), shape, this);
+	return new AFTensorImpl(std::move(af::constant(0, dims)), shape, this);
 }
 
 TensorImpl* ArrayFireBackend::ones(const Shape& shape)
 {
 	auto dims = shapeToDim4(shape);
-	return new AFTensorImpl(af::constant(1, dims), shape, this);
+	return new AFTensorImpl(std::move(af::constant(1, dims)), shape, this);
 }
 
 TensorImpl* ArrayFireBackend::rand(float lEdge, float rEdge, const Shape& shape)
@@ -385,7 +389,7 @@ TensorImpl* ArrayFireBackend::rand(float lEdge, float rEdge, const Shape& shape)
 	float span = rEdge - lEdge;
 	//af::randu genrates float between 0 and 1, map it to the requested range
 	af::array arr = (af::randu(dims)*span)-lEdge;
-	return createTensor(arr, shape);
+	return createTensor(std::move(arr), shape);
 }
 
 TensorImpl* ArrayFireBackend::normal(float mean, float stddev, const Shape& shape)
@@ -394,7 +398,7 @@ TensorImpl* ArrayFireBackend::normal(float mean, float stddev, const Shape& shap
 	if(mean == 0.f && stddev == 1)
 	{
 		auto dims = shapeToDim4(shape);
-		return createTensor(af::randn(dims), shape);
+		return createTensor(std::move(af::randn(dims)), shape);
 	}
 
 	std::minstd_rand eng; //Should be good enoguh for our purpose
