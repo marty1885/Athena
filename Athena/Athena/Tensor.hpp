@@ -19,9 +19,7 @@ namespace At
 class Tensor
 {
 public:
-	Tensor()
-	{
-	}
+	Tensor() = default;
 
 	// Tensor(const Shape& shape, Backend& backend)
 	// 	: Tensor(backend.createTensor(shape))

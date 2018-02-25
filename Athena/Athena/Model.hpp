@@ -22,8 +22,8 @@ public:
 	}
 
 	SequentialNetwork(Backend* backend)
+		: backend_(backend)
 	{
-		backend_ = backend;
 	}
 
 	template<typename LayerType, typename ... Args>
