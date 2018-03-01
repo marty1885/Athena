@@ -133,7 +133,6 @@ protected:
 	static const constexpr float epsilon_ = 1e-8f;
 };
 
-//FIXME: Seems to be faulty, gives nan sometimes
 class AdamOptimizer : public StatefulOptimizer<2>
 {
 public:
@@ -147,8 +146,9 @@ public:
 		auto& mt = get<0>(weight);
 		auto& vt = get<1>(weight);
 
-		mt = b1_*mt + (1.f-b1_)*grad;
-		vt = b2_*vt + (1.f-b2_)*grad*grad;
+		Tensor g = grad+epsilon_;//avoid 0
+		mt = b1_*mt + (1.f-b1_)*g;
+		vt = b2_*vt + (1.f-b2_)*g*g;
 
 		weight -= alpha_*(mt/(1.f - b1T_) /
 			sqrt(vt/(1.f - b2T_)) + epsilon_);
