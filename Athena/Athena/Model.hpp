@@ -118,14 +118,26 @@ public:
 
 	Tensor predict(const Tensor& input)
 	{
-		Tensor in = input.clone();
+		Tensor t = input.clone();
 		for(auto& layer : layers_)
 		{
-			Tensor out = layer->forward(in);
-			in = out;
+			Tensor out = layer->forward(t);
+			t = out;
 		}
 
-		return in;
+		return t;
+	}
+
+	float test(const Tensor& input, const Tensor& desireOutput, LossFunction& loss)
+	{
+		Tensor t = input.clone();
+		for(auto& layer : layers_)
+		{
+			Tensor out = layer->forward(t);
+			t = out;
+		}
+
+		return loss.f(t, desireOutput).host()[0];
 	}
 
 	const Layer* operator[](int index) const
