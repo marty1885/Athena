@@ -9,6 +9,8 @@
 #include <Athena/Layers/Layers.hpp>
 #include <Athena/Loss.hpp>
 
+#include <type_traits>
+
 namespace At
 {
 
@@ -133,7 +135,8 @@ public:
 
 	Layer* operator[](int index)
 	{
-		return layers_[index];
+		auto res = static_cast<const std::remove_reference<decltype(*this)>::type*>(this)->operator[] (index);
+		return const_cast<Layer*>(res);
 	}
 
 	size_t depth() const
@@ -143,11 +146,9 @@ public:
 
 	Layer* getLayer(const std::string& name)
 	{
-		for(auto layer : layers_)
-		{
-			if(layer->name() == name)
-				return layer;
-		}
+		auto it = std::find_if (layers_.begin(), layers_.end(), [&name](const auto& layer){return layer->name() == name;});
+		if(it != layers_.end())
+			return *it;
 		return nullptr;
 	}
 
