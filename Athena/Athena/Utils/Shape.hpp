@@ -5,25 +5,27 @@
 #include <iostream>
 #include <algorithm>
 
+#include <Athena/Utils/SmallVector.hpp>
+
 namespace At
 {
 
-//Might want to replace std::vector with something like LLVM's SmallVector
-class Shape : public std::vector<intmax_t>
+const constexpr unsigned shapeSmallVecSize = 6;
+class Shape : public SmallVector<intmax_t, shapeSmallVecSize>
 {
 public:
 	const static intmax_t None = -1;
-	Shape(std::initializer_list<intmax_t> l) : std::vector<intmax_t>(l)
+	Shape(std::initializer_list<intmax_t> l) : SmallVector<intmax_t, shapeSmallVecSize>(l)
 	{
 	}
 
 	template<class InputIt>
 	Shape(InputIt first, InputIt last)
-		: std::vector<intmax_t>(first, last)
+		: SmallVector<intmax_t, shapeSmallVecSize>(first, last)
 	{
 	}
 
-	Shape() : std::vector<intmax_t>()
+	Shape() : SmallVector<intmax_t, shapeSmallVecSize>()
 	{}
 
 	intmax_t volume() const
