@@ -93,8 +93,7 @@ public:
 						+ " but get " + to_string(layerOutputs.back().shape()));
 
 				Tensor E = layerOutputs.back() - y;
-				Tensor l = loss.f(layerOutputs.back(), y);
-				Tensor dE = E*l;
+				Tensor dE = loss.df(layerOutputs.back(), y);
 
 				for(int k=layers_.size()-1;k>=0;k--)
 				{
@@ -106,7 +105,7 @@ public:
 
 					dE = std::move(tmp);
 				}
-				float batchLoss = l.host()[0];
+				float batchLoss = loss.f(layerOutputs.back(), y).host()[0];
 				onBatchEnumerate(batchLoss);
 				epochLoss += batchLoss*((float)(sliceSize)/datasetSize);
 			}
