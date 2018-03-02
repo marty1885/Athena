@@ -5,11 +5,11 @@
 #include <typeinfo>
 #include <string>
 #include <array>
-#include <map>
 
 #include <Athena/Utils/Error.hpp>
 #include <Athena/Utils/Shape.hpp>
 #include <Athena/Utils/Delegate.hpp>
+#include <Athena/Utils/BoxedValue.hpp>
 #include <Athena/TensorImpl.hpp>
 
 namespace At
@@ -31,49 +31,6 @@ using Conv2DForward = FuncType<Tensor(const Tensor&, const Tensor&, const Tensor
 using Conv2DBackward = FuncType<Tensor(const Tensor& , const Tensor& , Tensor& , Tensor& , const Tensor& ,std::array<intmax_t, 2>)>;
 using LeakyReluForward = FuncType<Tensor(const Tensor& x, float alpha)>;
 using LeakyReluBackward = FuncType<Tensor(const Tensor& a, const Tensor& b, float alpha)>;
-
-struct BoxedValueBase
-{
-	virtual ~BoxedValueBase(){}
-};
-
-template<typename T>
-struct BoxedValue : public BoxedValueBase
-{
-	BoxedValue(){}
-	BoxedValue(const T& value):value_(value){}
-	T& value() {return value_;}
-	const T& value() const {return value_;}
-	T value_;
-};
-
-class BoxedValues : public std::map<std::string, BoxedValueBase*>
-{
-public:
-	virtual ~BoxedValues()
-	{
-		for(auto& e : *this)
-			delete e.second;
-	}
-
-	template<typename T>
-	inline void set(const std::string& name, const T& value)
-	{
-		operator[](name) = new BoxedValue<T>(value);
-	}
-
-	template<typename T>
-	const T& get(const std::string& name) const
-	{
-		auto it = find(name);
-		if(it == end())
-			throw AtError("Cannot find variable \"" + name + "\"");
-		BoxedValue<T>* ptr = dynamic_cast<BoxedValue<T>*>(it->second);
-		if(ptr == nullptr)
-			throw AtError("Variable \"" + name + "\" does not have type " + typeid(T).name());
-		return ptr->value();
-	}
-};
 
 using AlgorithmSelector = delegate<bool(const BoxedValues& config)>;
 
