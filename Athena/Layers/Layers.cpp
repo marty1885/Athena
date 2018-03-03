@@ -28,8 +28,8 @@ Shape FullyConnectedLayer::outputShape(const Shape& s)
 
 void FullyConnectedLayer::build()
 {
-	weights_.push_back(weightInitalizer_->create({inputSize_, outputSize_}, inputSize_, outputSize_, backend()));
-	weights_.push_back(At::zeros({outputSize_}, *backend()));
+	w_ = weightInitalizer_->create({inputSize_, outputSize_}, inputSize_, outputSize_, backend());
+	b_ = At::zeros({outputSize_}, *backend());
 
 	forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
 	backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
@@ -41,17 +41,17 @@ Tensor FullyConnectedLayer::forward(const Tensor& x)
 		throw AtError("Expecting a 2D tensor for a Fully Connected layer. But get " + std::to_string(x.dimension())
 		+ "D. shape = " + to_string(x.shape()));
 	if(!forwardAlgorithm_)
-		return x.dot(weights_[0])+weights_[1];
-	return forwardAlgorithm_(x, weights_[0], weights_[1]);
+		return x.dot(w_)+b_;
+	return forwardAlgorithm_(x, w_, b_);
 }
 
 void FullyConnectedLayer::backword(const Tensor& x, const Tensor& y,
 	Tensor& dx, const Tensor& dy)
 {
 	if(backwardAlgorithm_)
-		dx = backwardAlgorithm_(dy, weights_[0]);
+		dx = backwardAlgorithm_(dy, w_);
 	else
-		dx = dy.dot(transpose(weights_[0]));
+		dx = dy.dot(transpose(w_));
 
 	dE = dy;
 	dW = dot(x.transpose(), dy);
@@ -59,8 +59,13 @@ void FullyConnectedLayer::backword(const Tensor& x, const Tensor& y,
 
 void FullyConnectedLayer::update(Optimizer* optimizer)
 {
-	optimizer->update(weights_[0], dW);
-	optimizer->update(weights_[1], dE.sum(0));
+	optimizer->update(w_, dW);
+	optimizer->update(b_, dE.sum(0));
+}
+
+std::vector<Tensor> FullyConnectedLayer::weights() const
+{
+	return {w_, b_};
 }
 
 SigmoidLayer::SigmoidLayer(Backend* backend) : ActivationLayer(backend)
@@ -155,14 +160,14 @@ Tensor Conv2DLayer::forward(const Tensor& x)
 		throw AtError("Conv2D expecting a 4D tensor but got " + std::to_string(x.dimension()) + "D. Shape = " + to_string(x.shape()));
 	if(x.shape()[1] != inputChannels_)
 		throw AtError("Expecting " + std::to_string(inputChannels_) + " input channes, but get " + std::to_string(x.shape()[1]));
-	Tensor t = forwardAlgorithm_(x, weights_[0], weights_[1], strides_);
+	Tensor t = forwardAlgorithm_(x, kernel_, bias_, strides_);
 	return t;
 }
 
 void Conv2DLayer::backword(const Tensor& x, const Tensor& y,
 	Tensor& dx, const Tensor& dy)
 {
-	dx = backwardAlgorithm_(x, weights_[0], dW_, db_, dy, strides_);
+	dx = backwardAlgorithm_(x, kernel_, dW_, db_, dy, strides_);
 }
 
 Shape Conv2DLayer::outputShape(const Shape& s)
@@ -174,12 +179,11 @@ void Conv2DLayer::build()
 {
 	BoxedValues config;
 	intmax_t inputChannels = inputChannels_;
-	//TODO: Check this is a good idea
-	Tensor kernel = weightInitalizer_->create({outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}
+	//TODO: Check intializing with these params is a good idea
+	kernel_ = weightInitalizer_->create({outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}
 		, windowSize_[0]*windowSize_[1], 1, backend());
-	weights_.push_back(kernel);
-	weights_.push_back(At::zeros({outputChannels_}, *backend()));
-	config.set<Shape>("kernelShape", weights_[0].shape());
+	bias_ = At::zeros({outputChannels_}, *backend());
+	config.set<Shape>("kernelShape", kernel_.shape());
 	config.set<Shape>("stride", Shape({strides_[0], strides_[1]}));
 
 	forwardAlgorithm_ = backend()->getAlgorithm<Conv2DForward>("conv2DForward", config);
@@ -188,8 +192,13 @@ void Conv2DLayer::build()
 
 void Conv2DLayer::update(Optimizer* optimizer)
 {
-	optimizer->update(weights_[0], dW_);
-	optimizer->update(weights_[1], db_);
+	optimizer->update(kernel_, dW_);
+	optimizer->update(bias_, db_);
+}
+
+std::vector<Tensor> Conv2DLayer::weights() const
+{
+	return {kernel_, bias_};
 }
 
 LeakyReluLayer::LeakyReluLayer(float alpha, Backend* backend)

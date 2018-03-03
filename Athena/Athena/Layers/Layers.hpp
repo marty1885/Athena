@@ -78,20 +78,14 @@ public:
 		trainable_ = val;
 	}
 
-	const std::vector<Tensor>& weights() const
+	virtual std::vector<Tensor> weights() const
 	{
-		return weights_;
+		return std::vector<Tensor>();
 	}
 
 	bool isInitialized() const
 	{
 		return backend_ != nullptr;
-	}
-
-	std::vector<Tensor>& weights()
-	{
-		return const_cast<std::vector<Tensor>&>
-			(static_cast<const Layer*>(this)->weights());
 	}
 
 	std::string type() const
@@ -130,7 +124,6 @@ protected:
 		type_ = str;
 	}
 
-	std::vector<Tensor> weights_;
 	std::string type_;
 	std::string name_;
 	std::shared_ptr<WeightInitalizer> weightInitalizer_;
@@ -150,6 +143,7 @@ public:
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override;
 	virtual void update(Optimizer* optimizer) override;
+	std::vector<Tensor> weights() const override;
 
 protected:
 	delegate<FCForwardFunction> forwardAlgorithm_;
@@ -157,6 +151,9 @@ protected:
 
 	intmax_t inputSize_ = 0;
 	intmax_t outputSize_ = 0;
+
+	Tensor w_;
+	Tensor b_;
 
 	Tensor dE;
 	Tensor dW;
@@ -287,6 +284,7 @@ public:
 	virtual Shape outputShape(const Shape& s) override;
 	virtual void build() override;
 	virtual void update(Optimizer* optimizer) override;
+	std::vector<Tensor> weights() const override;
 
 protected:
 
@@ -297,6 +295,9 @@ protected:
 
 	delegate<Conv2DForward> forwardAlgorithm_;
 	delegate<Conv2DBackward> backwardAlgorithm_;
+
+	Tensor kernel_;
+	Tensor bias_;
 
 	Tensor dW_;
 	Tensor db_;
