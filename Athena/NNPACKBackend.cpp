@@ -163,7 +163,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 
 
 	addAlgorithm<Conv2DForward>("conv2DForward",
-		[this](const Tensor& x, const Tensor& kernel, const Tensor& bias, std::array<intmax_t, 2> strides)->Tensor
+		[this](const Tensor& x, const Tensor& kernel, const Tensor& bias, const Shape& strides)->Tensor
 	{
 		if(strides[0] != 1 || strides[1] != 1)//Limitation of NNPACK
 		{
@@ -216,7 +216,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 
 	addAlgorithm<Conv2DBackward>("conv2DBackward",
 	[this](const Tensor& prevOut, const Tensor& kernel, Tensor& dW, Tensor& db , const Tensor& currDelta,
-		std::array<intmax_t, 2> strides)->Tensor
+		const Shape& strides)->Tensor
 	{
 		assert(strides[0] == 1 && strides[1] == 1);//Limitation of NNPACK
 		auto algorithm = nnp_convolution_algorithm_auto;

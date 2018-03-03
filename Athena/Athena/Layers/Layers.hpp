@@ -181,6 +181,13 @@ public:
 	{
 		return s;
 	}
+
+	virtual BoxedValues states() const override
+	{
+		BoxedValues params;
+		params.set<std::string>("__type", type());
+		return params;
+	}
 };
 
 class SigmoidLayer : public ActivationLayer
@@ -191,7 +198,6 @@ public:
 	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override;
-	virtual BoxedValues states() const override;
 protected:
 	delegate<SigmoidForward> forwardAlgorithm_;
 	delegate<SigmoidBackward> backwardAlgorithm_;
@@ -251,6 +257,21 @@ public:
 		dx = dy.reshape(incomeShape_);
 	}
 
+	virtual BoxedValues states() const override
+	{
+		BoxedValues params;
+		params.set<std::string>("__type", type());
+		params.set<Shape>("incomeShape", incomeShape_);
+		params.set<Shape>("outputShape", outputShape_);
+		return params;
+	}
+
+	void loadStates(const BoxedValues& states)
+	{
+		incomeShape_ = states.get<Shape>("incomeShape");
+		outputShape_ = states.get<Shape>("outputShape");
+	}
+
 protected:
 	Shape incomeShape_;
 	Shape outputShape_;
@@ -281,6 +302,13 @@ public:
 		dx = dy.reshape(incomeShape_);
 	}
 
+	virtual BoxedValues states() const override
+	{
+		BoxedValues params;
+		params.set<std::string>("__type", type());
+		return params;
+	}
+
 protected:
 	Shape incomeShape_;
 };
@@ -288,7 +316,7 @@ protected:
 class Conv2DLayer : public Layer
 {
 public:
-	Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides={{1,1}}, Backend* backend=nullptr);
+	Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, Shape strides={{1,1}}, Backend* backend=nullptr);
 	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override;
@@ -302,7 +330,7 @@ protected:
 	intmax_t outputChannels_;
 	intmax_t inputChannels_;
 	Shape windowSize_;
-	std::array<intmax_t, 2> strides_;
+	Shape strides_;
 
 	delegate<Conv2DForward> forwardAlgorithm_;
 	delegate<Conv2DBackward> backwardAlgorithm_;
@@ -312,6 +340,27 @@ protected:
 
 	Tensor dW_;
 	Tensor db_;
+
+	virtual BoxedValues states() const override
+	{
+		BoxedValues params;
+		params.set<std::string>("__type", type());
+		params.set<BoxedValues>("kernel", kernel_.states());
+		params.set<BoxedValues>("bias", bias_.states());
+		params.set<Shape>("strides", strides_);
+		return params;
+	}
+
+	void loadStates(const BoxedValues& states)
+	{
+		kernel_.loadStates(states.get<BoxedValues>("kernel"));
+		bias_.loadStates(states.get<BoxedValues>("bias"));
+		strides_ = states.get<Shape>("strides");
+		outputChannels_ = kernel_.shape()[0];
+		inputChannels_ = kernel_.shape()[1];
+		windowSize_ = {kernel_.shape()[2], kernel_.shape()[3]};
+	}
+
 };
 
 class LeakyReluLayer : public ActivationLayer

@@ -68,7 +68,7 @@ void FullyConnectedLayer::update(Optimizer* optimizer)
 BoxedValues FullyConnectedLayer::states() const
 {
 	BoxedValues params;
-	params.set<std::string>("__type", "FullyConnectedLayer");
+	params.set<std::string>("__type", type());
 	params.set<BoxedValues>("weight", w_.states());
 	params.set<BoxedValues>("bias", b_.states());
 	return params;
@@ -110,13 +110,6 @@ void SigmoidLayer::backword(const Tensor& x, const Tensor& y,
 		dx = backwardAlgorithm_(dy, y);
 	else
 		dx = dy*(y*(1-y));
-}
-
-BoxedValues SigmoidLayer::states() const
-{
-	BoxedValues params;
-	params.set<std::string>("__type", "SigmoidLayer");
-	return params;
 }
 
 TanhLayer::TanhLayer(Backend* backend) : ActivationLayer(backend)
@@ -167,7 +160,7 @@ void ReluLayer::backword(const Tensor& x, const Tensor& y,
 	dx = dy*(y>0);
 }
 
-Conv2DLayer::Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, std::array<intmax_t, 2> strides, Backend* backend)
+Conv2DLayer::Conv2DLayer(intmax_t inputChannels, intmax_t outputChannels, Shape windowSize, Shape strides, Backend* backend)
 	: Layer(backend, true)
 {
 	outputChannels_ = outputChannels;
@@ -210,7 +203,7 @@ void Conv2DLayer::build()
 	if((bool)bias_)
 		bias_ = At::zeros({outputChannels_}, *backend());
 	config.set<Shape>("kernelShape", kernel_.shape());
-	config.set<Shape>("stride", Shape({strides_[0], strides_[1]}));
+	config.set<Shape>("stride", strides_);
 
 	forwardAlgorithm_ = backend()->getAlgorithm<Conv2DForward>("conv2DForward", config);
 	backwardAlgorithm_ = backend()->getAlgorithm<Conv2DBackward>("conv2DBackward", config);

@@ -459,7 +459,7 @@ XtensorBackend::XtensorBackend()
 		});
 	
 	addAlgorithm<Conv2DForward>("conv2DForward",
-		[this](const Tensor& x, const Tensor& weights, const Tensor& bias, std::array<intmax_t, 2> strides)->Tensor
+		[this](const Tensor& x, const Tensor& weights, const Tensor& bias, const Shape& strides)->Tensor
 		{
 			//assuming input format of N C H W
 			const auto& t = get(x);
@@ -484,7 +484,7 @@ XtensorBackend::XtensorBackend()
 			intmax_t outputHeight = (inputHeight-filterHeight)/strides[0]+1;
 			intmax_t outputWidth = (inputWidth-filterWidth)/strides[1]+1;
 
-			xt::xarray<float> tmpBuffer = im2col(t, {{filterHeight, filterWidth}}, strides);
+			xt::xarray<float> tmpBuffer = im2col(t, {{filterHeight, filterWidth}}, {{strides[0], strides[1]}});
 
 			xt::xarray<float> convKernel = kernels;
 			convKernel.reshape({(size_t)filterNums, (size_t)filterChannlelSize});
@@ -513,7 +513,7 @@ XtensorBackend::XtensorBackend()
 		//TODO: Optimize this function. It is super slow now.
 		addAlgorithm<Conv2DBackward>("conv2DBackward",
 			[this](const Tensor& prevOut, const Tensor& kernel, Tensor& dW, Tensor& db , const Tensor& currDelta,
-				std::array<intmax_t, 2> strides)->Tensor
+				const Shape& strides)->Tensor
 		{
 			intmax_t batchSize = prevOut.shape()[0];
 			intmax_t numFilters = kernel.shape()[0];
@@ -525,7 +525,7 @@ XtensorBackend::XtensorBackend()
 			db = currDelta.sum({0, 2, 3});
 			db.resize({db.shape()[0], db.shape().volume()/db.shape()[0]});
 
-			xt::xarray<float> xCol = im2col(x, {{kernel.shape()[2], kernel.shape()[3]}}, strides);
+			xt::xarray<float> xCol = im2col(x, {{kernel.shape()[2], kernel.shape()[3]}}, {{strides[0], strides[1]}});
 
 			xt::xarray<float> doutReshaped = xt::transpose(dout, {1, 2, 3, 0});
 			doutReshaped.reshape({(size_t)batchSize, (size_t)numFilters, (size_t)currDelta.size()/(numFilters*batchSize)});
@@ -537,7 +537,7 @@ XtensorBackend::XtensorBackend()
 			wReshape.reshape({(size_t)numFilters, w.size()/numFilters});
 			xt::xarray<float> dxCol = xt::linalg::dot(xt::transpose(wReshape), doutReshaped);
 			xt::xarray<float>  res = col2im(dxCol, prevOut.shape()
-				,{{kernel.shape()[2], kernel.shape()[3]}}, strides);
+				,{{kernel.shape()[2], kernel.shape()[3]}}, {{strides[0], strides[1]}});
 
 			return createTensor(res);
 		});
