@@ -20,7 +20,7 @@ int main()
 	net.add(At::SigmoidLayer());
 	net.compile();
 
-	net.summary({At::Shape::None, 2});
+	/*net.summary({At::Shape::None, 2});
 
 	At::Tensor X = {{0,0}, {1,0}, {0,1}, {1,1}};
 	At::Tensor Y = {{0,1,1,0}};
@@ -47,9 +47,17 @@ int main()
 		std::cout << "input = " << x << ", result = " << res << std::endl;
 	}
 
-	At::save(X.states(), "a.json");
+	At::save(net.states(), "a.json");*/
 	auto data = At::load("a.json");
-	At::Tensor t;
-	t.loadStates(data);
-	std::cout << t << std::endl;
+	// At::Tensor t;
+	net.loadStates(data);
+	At::Tensor X = {{0,0}, {1,0}, {0,1}, {1,1}};
+	At::Tensor Y = {{0,1,1,0}};
+	for(int i=0;i<X.shape()[0];i++)
+	{
+		At::Tensor x = X.slice({i},{1});
+		auto res = net.predict(x);
+		std::cout << "input = " << x << ", result = " << res << std::endl;
+	}
+	// std::cout << t << std::endl;
 }

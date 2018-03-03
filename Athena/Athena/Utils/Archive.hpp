@@ -31,7 +31,7 @@ void boxToJson(nlohmann::json& j, const BoxedValues& states)
 		{
 			json child;
 			boxToJson(child, ptr->value());
-			child[key] = child;
+			j[key] = child;
 		}
 		else if(auto ptr = box_cast<std::vector<float>>(elem); ptr != nullptr)
 		{

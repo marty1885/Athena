@@ -369,6 +369,11 @@ public:
 		return defaultBackend_;
 	}
 
+	explicit operator bool() const
+	{
+		return pimpl_ != nullptr;
+	}
+
 	BoxedValues states() const
 	{
 		BoxedValues params;

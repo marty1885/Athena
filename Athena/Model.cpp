@@ -81,3 +81,32 @@ void SequentialNetwork::compile()
 		layer->build();
 	}
 }
+
+BoxedValues SequentialNetwork::states() const
+{
+	BoxedValues params;
+	params.set<std::string>("__type", "SequentialNetwork");
+	for(const auto& layer : layers_)
+	{
+		params.set<BoxedValues>(layer->name(), layer->states());
+	}
+	return params;
+}
+
+void SequentialNetwork::loadStates(const BoxedValues& states)
+{
+	for(const auto& [key, val] : states)
+	{
+		if(key == "__type")
+		{
+			if(boxed_cast<std::string>(val) != "SequentialNetwork")
+				throw AtError("Can't load.");
+			continue;
+		}
+		
+		auto layer = getLayer(key);
+		if(layer == nullptr)
+			throw AtError("Can't find layer \"" + key + "\". Maybe forget to initalize the model before loading the states?");
+		layer->loadStates(boxed_cast<BoxedValues>(val));
+	}
+}

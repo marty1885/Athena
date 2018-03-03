@@ -117,6 +117,14 @@ public:
 
 	virtual void build() {}
 
+	virtual BoxedValues states() const
+	{
+		throw AtError("Error: Trying to save a layer that does not suppot saving");
+	}
+
+	virtual void loadStates(const BoxedValues& states) {}
+
+
 protected:
 
 	void setType(const std::string& str)
@@ -144,6 +152,8 @@ public:
 		Tensor& dx, const Tensor& dy) override;
 	virtual void update(Optimizer* optimizer) override;
 	std::vector<Tensor> weights() const override;
+	virtual BoxedValues states() const override;
+	virtual void loadStates(const BoxedValues& states) override;
 
 protected:
 	delegate<FCForwardFunction> forwardAlgorithm_;
@@ -181,6 +191,7 @@ public:
 	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override;
+	virtual BoxedValues states() const override;
 protected:
 	delegate<SigmoidForward> forwardAlgorithm_;
 	delegate<SigmoidBackward> backwardAlgorithm_;

@@ -166,6 +166,8 @@ public:
 
 	void compile();
 	void summary(const Shape& inputShape) const;
+	virtual BoxedValues states() const;
+	virtual void loadStates(const BoxedValues& states);
 
 protected:
 	std::vector<Layer*> layers_;

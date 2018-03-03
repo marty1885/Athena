@@ -28,8 +28,10 @@ Shape FullyConnectedLayer::outputShape(const Shape& s)
 
 void FullyConnectedLayer::build()
 {
-	w_ = weightInitalizer_->create({inputSize_, outputSize_}, inputSize_, outputSize_, backend());
-	b_ = At::zeros({outputSize_}, *backend());
+	if((bool)w_ != true)
+		w_ = weightInitalizer_->create({inputSize_, outputSize_}, inputSize_, outputSize_, backend());
+	if((bool)b_ != true)
+		b_ = At::zeros({outputSize_}, *backend());
 
 	forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
 	backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");
@@ -63,6 +65,21 @@ void FullyConnectedLayer::update(Optimizer* optimizer)
 	optimizer->update(b_, dE.sum(0));
 }
 
+BoxedValues FullyConnectedLayer::states() const
+{
+	BoxedValues params;
+	params.set<std::string>("__type", "FullyConnectedLayer");
+	params.set<BoxedValues>("weight", w_.states());
+	params.set<BoxedValues>("bias", b_.states());
+	return params;
+}
+
+void FullyConnectedLayer::loadStates(const BoxedValues& states)
+{
+	w_.loadStates(states.get<BoxedValues>("weight"));
+	b_.loadStates(states.get<BoxedValues>("bias"));
+}
+
 std::vector<Tensor> FullyConnectedLayer::weights() const
 {
 	return {w_, b_};
@@ -93,6 +110,13 @@ void SigmoidLayer::backword(const Tensor& x, const Tensor& y,
 		dx = backwardAlgorithm_(dy, y);
 	else
 		dx = dy*(y*(1-y));
+}
+
+BoxedValues SigmoidLayer::states() const
+{
+	BoxedValues params;
+	params.set<std::string>("__type", "SigmoidLayer");
+	return params;
 }
 
 TanhLayer::TanhLayer(Backend* backend) : ActivationLayer(backend)
@@ -180,9 +204,11 @@ void Conv2DLayer::build()
 	BoxedValues config;
 	intmax_t inputChannels = inputChannels_;
 	//TODO: Check intializing with these params is a good idea
-	kernel_ = weightInitalizer_->create({outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}
-		, windowSize_[0]*windowSize_[1], 1, backend());
-	bias_ = At::zeros({outputChannels_}, *backend());
+	if((bool)kernel_)
+		kernel_ = weightInitalizer_->create({outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}
+			, windowSize_[0]*windowSize_[1], 1, backend());
+	if((bool)bias_)
+		bias_ = At::zeros({outputChannels_}, *backend());
 	config.set<Shape>("kernelShape", kernel_.shape());
 	config.set<Shape>("stride", Shape({strides_[0], strides_[1]}));
 

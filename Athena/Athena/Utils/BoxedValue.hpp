@@ -2,6 +2,7 @@
 
 #include <map>
 #include <typeinfo>
+#include <memory>
 
 namespace At
 {
@@ -9,25 +10,36 @@ namespace At
 struct BoxedValueBase
 {
 	virtual ~BoxedValueBase(){}
+	virtual BoxedValueBase* allocateCopy() const = 0;
 };
 
 template<typename T>
 struct BoxedValue : public BoxedValueBase
 {
-	BoxedValue(){}
+	BoxedValue() = default;
 	BoxedValue(const T& value):value_(value){}
 	T& value() {return value_;}
 	const T& value() const {return value_;}
+	virtual BoxedValueBase* allocateCopy() const override {return new BoxedValue<T>(value_);};
 	T value_;
 };
 
+//TODO: Should I use shared_ptr instead of allocating and coping everything?
 class BoxedValues : public std::map<std::string, BoxedValueBase*>
 {
 public:
+	BoxedValues() = default;
+
 	virtual ~BoxedValues()
 	{
 		for(auto& e : *this)
 			delete e.second;
+	}
+
+	BoxedValues(const BoxedValues& other)
+	{
+		for(const auto& [key, ptr] : other)
+			operator[](key) = ptr->allocateCopy();
 	}
 
 	template<typename T>
