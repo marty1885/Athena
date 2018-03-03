@@ -64,15 +64,15 @@ void SequentialNetwork::summary(const Shape& inputShape) const
 
 void SequentialNetwork::compile()
 {
-	std::map<std::string, int> layerTypeNum;
+	std::map<std::string, int> layerApperence;
 
 	for(auto& layer : layers_)
 	{
 		if(layer->name() == "")
 		{
-			auto layerType = layer->type();
+			std::string typeStr = layer->type();
 			//std::map initializes variable by default even when accessing it
-			layer->setName(layerType + "_" + std::to_string(++layerTypeNum[layerType]));
+			layer->setName(typeStr + "_" + std::to_string(++layerApperence[typeStr]));
 		}
 
 		if(layer->backend() == nullptr)

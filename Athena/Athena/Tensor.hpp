@@ -4,6 +4,7 @@
 #include <Athena/Utils/ReferenceCounter.hpp>
 #include <Athena/TensorImpl.hpp>
 #include <Athena/Utils/Error.hpp>
+#include <Athena/Utils/BoxedValue.hpp>
 #include <Athena/Utils/Type.hpp>
 
 #include <assert.h>
@@ -366,6 +367,22 @@ public:
 	static Backend* defaultBackend()
 	{
 		return defaultBackend_;
+	}
+
+	BoxedValues states() const
+	{
+		BoxedValues params;
+		params.set<std::string>("__type", "Tensor");
+		params.set<std::vector<float>>("values", host());
+		params.set<Shape>("shape", shape());
+		return params;
+	}
+
+	void loadStates(const BoxedValues& states)
+	{
+		const auto& values = states.get<std::vector<float>>("values");
+		const auto& s = states.get<Shape>("shape");
+		*this = Tensor(values, s);
 	}
 
 protected:

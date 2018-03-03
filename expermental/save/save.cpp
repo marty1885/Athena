@@ -46,4 +46,10 @@ int main()
 		auto res = net.predict(x);
 		std::cout << "input = " << x << ", result = " << res << std::endl;
 	}
+
+	At::save(X.states(), "a.json");
+	auto data = At::load("a.json");
+	At::Tensor t;
+	t.loadStates(data);
+	std::cout << t << std::endl;
 }

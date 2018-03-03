@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <typeinfo>
 
 namespace At
 {
@@ -47,6 +48,12 @@ public:
 		return ptr->value();
 	}
 };
+
+template <typename T>
+BoxedValue<T>* box_cast(BoxedValueBase* ptr)
+{
+	return dynamic_cast<BoxedValue<T>*>(ptr);
+}
 
 template <typename T>
 T& boxed_cast(BoxedValueBase* ptr)
