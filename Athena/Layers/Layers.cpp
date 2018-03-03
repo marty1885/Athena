@@ -197,10 +197,10 @@ void Conv2DLayer::build()
 	BoxedValues config;
 	intmax_t inputChannels = inputChannels_;
 	//TODO: Check intializing with these params is a good idea
-	if((bool)kernel_)
+	if((bool)kernel_ == false)
 		kernel_ = weightInitalizer_->create({outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}
 			, windowSize_[0]*windowSize_[1], 1, backend());
-	if((bool)bias_)
+	if((bool)bias_ == false)
 		bias_ = At::zeros({outputChannels_}, *backend());
 	config.set<Shape>("kernelShape", kernel_.shape());
 	config.set<Shape>("stride", strides_);
