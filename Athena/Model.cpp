@@ -21,7 +21,7 @@ void SequentialNetwork::summary(const Shape& inputShape) const
 	};
 
 	std::cout << repeat("─",80) << '\n';
-	std::cout << trimString("Layer (type)",23) << " " << trimString("Output shape", 15) << " " << trimString("Params #", 16) << '\n';
+	std::cout << trimString("Layer (type)",23) << " " << trimString("Output shape", 20) << " " << trimString("Params #", 16) << '\n';
 	size_t trainableWeights = 0;
 	Shape currentInputShape = inputShape;
 	for(size_t i=0;i<depth();i++)
@@ -37,8 +37,8 @@ void SequentialNetwork::summary(const Shape& inputShape) const
 		currentInputShape = shape;
 		std::ostringstream stream;
 		stream << shape;
-		std::string str =  stream.str();
-		std::cout << trimString(str, 15) << " ";
+		std::string shapeStr =  stream.str();
+		std::cout << trimString(shapeStr, 20) << " ";
 
 		if(l->trainable() == false)
 			std::cout << trimString("0", 16);
