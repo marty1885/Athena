@@ -59,7 +59,7 @@ bool save(const BoxedValues& states, std::string path)
 
 	std::ofstream out(path);
 	out << j.dump();
-	std::cout << j.dump(4) << std::endl;
+	//std::cout << j.dump(4) << std::endl;
 	out.close();
 	return true;
 }
