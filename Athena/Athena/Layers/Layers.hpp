@@ -34,7 +34,7 @@ class He : public WeightInitalizer
 public:
 	virtual Tensor create(const Shape& shape , intmax_t fanIn, intmax_t fanOut, Backend* backend) const override
 	{
-		return normal(0, 1, shape, *backend) / std::sqrt(2.f/(float)fanIn);
+		return normal(0, 1, shape, *backend) * std::sqrt(2.f/(float)fanIn);
 	}
 };
 
@@ -111,6 +111,12 @@ public:
 	std::string name() const
 	{
 		return name_;
+	}
+
+	template <typename T>
+	void setWeightInitalizer()
+	{
+		weightInitalizer_ = std::make_shared<T>();
 	}
 
 	virtual void update(Optimizer* optimizer) {} //Implement this if the layer can be trained
@@ -325,6 +331,26 @@ public:
 	virtual void update(Optimizer* optimizer) override;
 	std::vector<Tensor> weights() const override;
 
+	virtual BoxedValues states() const override
+	{
+		BoxedValues params;
+		params.set<std::string>("__type", type());
+		params.set<BoxedValues>("kernel", kernel_.states());
+		params.set<BoxedValues>("bias", bias_.states());
+		params.set<Shape>("strides", strides_);
+		return params;
+	}
+
+	virtual void loadStates(const BoxedValues& states) override
+	{
+		kernel_.loadStates(states.get<BoxedValues>("kernel"));
+		bias_.loadStates(states.get<BoxedValues>("bias"));
+		strides_ = states.get<Shape>("strides");
+		outputChannels_ = kernel_.shape()[0];
+		inputChannels_ = kernel_.shape()[1];
+		windowSize_ = {kernel_.shape()[2], kernel_.shape()[3]};
+	}
+
 protected:
 
 	intmax_t outputChannels_;
@@ -340,26 +366,6 @@ protected:
 
 	Tensor dW_;
 	Tensor db_;
-
-	virtual BoxedValues states() const override
-	{
-		BoxedValues params;
-		params.set<std::string>("__type", type());
-		params.set<BoxedValues>("kernel", kernel_.states());
-		params.set<BoxedValues>("bias", bias_.states());
-		params.set<Shape>("strides", strides_);
-		return params;
-	}
-
-	void loadStates(const BoxedValues& states)
-	{
-		kernel_.loadStates(states.get<BoxedValues>("kernel"));
-		bias_.loadStates(states.get<BoxedValues>("bias"));
-		strides_ = states.get<Shape>("strides");
-		outputChannels_ = kernel_.shape()[0];
-		inputChannels_ = kernel_.shape()[1];
-		windowSize_ = {kernel_.shape()[2], kernel_.shape()[3]};
-	}
 
 };
 

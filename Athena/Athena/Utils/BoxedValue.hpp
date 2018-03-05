@@ -37,7 +37,9 @@ public:
 	}
 
 	BoxedValues(const BoxedValues& other)
+		: std::map<std::string, BoxedValueBase*>(other)
 	{
+		//Overrite all the keys
 		for(const auto& [key, ptr] : other)
 			operator[](key) = ptr->allocateCopy();
 	}

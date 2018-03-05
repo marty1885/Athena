@@ -165,53 +165,80 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 	addAlgorithm<Conv2DForward>("conv2DForward",
 		[this](const Tensor& x, const Tensor& kernel, const Tensor& bias, const Shape& strides)->Tensor
 	{
-		if(strides[0] != 1 || strides[1] != 1)//Limitation of NNPACK
-		{
-			Shape s = {strides[0], strides[1]};
-			throw AtError("Strides in NNPACK conv2DForward must be {1,1}, but get " + to_string(s));
-		}
-
 		//assuming input format of NCHW
 		auto algorithm = nnp_convolution_algorithm_auto;
 		intmax_t batchSize = x.shape()[0];
 		intmax_t inputChannels = x.shape()[1];
+		intmax_t inputHeight = x.shape()[2];
+		intmax_t inputWidth = x.shape()[3];
+
 		intmax_t outputChannels = kernel.shape()[0];
-		nnp_size inputSize = {(size_t)x.shape()[3], (size_t)x.shape()[2]};//NNPACK uses WH instead of HW
+		intmax_t filterHeight = kernel.shape()[2];
+		intmax_t filterWidth = kernel.shape()[3];
+		intmax_t outputHeight = (inputHeight-filterHeight)/strides[0]+1;
+		intmax_t outputWidth = (inputWidth-filterWidth)/strides[1]+1;
+
+		nnp_size inputSize = {(size_t)inputWidth, (size_t)inputHeight};//NNPACK uses WH instead of HW
 		nnp_padding inputPadding = {0, 0, 0, 0};
-		Shape outputShape({batchSize, kernel.shape()[0], x.shape()[2]-kernel.shape()[2]+1, x.shape()[3]-kernel.shape()[3]+1});
+
+		Shape outputShape({batchSize, kernel.shape()[0], outputHeight, outputWidth});
 		std::vector<float> res(outputShape.volume());
-		std::array<intmax_t,2> kernelShape = {kernel.shape()[2], kernel.shape()[3]};
+		std::array<intmax_t,2> kernelShape = {filterHeight, filterWidth};
 
-		if(kernelShape[0] > 16 || kernelShape[1] > 16)
+		nnp_size kernelSize = {(size_t)filterWidth, (size_t)filterHeight};
+
+		//Use output mode if possble. May not be a good idea?
+		if(strides[0] == 1 && strides[1] == 1
+			&& kernelShape[2] <= 16 && kernelShape[3] <= 16
+			&& kernelShape[2] != 1 && kernelShape[3] != 1)
 		{
-			Shape s = {kernelShape[0], kernelShape[1]};
-			throw AtError("NNPACK can only support convulute kernel upto {16,16}, but get " + to_string(s));
+			auto status = nnp_convolution_output(algorithm,
+				batchSize,
+				inputChannels,
+				outputChannels,
+				inputSize,
+				inputPadding,
+				kernelSize,
+				x.hostPtr(),
+				kernel.hostPtr(),
+				bias.hostPtr(),
+				&res[0],
+				threadpool_,
+				nullptr);
+			if(status != nnp_status_success)
+				throw AtError("nnp_convolution_output execution failed. Error " + std::to_string(status));
 		}
+		else
+		{
+			nnp_size subsampling = {(size_t)strides[1], (size_t)strides[0]};
+			for(intmax_t i=0;i<batchSize;i++)
+			{
+				size_t imageSize = x.volume()/batchSize;
+				size_t outputImageSize = outputShape.volume()/batchSize;
+				const float* ptr = x.hostPtr() + i*imageSize;
+				auto status = nnp_convolution_inference(
+					nnp_convolution_algorithm_auto,
+					nnp_convolution_transform_strategy_compute,
+					inputChannels,
+					outputChannels,
+					inputSize,	
+					inputPadding,
+					kernelSize,
+					subsampling,
+					ptr,
+					kernel.hostPtr(),
+					bias.hostPtr(),
+					&res[i*outputImageSize],
+					threadpool_,
+					nullptr
+				);
+				if(status != nnp_status_success)
+					throw AtError("nnp_convolution_inference execution failed. Error " + std::to_string(status));
 
-		nnp_size kernelSize = {(size_t)kernel.shape()[2], (size_t)kernel.shape()[3]};
+			}
 
-		auto status = nnp_convolution_output(algorithm,
-			batchSize,
-			inputChannels,
-			outputChannels,
-			inputSize,
-			inputPadding,
-			kernelSize,
-			x.hostPtr(),
-			kernel.hostPtr(),
-			bias.hostPtr(),
-			&res[0],
-			threadpool_,
-			nullptr);
-		if(status != nnp_status_success)
-			throw AtError("nnp_convolution_output execution failed. Error " + std::to_string(status));
+		}
 		return x.backend()->createTensor(std::move(res), outputShape);
-	}, [](const BoxedValues& config)->bool
-	{
-		Shape kernelShape = config.get<Shape>("kernelShape");
-		Shape stride = config.get<Shape>("stride");
-		return (kernelShape[2] <= 16 && kernelShape[2] <= 16 &&
-			stride[0] == 1 && stride[1] == 1);
 	});
 
 	addAlgorithm<Conv2DBackward>("conv2DBackward",
@@ -280,7 +307,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 	{
 		Shape kernelShape = config.get<Shape>("kernelShape");
 		Shape stride = config.get<Shape>("stride");
-		return (kernelShape[2] <= 16 && kernelShape[2] <= 16 &&
+		return (kernelShape[2] <= 16 && kernelShape[3] <= 16 &&
 			stride[0] == 1 && stride[1] == 1);
 	});
 

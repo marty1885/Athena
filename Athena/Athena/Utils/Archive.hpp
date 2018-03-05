@@ -58,7 +58,7 @@ bool save(const BoxedValues& states, std::string path)
 	boxToJson(j, states);
 
 	std::ofstream out(path);
-	out << j.dump();
+	out << j.dump(2);
 	//std::cout << j.dump(4) << std::endl;
 	out.close();
 	return true;
