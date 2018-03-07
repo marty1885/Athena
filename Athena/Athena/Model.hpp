@@ -177,6 +177,8 @@ public:
 	void summary(const Shape& inputShape) const;
 	virtual BoxedValues states() const;
 	virtual void loadStates(const BoxedValues& states);
+	void save(const std::string path) const;
+	void load(const std::string path);
 
 protected:
 	std::vector<Layer*> layers_;

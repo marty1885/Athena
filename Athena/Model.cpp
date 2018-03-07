@@ -1,4 +1,5 @@
 #include <Athena/Model.hpp>
+#include <Athena/Utils/Archive.hpp>
 
 #include <iostream>
 #include <string>
@@ -106,7 +107,18 @@ void SequentialNetwork::loadStates(const BoxedValues& states)
 		
 		auto layer = getLayer(key);
 		if(layer == nullptr)
-			throw AtError("Can't find layer \"" + key + "\". Maybe forget to initalize the model before loading the states?");
+			throw AtError("Can't find layer \"" + key +
+				"\". Maybe forget to initalize the model before loading the states or the model changed?");
 		layer->loadStates(boxed_cast<BoxedValues>(val));
 	}
+}
+
+void SequentialNetwork::save(const std::string path) const
+{
+	Archiver::save(states(), path);
+}
+
+void SequentialNetwork::load(const std::string path)
+{
+	loadStates(Archiver::load(path));
 }

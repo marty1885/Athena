@@ -47,9 +47,9 @@ int main()
 		std::cout << "input = " << x << ", result = " << res << std::endl;
 	}
 
-	At::save(net.states(), "a.json");
-	auto data = At::load("a.json");
-	// At::Tensor t;
+	using namespace At;
+	At::Archiver archiver;
+	archiver.save(net.states(), "b.json");
+	auto data = archiver.load("b.json");
 	net.loadStates(data);
-	// std::cout << t << std::endl;
 }

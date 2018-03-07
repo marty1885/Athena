@@ -70,11 +70,28 @@ BoxedValue<T>* box_cast(BoxedValueBase* ptr)
 }
 
 template <typename T>
+const BoxedValue<T>* box_cast(const BoxedValueBase* ptr)
+{
+	return dynamic_cast<const BoxedValue<T>*>(ptr);
+}
+
+template <typename T>
 T& boxed_cast(BoxedValueBase* ptr)
 {
 	if(ptr == nullptr)
 		throw AtError("Variable does not exist");
 	BoxedValue<T>* res = dynamic_cast<BoxedValue<T>*>(ptr);
+	if(res == nullptr)
+		throw AtError("Variable isn't typed as " + std::string(typeid(T).name()));
+	return res->value();
+}
+
+template <typename T>
+const T& boxed_cast(const BoxedValueBase* ptr)
+{
+	if(ptr == nullptr)
+		throw AtError("Variable does not exist");
+	const BoxedValue<T>* res = dynamic_cast<const BoxedValue<T>*>(ptr);
 	if(res == nullptr)
 		throw AtError("Variable isn't typed as " + std::string(typeid(T).name()));
 	return res->value();

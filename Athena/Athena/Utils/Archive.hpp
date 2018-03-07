@@ -22,97 +22,103 @@ nlohmann::json makeChild(std::string type, const T& val)
 	return j;
 }
 
-void boxToJson(nlohmann::json& j, const BoxedValues& states)
+class Archiver
 {
-	using json = nlohmann::json;
-	for(const auto& [key, elem] : states)
+public:
+
+	static void save(const BoxedValues& states, std::string path)
 	{
-		if(auto ptr = box_cast<BoxedValues>(elem); ptr != nullptr)
-		{
-			json child;
-			boxToJson(child, ptr->value());
-			j[key] = child;
-		}
-		else if(auto ptr = box_cast<std::vector<float>>(elem); ptr != nullptr)
-		{
-			j[key] = makeChild("FloatVector", ptr->value());
-		}
-		else if(auto ptr = box_cast<Shape>(elem); ptr != nullptr)
-		{
-			j[key] = makeChild("Shape", ptr->value());
-		}
-		else if(auto ptr = box_cast<std::string>(elem); ptr != nullptr)
-		{
-			j[key] = ptr->value();
-		}
-		else if(auto ptr = box_cast<float>(elem); ptr != nullptr)
-		{
-			j[key] = makeChild("Float32", ptr->value());
-		}
-		else
-		{
-			throw AtError("Not supported type");
-		}
+		nlohmann::json j;
+		boxToJson(j, states);
+
+		std::ofstream out(path);
+		out << j.dump(2);
+		out.close();
 	}
-}
 
-bool save(const BoxedValues& states, std::string path)
-{
-	nlohmann::json j;
-	boxToJson(j, states);
-
-	std::ofstream out(path);
-	out << j.dump(2);
-	//std::cout << j.dump(4) << std::endl;
-	out.close();
-	return true;
-}
-
-void jsonToBox(const nlohmann::json& j, BoxedValues& states)
-{
-	for (auto it=j.begin(); it!=j.end(); ++it)
+	static void boxToJson(nlohmann::json& j, const BoxedValues& states)
 	{
-		const nlohmann::json& elem = it.value();
-		std::string key = it.key();
-		if(elem.is_object() == true)
+		using json = nlohmann::json;
+		for(const auto& [key, elem] : states)
 		{
-			std::string type = elem["__type"];
-			if(type == "FloatVector")
+			if(auto ptr = box_cast<BoxedValues>(elem); ptr != nullptr)
 			{
-				states.set<std::vector<float>>(key, elem["__value"]);
+				json child;
+				boxToJson(child, ptr->value());
+				j[key] = child;
 			}
-			else if(type == "Shape")
+			else if(auto ptr = box_cast<std::vector<float>>(elem); ptr != nullptr)
 			{
-				states.set<Shape>(key, elem["__value"]);
+				j[key] = makeChild("FloatVector", ptr->value());
 			}
-			else if(type == "Float32")
+			else if(auto ptr = box_cast<Shape>(elem); ptr != nullptr)
 			{
-				states.set<float>(key, elem["__value"]);
+				j[key] = makeChild("Shape", ptr->value());
+			}
+			else if(auto ptr = box_cast<std::string>(elem); ptr != nullptr)
+			{
+				j[key] = ptr->value();
+			}
+			else if(auto ptr = box_cast<float>(elem); ptr != nullptr)
+			{
+				j[key] = makeChild("Float32", ptr->value());
 			}
 			else
 			{
-				BoxedValues params;
-				jsonToBox(elem, params);
-				states.set<BoxedValues>(key, params);
+				throw AtError("Not supported type");
 			}
 		}
-		else if(elem.is_string())
+	}
+
+
+	static void jsonToBox(const nlohmann::json& j, BoxedValues& states)
+	{
+		for (auto it=j.begin(); it!=j.end(); ++it)
 		{
-			states.set<std::string>(key, elem);
+			const nlohmann::json& elem = it.value();
+			std::string key = it.key();
+			if(elem.is_object() == true)
+			{
+				std::string type = elem["__type"];
+				if(type == "FloatVector")
+				{
+					states.set<std::vector<float>>(key, elem["__value"]);
+				}
+				else if(type == "Shape")
+				{
+					states.set<Shape>(key, elem["__value"]);
+				}
+				else if(type == "Float32")
+				{
+					states.set<float>(key, elem["__value"]);
+				}
+				else
+				{
+					BoxedValues params;
+					jsonToBox(elem, params);
+					states.set<BoxedValues>(key, params);
+				}
+			}
+			else if(elem.is_string())
+			{
+				states.set<std::string>(key, elem);
+			}
 		}
 	}
-}
 
-BoxedValues load(std::string path)
-{
-	std::ifstream in(path);
-	nlohmann::json j;
-	in >> j;
-	in.close();
+	static BoxedValues load(std::string path)
+	{
+		std::ifstream in(path);
+		nlohmann::json j;
+		in >> j;
+		in.close();
 
-	BoxedValues vals;
-	jsonToBox(j, vals);
-	return vals;
-}
+		BoxedValues vals;
+		jsonToBox(j, vals);
+		return vals;
+	}
+
+};
+
 
 }
