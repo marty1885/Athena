@@ -41,9 +41,7 @@ public:
 class Layer
 {
 public:
-	virtual ~Layer()
-	{
-	}
+	virtual ~Layer() = default;
 
 	Layer():
 		weightInitalizer_(std::make_shared<Xavier>())
@@ -55,10 +53,7 @@ public:
 	{
 	}
 
-	virtual Tensor forward(const Tensor& input)
-	{
-		return Tensor();
-	}
+	virtual Tensor forward(const Tensor& input) = 0;
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy)
@@ -68,12 +63,12 @@ public:
 	//Caclulate the output shape given a input shape
 	virtual Shape outputShape(const Shape& s) = 0;
 
-	bool trainable() const
+	inline bool trainable() const
 	{
 		return trainable_;
 	}
 
-	void setTrainable(bool val)
+	inline void setTrainable(bool val)
 	{
 		trainable_ = val;
 	}
@@ -83,12 +78,12 @@ public:
 		return std::vector<Tensor>();
 	}
 
-	bool isInitialized() const
+	inline bool isInitialized() const
 	{
 		return backend_ != nullptr;
 	}
 
-	std::string type() const
+	inline std::string type() const
 	{
 		return type_;
 	}
@@ -108,7 +103,7 @@ public:
 		name_ = name;
 	}
 
-	std::string name() const
+	inline std::string name() const
 	{
 		return name_;
 	}
@@ -133,7 +128,7 @@ public:
 
 protected:
 
-	void setType(const std::string& str)
+	inline void setType(const std::string& str)
 	{
 		type_ = str;
 	}
@@ -401,6 +396,17 @@ protected:
 	delegate<LeakyReluBackward> backwardAlgorithm_;
 	float alpha_;
 };
+
+//Short names
+using FullyConnected = FullyConnectedLayer;
+using Dense = FullyConnectedLayer;
+using Conv2D = Conv2DLayer;
+using Sigmoid = SigmoidLayer;
+using Tanh = TanhLayer;
+using Relu = ReluLayer;
+using LeakyRelu = LeakyReluLayer;
+using Reshape = ReshapeLayer;
+using Flatten = FlattenLayer;
 
 }
 

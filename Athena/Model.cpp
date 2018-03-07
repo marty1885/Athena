@@ -8,6 +8,12 @@
 
 using namespace At;
 
+SequentialNetwork::~SequentialNetwork()
+{
+	for(auto layer : layers_)
+		delete layer;
+}
+
 void SequentialNetwork::summary(const Shape& inputShape) const
 {
 	auto repeat = [](const std::string& str, int n) {std::ostringstream os;for(int i=0;i<n;i++)os << str; return os.str();};
@@ -36,10 +42,7 @@ void SequentialNetwork::summary(const Shape& inputShape) const
 
 		const auto& shape = l->outputShape(currentInputShape);
 		currentInputShape = shape;
-		std::ostringstream stream;
-		stream << shape;
-		std::string shapeStr =  stream.str();
-		std::cout << trimString(shapeStr, 20) << " ";
+		std::cout << trimString(to_string(shape), 20) << " ";
 
 		if(l->trainable() == false)
 			std::cout << trimString("0", 16);
@@ -122,7 +125,7 @@ void SequentialNetwork::loadStates(const BoxedValues& states)
 		if(key == "__type")
 		{
 			if(boxed_cast<std::string>(val) != "SequentialNetwork")
-				throw AtError("Can't load.");
+				throw AtError("Can't load the states. The given states are not for SequentialNetwork");
 			continue;
 		}
 		

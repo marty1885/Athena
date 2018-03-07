@@ -599,7 +599,7 @@ TensorImpl* XtensorBackend::normal(float mean, float stddev, const Shape& shape)
 	std::normal_distribution<float> dist(mean, stddev);
 	std::vector<float> vec;
 
-	size_t size = std::accumulate(shape.begin(), shape.end(), 1L, std::multiplies<size_t>());
+	size_t size = shape.volume();
 	vec.resize(size);
 	for(auto& v : vec)
 		v = dist(eng);

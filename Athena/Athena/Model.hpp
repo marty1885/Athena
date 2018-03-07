@@ -17,11 +17,7 @@ namespace At
 class SequentialNetwork
 {
 public:
-	virtual ~SequentialNetwork()
-	{
-		for(auto layer : layers_)
-			delete layer;
-	}
+	virtual ~SequentialNetwork();
 
 	SequentialNetwork(Backend* backend)
 		: backend_(backend)

@@ -260,13 +260,11 @@ public:
 	//Direct data access is not avliable for ArrayFire
 	virtual float* hostPtr() override
 	{
-		throw AtError("hostPtr not implemented now");
 		return nullptr;
 	}
 
 	virtual const float* hostPtr() const override
 	{
-		throw AtError("const hostPtr not implemented now");
 		return nullptr;
 	}
 
