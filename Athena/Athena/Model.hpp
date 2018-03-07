@@ -57,10 +57,7 @@ public:
 	}
 
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
-		size_t batchSize, size_t epoch)
-	{
-		fit(optimizer, loss, input, desireOutput, batchSize, epoch, [](float){}, [](float){});
-	}
+		size_t batchSize, size_t epoch);
 
 	template <typename OnBatchEnumerate
 		, typename OnEpochEnumerate>
@@ -125,52 +122,59 @@ public:
 		}
 	}
 
-	Tensor predict(const Tensor& input)
-	{
-		Tensor t = input.clone();
-		for(auto& layer : layers_)
-		{
-			Tensor out = layer->forward(t);
-			t = out;
-		}
+	Tensor predict(const Tensor& input);
 
-		return t;
-	}
+	float test(const Tensor& input, const Tensor& desireOutput, LossFunction& loss);
 
-	float test(const Tensor& input, const Tensor& desireOutput, LossFunction& loss)
-	{
-		Tensor t = input.clone();
-		for(auto& layer : layers_)
-		{
-			Tensor out = layer->forward(t);
-			t = out;
-		}
-
-		return loss.f(t, desireOutput).host()[0];
-	}
-
-	const Layer* operator[](int index) const
+	inline const Layer* operator[](int index) const
 	{
 		return layers_[index];
 	}
 
-	Layer* operator[](int index)
+	inline Layer* operator[](int index)
 	{
 		auto res = static_cast<const std::remove_reference<decltype(*this)>::type*>(this)->operator[] (index);
 		return const_cast<Layer*>(res);
 	}
 
-	size_t depth() const
+	inline size_t depth() const
 	{
 		return layers_.size();
 	}
 
-	Layer* getLayer(const std::string& name)
+	template <typename T=Layer>
+	T* layer(const std::string& name)
+	{
+		return const_cast<T*>(static_cast<const SequentialNetwork*>(this)->layer(name));
+	}
+
+	template <typename T=Layer>
+	const T* layer(const std::string& name) const
 	{
 		auto it = std::find_if (layers_.begin(), layers_.end(), [&name](const auto& layer){return layer->name() == name;});
 		if(it != layers_.end())
-			return *it;
+		{
+			T* ptr = dynamic_cast<T*>(*it);
+			if(ptr == nullptr)
+				throw AtError("Layer " + name + " cannot be casted to " + typeid(T).name());
+			return ptr;
+		}
 		return nullptr;
+	}
+
+	template <typename T=Layer>
+	T* layer(int i)
+	{
+		return const_cast<T*>(static_cast<const SequentialNetwork*>(this)->layer(i));
+	}
+
+	template <typename T=Layer>
+	const T* layer(int i) const
+	{
+		T* ptr = dynamic_cast<T*>(layers_[i]);
+		if(ptr == nullptr)
+			throw AtError("Layer " + std::to_string(i) + "in network cannot be casted to " + typeid(T).name());
+		return ptr;
 	}
 
 	void compile();

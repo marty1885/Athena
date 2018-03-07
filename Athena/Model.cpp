@@ -63,6 +63,27 @@ void SequentialNetwork::summary(const Shape& inputShape) const
 	std::cout << "Trainable weights: " << trainableWeights << '\n';
 }
 
+void SequentialNetwork::fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
+		size_t batchSize, size_t epoch)
+{
+	fit(optimizer, loss, input, desireOutput, batchSize, epoch, [](float){}, [](float){});
+}
+
+Tensor SequentialNetwork::predict(const Tensor& input)
+{
+	Tensor t = input;
+	for(auto& layer : layers_)
+		t = layer->forward(t);
+
+	return t;
+}
+
+float SequentialNetwork::test(const Tensor& input, const Tensor& desireOutput, LossFunction& loss)
+{
+	Tensor t = predict(input);
+	return loss.f(t, desireOutput).host()[0];
+}
+
 void SequentialNetwork::compile()
 {
 	std::map<std::string, int> layerApperence;
@@ -105,13 +126,14 @@ void SequentialNetwork::loadStates(const BoxedValues& states)
 			continue;
 		}
 		
-		auto layer = getLayer(key);
-		if(layer == nullptr)
+		auto l = layer(key);
+		if(l == nullptr)
 			throw AtError("Can't find layer \"" + key +
 				"\". Maybe forget to initalize the model before loading the states or the model changed?");
-		layer->loadStates(boxed_cast<BoxedValues>(val));
+		l->loadStates(boxed_cast<BoxedValues>(val));
 	}
 }
+
 
 void SequentialNetwork::save(const std::string path) const
 {
