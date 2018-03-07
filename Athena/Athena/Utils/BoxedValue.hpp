@@ -4,6 +4,8 @@
 #include <typeinfo>
 #include <memory>
 
+#include <Athena/Utils/Error.hpp>
+
 namespace At
 {
 
