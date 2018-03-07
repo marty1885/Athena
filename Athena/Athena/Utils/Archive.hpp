@@ -45,6 +45,10 @@ void boxToJson(nlohmann::json& j, const BoxedValues& states)
 		{
 			j[key] = ptr->value();
 		}
+		else if(auto ptr = box_cast<float>(elem); ptr != nullptr)
+		{
+			j[key] = makeChild("Float32", ptr->value());
+		}
 		else
 		{
 			throw AtError("Not supported type");
@@ -80,6 +84,10 @@ void jsonToBox(const nlohmann::json& j, BoxedValues& states)
 			else if(type == "Shape")
 			{
 				states.set<Shape>(key, elem["__value"]);
+			}
+			else if(type == "Float32")
+			{
+				states.set<float>(key, elem["__value"]);
 			}
 			else
 			{

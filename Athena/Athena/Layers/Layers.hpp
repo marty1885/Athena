@@ -330,6 +330,12 @@ public:
 	virtual void build() override;
 	virtual void update(Optimizer* optimizer) override;
 	std::vector<Tensor> weights() const override;
+	inline Shape stride() const {return strides_;};
+
+	void setStrides(const Shape& stride)
+	{
+		strides_ = stride;
+	}
 
 	virtual BoxedValues states() const override
 	{
@@ -377,6 +383,18 @@ public:
 	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override;
+	virtual BoxedValues states() const override
+	{
+		BoxedValues params;
+		params.set<std::string>("__type", type());
+		params.set<float>("alpha", alpha_);
+		return params;
+	}
+
+	virtual void loadStates(const BoxedValues& states) override
+	{
+		alpha_ = states.get<float>("alpha");
+	}
 
 protected:
 	delegate<LeakyReluForward> forwardAlgorithm_;
