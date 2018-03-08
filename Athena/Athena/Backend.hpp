@@ -57,7 +57,7 @@ struct FunctoinWrapper
 		return selector_;
 	}
 
-	virtual ~FunctoinWrapper(){}
+	virtual ~FunctoinWrapper() = default;
 
 };
 

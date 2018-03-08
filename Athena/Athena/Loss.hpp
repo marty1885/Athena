@@ -32,6 +32,7 @@ public:
 };
 
 using L2Loss = MSELoss;
+using MSE = MSELoss;
 
 class AbsoluteLoss : public LossFunction
 {

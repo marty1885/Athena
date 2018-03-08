@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <array>
 
+#include <assert.h>
+
 namespace At
 {
 
@@ -48,6 +50,7 @@ protected:
 	template <int Index>
 	Tensor& get(const Tensor& vec)
 	{
+		static_assert(Index <=N && Index >= 0);
 		auto& s = storage_[Index];
 		auto it = s.find(&vec);
 		if(it == s.end())
@@ -162,5 +165,32 @@ public:
 protected:
 	static const constexpr float epsilon_ = 1e-8f;	
 };
+
+/*
+//max not implemented yet
+class AdamaxOptimizer : public StatefulOptimizer<2>
+{
+public:
+	AdamaxOptimizer() : alpha_(0.002), b1_(0.9f), b2_(0.999), b1T_(b1_)
+	{
+	}
+
+	virtual void update(Tensor& weight, const Tensor& grad) override
+	{
+		auto& mt = get<0>(weight);
+		auto& ut = get<1>(weight);
+
+		mt = b1_*mt + + (1.f-b1_)*grad;
+		ut = max(b2_*ut, abs(grad));
+
+		weight -= (alpha_/(1.0-b1T_))*(mt/(ut+epsilon_));
+	}
+	float alpha_;
+	float b1_;
+	float b2_;
+	float b1T_;
+protected:
+	static const constexpr float epsilon_ = 1e-8f;
+};*/
 
 }
