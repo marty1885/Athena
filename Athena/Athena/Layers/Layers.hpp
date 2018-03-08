@@ -397,7 +397,6 @@ protected:
 	float alpha_;
 };
 
-//TODO: Disable dropout whtn inference
 class DropoutLayer : public Layer
 {
 public:
@@ -418,9 +417,20 @@ public:
 	{
 		rate_ = states.get<float>("alpha");
 	}
+
+	void setBypass(bool bypass)
+	{
+		bypass_ = bypass;
+	}
+
+	bool bypass() const
+	{
+		return bypass_;
+	}
 protected:
 	float rate_;
 	Tensor filter_;
+	bool bypass_ = false;
 };
 
 //Short names
@@ -433,6 +443,7 @@ using Relu = ReluLayer;
 using LeakyRelu = LeakyReluLayer;
 using Reshape = ReshapeLayer;
 using Flatten = FlattenLayer;
+using Dropout = DropoutLayer;
 
 }
 

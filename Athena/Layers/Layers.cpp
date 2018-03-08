@@ -261,12 +261,20 @@ void DropoutLayer::build()
 
 Tensor DropoutLayer::forward(const Tensor& x)
 {
-	filter_ = At::rand(0, 1, x.shape(), *backend()) < rate_;
-	return x*filter_;
+	if(bypass_ == false)
+	{
+		filter_ = At::rand(0, 1, x.shape(), *backend()) < rate_;
+		return x*filter_;
+	}
+	return x;
+	
 }
 
 void DropoutLayer::backword(const Tensor& x, const Tensor& y,
 	Tensor& dx, const Tensor& dy)
 {
-	dx = dy*filter_;
+	if(bypass_ == false)
+		dx = dy*filter_;
+	else
+		dx = dy;
 }

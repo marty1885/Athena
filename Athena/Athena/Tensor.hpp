@@ -568,7 +568,7 @@ inline Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
 	return t.stack(q, axis);
 }
 
-static int tensorToOstream (std::ostream& os, float* arr, Shape shape, int depth, int maxDepth, int maxLength=0)
+static int prittyPrintTensor (std::ostream& os, float* arr, Shape shape, int depth, int maxDepth, int maxLength=0)
 {
 	auto floatToStr = [&](float val)->std::string
 	{
@@ -610,7 +610,7 @@ static int tensorToOstream (std::ostream& os, float* arr, Shape shape, int depth
 		int val = 0;
 		for(intmax_t i=0;i<size;i++)
 		{
-			val = tensorToOstream(os, arr+i*vol, shape,depth+1, maxDepth, maxLength);
+			val = prittyPrintTensor(os, arr+i*vol, shape,depth+1, maxDepth, maxLength);
 			os << (i==size-1 ? "" : ", ");
 			if(i != size-1)
 			{
@@ -636,7 +636,7 @@ inline std::ostream& operator<< (std::ostream& os, const Tensor& t)
 	}
 
 	std::vector<float> v = t.host();
-	tensorToOstream(os, &v[0], t.shape(), 0, t.shape().size());
+	prittyPrintTensor(os, &v[0], t.shape(), 0, t.shape().size());
 	return os;
 }
 
