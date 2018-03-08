@@ -247,3 +247,26 @@ void LeakyReluLayer::backword(const Tensor& x, const Tensor& y,
 	else
 		dx = dy*(y>0) + alpha_*dy*(y<0);
 }
+
+DropoutLayer::DropoutLayer(float rate, Backend* backend)
+	: Layer(backend)
+{
+	rate_ = rate;
+	setType("dropout");
+}
+
+void DropoutLayer::build()
+{
+}
+
+Tensor DropoutLayer::forward(const Tensor& x)
+{
+	filter_ = At::rand(0, 1, x.shape(), *backend()) < rate_;
+	return x*filter_;
+}
+
+void DropoutLayer::backword(const Tensor& x, const Tensor& y,
+	Tensor& dx, const Tensor& dy)
+{
+	dx = dy*filter_;
+}

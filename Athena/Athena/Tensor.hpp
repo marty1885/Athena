@@ -327,16 +327,7 @@ public:
 
 	virtual ~Tensor()
 	{
-		if(referenceCounter_ != nullptr)
-		{
-			if(referenceCounter_->release() == 0)
-			{
-				delete referenceCounter_;
-				backend()->destoryTensor(pimpl_);
-			}
-		}
-		referenceCounter_ = nullptr;
-		pimpl_ = nullptr;
+		release();
 	}
 
 	inline TensorImpl* pimpl()
@@ -388,6 +379,20 @@ public:
 		const auto& values = states.get<std::vector<float>>("values");
 		const auto& s = states.get<Shape>("shape");
 		*this = Tensor(values, s);
+	}
+
+	void release()
+	{
+		if(referenceCounter_ != nullptr)
+		{
+			if(referenceCounter_->release() == 0)
+			{
+				delete referenceCounter_;
+				backend()->destoryTensor(pimpl_);
+			}
+		}
+		referenceCounter_ = nullptr;
+		pimpl_ = nullptr;
 	}
 
 protected:

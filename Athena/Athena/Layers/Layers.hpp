@@ -397,6 +397,32 @@ protected:
 	float alpha_;
 };
 
+//TODO: Disable dropout whtn inference
+class DropoutLayer : public Layer
+{
+public:
+	DropoutLayer(float rate, Backend* backend = nullptr);
+	virtual void build() override;
+	virtual Tensor forward(const Tensor& x) override;
+	virtual void backword(const Tensor& x, const Tensor& y,
+		Tensor& dx, const Tensor& dy) override;
+	virtual BoxedValues states() const override
+	{
+		BoxedValues params;
+		params.set<std::string>("__type", type());
+		params.set<float>("rate", rate_);
+		return params;
+	}
+
+	virtual void loadStates(const BoxedValues& states) override
+	{
+		rate_ = states.get<float>("alpha");
+	}
+protected:
+	float rate_;
+	Tensor filter_;
+};
+
 //Short names
 using FullyConnected = FullyConnectedLayer;
 using Dense = FullyConnectedLayer;
