@@ -57,25 +57,26 @@ public:
 	virtual void forward(const SmallVector<const Tensor*> x, SmallVector<Tensor*> y)
 	{
 		if(x.size() != 1)
-			throw AtError("Error: Input Vector of Tensor does not have length 1");
+			throw AtError("Forwording with multiple variables are not implemnted.");
 		*y[0] = forward(*x[0]);
 	}
 
 	virtual Tensor forward(const Tensor& input)
 	{
-		throw AtError("Old style forward function not implemented");
+		throw AtError("Forwarding with one variable not implemented");
 	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy)
 	{
+		throw AtError("Backwording with one variable not implemented");
 	}
 
 	virtual void backword(const SmallVector<const Tensor*> x, const SmallVector<const Tensor*> y
 		,SmallVector<Tensor*> dx ,const SmallVector<const Tensor*> dy)
 	{
 		AtAssert(x.size() == 1 && y.size() == 1 && dy.size() == 1,
-			"Error: Backword data num not match");
+			"Backwording with multiple variables are not implemnted.");
 
 		backword(*x[0], *y[0], *dx[0], *dy[0]);
 	}
