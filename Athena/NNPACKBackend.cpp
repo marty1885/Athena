@@ -54,6 +54,26 @@ inline Tensor reluGradientWithNegSlope(const Tensor& a, const Tensor& b, float n
 	return res;
 }
 
+inline void nnpMatmul(const Tensor& x, const Tensor& y, Tensor& res, pthreadpool_t threadpool)
+{
+	AtAssert(x.dimension() == 2);
+	AtAssert(y.dimension() == 2);
+	const float* xPtr = x.hostPtr();
+	const float* yPtr = y.hostPtr();
+	intmax_t batchSize = x.shape()[0];
+	intmax_t inVecSize = x.shape()[1];
+	intmax_t outVecSize = y.shape()[0];
+	intmax_t outSize = inVecSize*outVecSize;
+	if(res.size() != (size_t)outSize)
+		res.resize({inVecSize, outVecSize});
+	float* resPtr = res.hostPtr();
+
+	auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, xPtr, yPtr, resPtr, threadpool, nullptr);
+
+	if(status != nnp_status_success)
+		throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
+}
+
 NNPackBackend::NNPackBackend(intmax_t threads)
 {
 	auto status = nnp_initialize();

@@ -13,4 +13,10 @@ public:
 private:
 	std::string msg_;
 };
+
+#define AtAssertWithMessage(expression, msg) do{if((expression) == false) throw At::AtError(msg);}while(0)
+#define AtAssertNoMessage(expression) do{if((expression) == false) throw At::AtError(#expression);}while(0)
+
+#define GetAtAssrtyMacro(_1,_2,NAME,...) NAME
+#define AtAssert(...) GetAtAssrtyMacro(__VA_ARGS__ ,AtAssertWithMessage, AtAssertNoMessage)(__VA_ARGS__)
 }

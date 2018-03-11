@@ -74,13 +74,10 @@ public:
 	virtual void backword(const SmallVector<const Tensor*> x, const SmallVector<const Tensor*> y
 		,SmallVector<Tensor*> dx ,const SmallVector<const Tensor*> dy)
 	{
-		if(x.size() == 1 && y.size() == 1 && dy.size() == 1)
-		{
-			backword(*x[0], *y[0], *dx[0], *dy[0]);
-			return;
-		}
+		AtAssert(x.size() == 1 && y.size() == 1 && dy.size() == 1,
+			"Error: Backword data num not match");
 
-		throw AtError("Error: Backword data num not match");
+		backword(*x[0], *y[0], *dx[0], *dy[0]);
 	}
 	
 	//Caclulate the output shape given a input shape
