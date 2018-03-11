@@ -978,7 +978,7 @@ void SmallVectorBase::grow_pod(void *FirstEl, size_t MinSizeInBytes,
 
 namespace At
 {
-	template <typename T, unsigned N=6>//6 is an arbitrary value
+	template <typename T, unsigned N=3>//6 is an arbitrary value
 	using SmallVector = llvm_vecsmall::SmallVector<T, N>;
 }
 

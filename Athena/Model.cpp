@@ -76,7 +76,11 @@ Tensor SequentialNetwork::predict(const Tensor& input)
 {
 	Tensor t = input;
 	for(auto& layer : layers_)
-		t = layer->forward(t);
+	{
+		Tensor y;
+		layer->forward({&t}, {&y});
+		t = std::move(y);
+	}
 
 	return t;
 }

@@ -53,11 +53,34 @@ public:
 	{
 	}
 
-	virtual Tensor forward(const Tensor& input) = 0;
+	//Temp function, use to gap the code difference between new API
+	virtual void forward(const SmallVector<const Tensor*> x, SmallVector<Tensor*> y)
+	{
+		if(x.size() != 1)
+			throw AtError("Error: Input Vector of Tensor does not have length 1");
+		*y[0] = forward(*x[0]);
+	}
+
+	virtual Tensor forward(const Tensor& input)
+	{
+		throw AtError("Old style forward function not implemented");
+	}
 
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy)
 	{
+	}
+
+	virtual void backword(const SmallVector<const Tensor*> x, const SmallVector<const Tensor*> y
+		,SmallVector<Tensor*> dx ,const SmallVector<const Tensor*> dy)
+	{
+		if(x.size() == 1 && y.size() == 1 && dy.size() == 1)
+		{
+			backword(*x[0], *y[0], *dx[0], *dy[0]);
+			return;
+		}
+
+		throw AtError("Error: Backword data num not match");
 	}
 	
 	//Caclulate the output shape given a input shape

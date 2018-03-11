@@ -88,7 +88,8 @@ public:
 				for(auto& layer : layers_)
 				{
 					const auto& currentInput = layerOutputs[index];
-					Tensor out = layer->forward(currentInput);
+					Tensor out;
+					layer->forward({&currentInput}, {&out});
 					layerOutputs[++index] = std::move(out);
 				}
 
@@ -96,18 +97,17 @@ public:
 					throw AtError("Expecting model output with shape " + to_string(y.shape())
 						+ " but get " + to_string(layerOutputs.back().shape()));
 
-				Tensor E = layerOutputs.back() - y;
 				Tensor dE = loss.df(layerOutputs.back(), y);
 
 				for(int k=layers_.size()-1;k>=0;k--)
 				{
 					auto& layer = layers_[k];
-					Tensor tmp;
-					layer->backword(layerOutputs[k],layerOutputs[k+1], tmp, dE);
+					Tensor dx;
+					layer->backword({&layerOutputs[k]},{&layerOutputs[k+1]}, {&dx}, {&dE});
 					if(layer->trainable())
 						layer->update(&optimizer);
 
-					dE = std::move(tmp);
+					dE = std::move(dx);
 				}
 				float batchLoss = loss.f(layerOutputs.back(), y).host()[0];
 				onBatchEnumerate(batchLoss);
