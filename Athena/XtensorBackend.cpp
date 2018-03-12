@@ -476,7 +476,7 @@ XtensorBackend::XtensorBackend()
 			intmax_t filterHeight = kernels.shape()[2];
 			intmax_t filterWidth = kernels.shape()[3];
 
-			assert(inputChannels == filterChannels);
+			AtAssert(inputChannels == filterChannels);
 			_unused(inputChannels);
 
 			intmax_t filterChannlelSize = filterHeight*filterWidth*filterChannels;

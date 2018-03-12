@@ -94,7 +94,28 @@ struct FunctionContainer : public FunctoinWrapper
 	{
 		return func_;
 	}
+
+	explicit operator bool() const
+	{
+		return (bool)func_;
+	}
+
+	//Unfortunatelly making a function-call operator is impossible
+	template <typename ResType, typename ... Args>
+	inline ResType call(Args&& ... args)
+	{
+		  return func_(args ...);
+	}
 };
+
+template <typename RetType, typename ... Args>
+RetType invoke(FunctoinWrapper& wrapper, Args&& ... args)
+{
+	using FT = RetType(Args ...);
+	auto container = dynamic_cast<FunctionContainer<FT>*>(&wrapper);
+	AtAssert(container != nullptr, std::string("Cannot cast Function to ") + typeid(FT).name());
+	return container->get()(args ...);
+}
 
 class Backend
 {
@@ -152,7 +173,6 @@ public:
 					return container->get();
 					
 			}
-			// throw AtError("Algorithm \"" + name + "\" is not typed as \"" + typeid(FT).name());
 		}
 		return delegate<FT>();
 	}
@@ -167,17 +187,10 @@ public:
 	{
 		if(&other == this)//For good measure
 			return;
-		//Implement proper error handling
-		try
-		{
-			auto algo = other.template getFunction<FT>(name);
-			addAlgorithm<FT>(name, algo.get(), algo.selector());
-		}
-		catch(AtError e)
-		{
-			throw AtError("Algorithm \"" + name + "\" not avliable while assigning it from"
-				+ other.type() + " bakend to " + type() + " backend.");
-		}
+		auto algo = other.template getFunction<FT>(name);
+		if((bool)algo == false)
+			throw AtError(std::string("Algorithm ") + name + "with type " + typeid(FT).name() + " cannot be found ");
+		addAlgorithm<FT>(name, algo.get(), algo.selector());
 	}
 
 protected:

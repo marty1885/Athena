@@ -102,8 +102,8 @@ public:
 		if(this == &t)
 			return;
 
-		pimpl_ = (TensorImpl*)t.pimpl();
-		referenceCounter_ = t.referenceCounter();
+		pimpl_ = t.pimpl_;
+		referenceCounter_ = t.referenceCounter_;
 		if(referenceCounter_ != nullptr)
 			referenceCounter_->addRef();
 	}
@@ -113,17 +113,10 @@ public:
 		if(this == &other || other.pimpl() == nullptr)
 			return *this;
 
-		if(referenceCounter_ != nullptr && other.referenceCounter() != nullptr)
-		{
-			if(referenceCounter_->release() == 0)
-			{
-				delete referenceCounter_;
-				backend()->destoryTensor(pimpl_);
-			}
-		}
+		release();
 
-		pimpl_ = (TensorImpl*)other.pimpl();
-		referenceCounter_ = other.referenceCounter();
+		pimpl_ = other.pimpl_;
+		referenceCounter_ = other.referenceCounter_;
 		if(referenceCounter_ != nullptr)
 			referenceCounter_->addRef();
 
