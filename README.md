@@ -1,6 +1,6 @@
 # Athena
 
-`Athena` is a deep learning framework in C++. It is designed for maxima performance and the ablity to run on any systems and accelerators without being vender locked-in.
+`Athena` is a deep learning framework in C++17. It is designed for maxima performance and the ablity to run on any systems and accelerators without being vender locked-in.
 
 ## Introduction
 
