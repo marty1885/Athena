@@ -426,6 +426,10 @@ public:
 	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
 		Tensor& dx, const Tensor& dy) override;
+	virtual Shape outputShape(const Shape& s) override
+	{
+		return s;
+	}
 	virtual BoxedValues states() const override
 	{
 		BoxedValues params;
@@ -436,7 +440,7 @@ public:
 
 	virtual void loadStates(const BoxedValues& states) override
 	{
-		rate_ = states.get<float>("alpha");
+		rate_ = states.get<float>("rate");
 	}
 
 	void setBypass(bool bypass)

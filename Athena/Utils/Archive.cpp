@@ -19,6 +19,8 @@ void Archiver::save(const BoxedValues& states, std::string path)
 	boxToJson(j, states);
 
 	std::ofstream out(path);
+	if(out.good() == false)
+		throw AtError("Cannot write to file " + path);
 	out << j.dump(2);
 	out.close();
 }
@@ -96,6 +98,8 @@ void Archiver::jsonToBox(const nlohmann::json& j, BoxedValues& states)
 BoxedValues Archiver::load(std::string path)
 {
 	std::ifstream in(path);
+	if(in.good() == false)
+		throw AtError("Can't read file " + path);
 	nlohmann::json j;
 	in >> j;
 	in.close();
