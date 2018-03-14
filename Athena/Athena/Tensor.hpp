@@ -350,6 +350,7 @@ public:
 
 	static Backend* defaultBackend()
 	{
+		AtAssert(defaultBackend_ != nullptr, "Default backend not set. Please set it before using it.");
 		return defaultBackend_;
 	}
 
