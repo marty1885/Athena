@@ -379,6 +379,34 @@ ArrayFireBackend::ArrayFireBackend()
 			af::array res = dy*(y>0) + alpha*dy*(y<0);
 			return createTensor(std::move(res), a.shape());
 		});
+	addAlgorithm<Conv2DForward>("conv2DForward",
+		[this](const Tensor& x, const Tensor& kernel, const Tensor& bias, const Shape& strides)->Tensor
+	{
+		intmax_t batchSize = x.shape()[0];
+		intmax_t inputHeight = x.shape()[2];
+		intmax_t inputWidth = x.shape()[3];
+
+		intmax_t outputChannels = kernel.shape()[0];
+		intmax_t filterHeight = kernel.shape()[2];
+		intmax_t filterWidth = kernel.shape()[3];
+		intmax_t outputHeight = (inputHeight-filterHeight)/strides[0]+1;
+		intmax_t outputWidth = (inputWidth-filterWidth)/strides[1]+1;
+
+		assert(x.shape()[1] == kernel.shape()[1]);
+		Shape outputShape({batchSize, outputChannels, outputHeight, outputWidth});
+		af::array arr = af::convolve(get(x), get(kernel))+get(bias);
+		intmax_t hw = filterWidth/2;
+		intmax_t hh = filterHeight/2;
+		arr = arr(af::seq(hw, af::end-hw), af::seq(hh, af::end-hh), af::span, af::span);
+		return new AFTensorImpl(std::move(arr), outputShape, this);
+	}
+	,[](const BoxedValues& config)->bool
+	{
+		Shape kernelShape = config.get<Shape>("kernelShape");
+		Shape stride = config.get<Shape>("stride");
+		return (kernelShape[2] <= 16 && kernelShape[3] <= 16 &&
+			stride[0] == 1 && stride[1] == 1);
+	});
 }
 
 TensorImpl* ArrayFireBackend::createTensor(const Shape& dims)
