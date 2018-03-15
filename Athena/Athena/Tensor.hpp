@@ -266,6 +266,8 @@ public:
 
 	size_t size() const
 	{
+		if((bool)(*this) == false)
+			return 0;
 		return pimpl_->size();
 	}
 

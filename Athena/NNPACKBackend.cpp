@@ -198,19 +198,20 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		intmax_t outputHeight = (inputHeight-filterHeight)/strides[0]+1;
 		intmax_t outputWidth = (inputWidth-filterWidth)/strides[1]+1;
 
+		assert(inputChannels == kernel.shape()[1]);
+
 		nnp_size inputSize = {(size_t)inputWidth, (size_t)inputHeight};//NNPACK uses WH instead of HW
 		nnp_padding inputPadding = {0, 0, 0, 0};
 
-		Shape outputShape({batchSize, kernel.shape()[0], outputHeight, outputWidth});
+		Shape outputShape({batchSize, outputChannels, outputHeight, outputWidth});
 		std::vector<float> res(outputShape.volume());
-		std::array<intmax_t,2> kernelShape = {filterHeight, filterWidth};
 
 		nnp_size kernelSize = {(size_t)filterWidth, (size_t)filterHeight};
 
 		//Use output mode if possble. May not be a good idea?
 		if(strides[0] == 1 && strides[1] == 1
-			&& kernelShape[2] <= 16 && kernelShape[3] <= 16
-			&& kernelShape[2] != 1 && kernelShape[3] != 1)
+			&& filterHeight <= 16 && filterWidth <= 16
+			&& filterHeight != 1 && filterWidth != 1)
 		{
 			auto status = nnp_convolution_output(algorithm,
 				batchSize,
@@ -283,8 +284,10 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		std::vector<float> res(resShape.volume());
 		float* gradInput = &res[0];
 
-		std::vector<float> gradKernel(kernel.shape().volume());
-		float* gradKernelPtr = &gradKernel[0];
+		if(dW.size() != kernel.size())
+			dW = kernel.backend()->createTensor(kernel.shape());
+		float* gradKernelPtr = dW.hostPtr();
+		//TODO: Check for nullptr
 
 		db = currDelta.sum({0, 2, 3});
 		db.resize({db.shape()[0], db.shape().volume()/db.shape()[0]});
@@ -320,7 +323,6 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			nullptr);
 		if(status != nnp_status_success)
 			throw AtError("nnp_convolution_input_gradient execution failed. Error " + std::to_string(status));
-		dW = currDelta.backend()->createTensor(std::move(gradKernel), kernel.shape());
 
 		return currDelta.backend()->createTensor(std::move(res), resShape);
 	},[](const BoxedValues& config)->bool

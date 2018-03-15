@@ -6,8 +6,9 @@
 #include <xtensor/xrandom.hpp>
 #include <xtensor/xio.hpp>
 #include <xtensor/xvectorize.hpp>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xstrided_view.hpp>
+
+#include <xtensor-blas/xlinalg.hpp>
 
 #include <random>
 #include <chrono>
@@ -171,9 +172,9 @@ public:
 
 	virtual TensorImpl* slice(const Shape& begin, const Shape& size) const override
 	{
-		xt::slice_vector sv(arr_);
+		xt::slice_vector sv;
 		for(size_t i=0;i<begin.size();i++)
-			sv.push_back(xt::range(begin[i], begin[i]+size[i]));
+			sv.push_back(xt::range((int)begin[i], (int)(begin[i]+size[i])));//Why int...?
 		return new XtensorTensorImpl(std::move(xt::dynamic_view(arr_, sv)), (XtensorBackend*)backend());
 	}
 

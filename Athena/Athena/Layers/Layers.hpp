@@ -167,7 +167,7 @@ public:
 	FullyConnectedLayer(Backend* backend = nullptr);
 	FullyConnectedLayer(intmax_t input, intmax_t output, Backend* backend = nullptr);
 	FullyConnectedLayer(intmax_t output, Backend* backend = nullptr);
-	virtual Shape outputShape(const Shape& s);
+	virtual Shape outputShape(const Shape& s) override;
 	virtual void build() override;
 	virtual Tensor forward(const Tensor& x) override;
 	virtual void backword(const Tensor& x, const Tensor& y,
@@ -288,7 +288,7 @@ public:
 		return params;
 	}
 
-	void loadStates(const BoxedValues& states)
+	void loadStates(const BoxedValues& states) override
 	{
 		incomeShape_ = states.get<Shape>("incomeShape");
 		outputShape_ = states.get<Shape>("outputShape");
