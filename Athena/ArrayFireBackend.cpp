@@ -204,7 +204,6 @@ public:
 		//XXX: af::end and af::span seem not to work when stored as af::seq. This is a workarround
 		for(size_t i=0;i<sliceDims;i++)
 		{
-			//std::cout << "Loop " << i << std::endl;
 			dim[s.size()-i-1] = af::seq(begin[i], begin[i]+size[i]-1);
 			s[i] = size[i];
 		}
@@ -234,8 +233,10 @@ public:
 
 	TensorImpl* concatenate(const TensorImpl* other, int axis) const override
 	{
-		throw AtError("concat not implemented now");
-		return nullptr;
+		const auto& o = ((AFTensorImpl*)(other))->get();
+		auto s = shape();
+		s[axis] += other->shape()[axis];
+		return new AFTensorImpl(af::join(shape().size()-axis-1, arr_, o), s, (ArrayFireBackend*)backend());
 	}
 
 	virtual TensorImpl* exp() const override
@@ -302,9 +303,10 @@ inline const af::array& get(const Tensor& t)
 	return ((const AFTensorImpl*)t.pimpl())->get();
 }
 
-ArrayFireBackend::ArrayFireBackend()
+ArrayFireBackend::ArrayFireBackend(AFBackend afBackend)
 {
 	setType("arrayfire");
+	setAFBackend(afBackend);
 
 	//Enable brodcasting
 	af::gforSet(true);

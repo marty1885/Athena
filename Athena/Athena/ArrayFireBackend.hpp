@@ -11,7 +11,15 @@ namespace At
 class ArrayFireBackend : public Backend
 {
 public:
-	ArrayFireBackend();
+	enum AFBackend
+	{
+		Default = 0,
+		CPU = 1,
+		CUDA = 2,
+		OpenCL = 3
+	};
+
+	ArrayFireBackend(AFBackend afBackend=Default);
 	virtual ~ArrayFireBackend()
 	{
 	}
@@ -25,14 +33,6 @@ public:
 	virtual TensorImpl* ones(const Shape& shape) override;
 	virtual TensorImpl* rand(float lEdge, float rEdge, const Shape& shape) override;
 	virtual TensorImpl* normal(float mean, float stddev, const Shape& shape) override;
-
-	enum AFBackend
-	{
-		Default = 0,
-		CPU = 1,
-		CUDA = 2,
-		OpenCL = 3
-	};
 
 	void setAFBackend(AFBackend type);
 	AFBackend getAFBackend() const;
