@@ -55,14 +55,14 @@ void FullyConnectedLayer::backword(const Tensor& x, const Tensor& y,
 	else
 		dx = dy.dot(transpose(w_));
 
-	dE = dy;
+	dE = dy.sum(0);
 	dW = dot(x.transpose(), dy);
 }
 
 void FullyConnectedLayer::update(Optimizer* optimizer)
 {
 	optimizer->update(w_, dW);
-	optimizer->update(b_, dE.sum(0));
+	optimizer->update(b_, dE);
 }
 
 BoxedValues FullyConnectedLayer::states() const

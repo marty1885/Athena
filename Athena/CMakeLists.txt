@@ -15,7 +15,7 @@ endif()
 
 if(ATHENA_ENABLE_ARRAYFIRE)
 	list(APPEND ATHENA_SRC ArrayFireBackend.cpp)
-	list(APPEND ATHENA_LIB afcpu)#TODO: remember to switch to GPU later on
+	list(APPEND ATHENA_LIB af)
 endif()
 
 add_library(Athena SHARED ${ATHENA_SRC})
