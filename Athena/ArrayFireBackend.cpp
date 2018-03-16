@@ -56,7 +56,7 @@ public:
 			throw AtError("ArrayFire backend only supports upto 4D Tensor, got " + std::to_string(s.size()) + "D.");
 		arrShape_ = s;
 		if(arr.type() != f32)
-			throw AtError("ArrayFire backend only works with floats. Please convert into floats.");
+			throw AtError("ArrayFire backend only works with floats. Please convert into floats. dtype enum = " + std::to_string(arr.type()));
 		arr_ = std::move(arr);
 	}
 
@@ -487,4 +487,37 @@ TensorImpl* ArrayFireBackend::normal(float mean, float stddev, const Shape& shap
 	for(auto& v : vec)
 		v = dist(eng);
 	return createTensor(std::move(vec), shape);
+}
+
+ArrayFireBackend::AFBackend ArrayFireBackend::getAFBackend() const
+{
+	auto b = af::getActiveBackend();
+	if(b == AF_BACKEND_DEFAULT)
+		return AFBackend::Default;
+	else if(b == AF_BACKEND_CPU)
+		return AFBackend::CPU;
+	else if(b == AF_BACKEND_CUDA)
+		return AFBackend::CUDA;
+	else if(b == AF_BACKEND_OPENCL)
+		return AFBackend::OpenCL;
+	throw AtError("Unknown ArrayFire backend.");
+}
+
+void ArrayFireBackend::setAFBackend(AFBackend type)
+{
+	try
+	{
+		if(type == AFBackend::Default)
+			af::setBackend(AF_BACKEND_DEFAULT);
+		else if(type == AFBackend::CPU)
+			af::setBackend(AF_BACKEND_CPU);
+		else if(type == AFBackend::CUDA)
+			af::setBackend(AF_BACKEND_CUDA);
+		else if(type == AFBackend::OpenCL)
+			af::setBackend(AF_BACKEND_OPENCL);
+	}
+	catch(af::exception& e)
+	{
+		throw AtError(std::string("Failed to set AF backend.\n") + e.what());
+	}
 }
