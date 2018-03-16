@@ -152,11 +152,11 @@ public:
 	virtual TensorImpl* dot(const TensorImpl* other) const override
 	{
 		const auto& o = ((AFTensorImpl*)other)->get();
-		//TODO: Find a way to not need this transpose
-		af::array res = af::transpose(af::matmulTT(arr_, o));
 		int size = std::max(arr_.numdims(), o.numdims());
 		if(size != 2)
-			throw AtError("ArrayFire backend can only support 2D dot product now");
+			throw AtError("ArrayFire backend can only support 2D dot product (matmul) now");
+		//TODO: Find a way to not need this transpose
+		af::array res = af::transpose(af::matmulTT(arr_, o));
 		return new AFTensorImpl(res, shapeFromDim4(res.dims(), size), (ArrayFireBackend*)backend());
 	}
 
@@ -193,14 +193,31 @@ public:
 		return new AFTensorImpl(af::pow(arr_, val), arrShape_, (ArrayFireBackend*)backend());
 	}
 
-	//TODO: Implement better slicing
 	virtual TensorImpl* slice(const Shape& begin, const Shape& size) const override
 	{
-		if(begin.size() != 1 || size.size() != 1)
-			throw AtError("ArrayFire backend can only slice alone the first axis");
+		AtAssert(begin.size() == size.size() && begin.size() <= 4);
+		af::seq dim[4];
+		size_t sliceDims = begin.size();
 		Shape s = shape();
-		s[0] = size[0];
-		af::array arr = arr_.cols(begin[0], begin[0]+size[0]-1);
+		size_t tensorDims = s.size();
+		AtAssert(sliceDims != 0);
+		//XXX: af::end and af::span seem not to work when stored as af::seq. This is a workarround
+		for(size_t i=0;i<sliceDims;i++)
+		{
+			//std::cout << "Loop " << i << std::endl;
+			dim[s.size()-i-1] = af::seq(begin[i], begin[i]+size[i]-1);
+			s[i] = size[i];
+		}
+
+		af::array arr;
+		if(tensorDims == 1)
+			arr = arr_(dim[0], af::span, af::span, af::span);
+		if(tensorDims == 2)
+			arr = arr_(dim[0], dim[1], af::span, af::span);
+		if(tensorDims == 3)
+			arr = arr_(dim[0], dim[1], dim[2], af::span);
+		if(tensorDims == 4)
+			arr = arr_(dim[0], dim[1], dim[2], dim[4]);
 		return new AFTensorImpl(arr, s, (ArrayFireBackend*)backend());
 	}
 
