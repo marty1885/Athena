@@ -552,7 +552,7 @@ TensorImpl* XtensorBackend::createTensor(const Shape& dims)
 {
 	std::vector<size_t> size(dims.size());
 	std::copy(dims.begin(), dims.end(), size.begin());
-	return createTensor(xt::zeros<float>(size));
+	return createTensor(xt::xarray<float>::from_shape(size));
 }
 
 TensorImpl* XtensorBackend::createTensor(const std::vector<float>& vec, const Shape& shape)
