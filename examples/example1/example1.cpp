@@ -20,6 +20,7 @@ int main()
 	net.add(At::SigmoidLayer());
 	net.compile();
 
+	std::cout << "Running with backend: " << backend.type() << std::endl;
 	net.summary({At::Shape::None, 2});
 
 	At::Tensor X = {{0,0}, {1,0}, {0,1}, {1,1}};
@@ -30,7 +31,7 @@ int main()
 	At::MSELoss loss;
 	opt.alpha_ = 0.35;
 
-	size_t epoch = 100000;
+	size_t epoch = 1000;
 
 	//Record how long it takes to train
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
