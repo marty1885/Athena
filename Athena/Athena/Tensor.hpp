@@ -6,6 +6,7 @@
 #include <Athena/Utils/Error.hpp>
 #include <Athena/Utils/BoxedValue.hpp>
 #include <Athena/Utils/Type.hpp>
+#include <Athena/DType.hpp>
 
 #include <assert.h>
 
@@ -21,11 +22,6 @@ class Tensor
 {
 public:
 	Tensor() = default;
-
-	// Tensor(const Shape& shape, Backend& backend)
-	// 	: Tensor(backend.createTensor(shape))
-	// {
-	// }
 
 	Tensor(const std::vector<float>& vec, Backend& backend)
 		: Tensor(backend.createTensor(vec, Shape({1, (intmax_t)vec.size()})))
@@ -389,6 +385,11 @@ public:
 		}
 		referenceCounter_ = nullptr;
 		pimpl_ = nullptr;
+	}
+
+	DType dtype() const
+	{
+		return pimpl_->dtype();
 	}
 
 protected:

@@ -55,8 +55,6 @@ public:
 		if(s.size() > 4)
 			throw AtError("ArrayFire backend only supports upto 4D Tensor, got " + std::to_string(s.size()) + "D.");
 		arrShape_ = s;
-		if(arr.type() != f32)
-			throw AtError("ArrayFire backend only works with floats. Please convert into floats. dtype enum = " + std::to_string(arr.type()));
 		arr_ = std::move(arr);
 	}
 
@@ -78,6 +76,7 @@ public:
 	virtual void device(const float* ptr) override
 	{
 		//XXX: Hope this works
+		arr_.eval();
 		arr_ = af::array(arr_.dims(), ptr);
 	}
 
@@ -273,6 +272,11 @@ public:
 	virtual TensorImpl* equalTo(float val) const override
 	{
 		return new AFTensorImpl(std::move(arr_ == val), arrShape_, (ArrayFireBackend*)backend());
+	}
+
+	virtual DType dtype() const override
+	{
+		return DType::float32;
 	}
 
 	//Direct data access is not avliable for ArrayFire

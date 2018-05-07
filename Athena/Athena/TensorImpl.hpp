@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <Athena/DType.hpp>
+
 namespace At
 {
 
@@ -48,6 +50,8 @@ public:
 	virtual TensorImpl* greaterOrEqual(float val) const = 0;
 	virtual TensorImpl* lesserOrEqual(float val) const = 0;
 	virtual TensorImpl* equalTo(float val) const = 0;
+
+	virtual DType dtype() const = 0;
 
 
 	virtual float* hostPtr() = 0;

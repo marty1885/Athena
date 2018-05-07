@@ -235,6 +235,11 @@ public:
 		return new XtensorTensorImpl(std::move(arr), (XtensorBackend*)backend());
 	}
 
+	virtual DType dtype() const override
+	{
+		return DType::float32;
+	}
+
 	virtual float* hostPtr() override
 	{
 		return &arr_[0];
