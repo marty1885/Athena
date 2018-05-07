@@ -55,68 +55,8 @@ public:
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
 		size_t batchSize, size_t epoch);
 
-	template <typename OnBatchEnumerate
-		, typename OnEpochEnumerate>
 	void fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
-		size_t batchSize, size_t epoch, OnBatchEnumerate onBatchEnumerate, OnEpochEnumerate onEpochEnumerate)
-	{
-		size_t datasetSize = input.shape()[0];
-
-		auto inputShape = input.shape();
-		auto outputShape = desireOutput.shape();
-		std::vector<Tensor> layerOutputs(layers_.size()+1);
-
-		for(size_t i=0;i<epoch;i++)
-		{
-			float epochLoss = 0;
-			for(size_t j=0;j<datasetSize;j+=batchSize)
-			{
-				intmax_t sliceSize = std::min((intmax_t)batchSize, (intmax_t)(datasetSize-j));
-				Tensor x = input.slice({(intmax_t)j}, {sliceSize});
-				Tensor y = desireOutput.slice({(intmax_t)j} ,{sliceSize});
-
-				inputShape[0] = sliceSize;
-				outputShape[0] = sliceSize;
-
-				x.resize(inputShape);
-				y.resize(outputShape);
-
-				//This variable should not be modified, no need to clone
-				layerOutputs[0] = x;
-
-				int index = 0;
-				for(auto& layer : layers_)
-				{
-					const auto& currentInput = layerOutputs[index];
-					Tensor out;
-					layer->forward({&currentInput}, {&out});
-					layerOutputs[++index] = std::move(out);
-				}
-
-				if(layerOutputs.back().shape() != y.shape())
-					throw AtError("Expecting model output with shape " + to_string(y.shape())
-						+ " but get " + to_string(layerOutputs.back().shape()));
-
-				Tensor dE = loss.df(layerOutputs.back(), y);
-
-				for(int k=layers_.size()-1;k>=0;k--)
-				{
-					auto& layer = layers_[k];
-					Tensor dx;
-					layer->backword({&layerOutputs[k]},{&layerOutputs[k+1]}, {&dx}, {&dE});
-					if(layer->trainable())
-						layer->update(&optimizer);
-
-					dE = std::move(dx);
-				}
-				float batchLoss = loss.f(layerOutputs.back(), y).host()[0];
-				onBatchEnumerate(batchLoss);
-				epochLoss += batchLoss*((float)(sliceSize)/datasetSize);
-			}
-			onEpochEnumerate(epochLoss);
-
-		}
-	}
+		size_t batchSize, size_t epoch, delegate<void(float)> onBatchEnumerate, delegate<void(float)> onEpochEnumerate);
 
 	Tensor predict(const Tensor& input);
 

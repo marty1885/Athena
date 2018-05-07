@@ -402,6 +402,8 @@ ArrayFireBackend::ArrayFireBackend(AFBackend afBackend)
 			af::array res = dy*(y>0) + alpha*dy*(y<0);
 			return createTensor(std::move(res), a.shape());
 		});
+	//ArrayFire does not have deconvolution for now. The backword function can't be implement.
+	//Maybe implment it via cuDNN/MIOpen?
 	addAlgorithm<Conv2DForward>("conv2DForward",
 		[this](const Tensor& x, const Tensor& kernel, const Tensor& bias, const Shape& strides)->Tensor
 	{

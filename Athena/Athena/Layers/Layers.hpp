@@ -460,6 +460,8 @@ protected:
 
 //Short names
 using FullyConnected = FullyConnectedLayer;
+using DenseLayer = FullyConnectedLayer;
+using Dense = FullyConnectedLayer;
 using Dense = FullyConnectedLayer;
 using Conv2D = Conv2DLayer;
 using Sigmoid = SigmoidLayer;

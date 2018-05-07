@@ -20,6 +20,7 @@ inline Tensor Tensor::from(const xt::xarray<float>& arr)
 		v[i] = arr[i];
 	return At::Tensor(v, s);
 }
+
 template <> 
 xt::xarray<float> to(const Tensor& t);
 {
