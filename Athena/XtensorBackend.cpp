@@ -598,16 +598,6 @@ TensorImpl* XtensorBackend::rand(float lEdge, float rEdge, const Shape& shape)
 
 TensorImpl* XtensorBackend::normal(float mean, float stddev, const Shape& shape)
 {
-	//XXX: Xtensor does not support normal distrobution. Use C++'s normal distrobution
-	//until Xtensor has it.
-	auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-	static std::minstd_rand eng(seed); //Should be good enoguh for our purpose
-	std::normal_distribution<float> dist(mean, stddev);
-	std::vector<float> vec;
-
-	size_t size = shape.volume();
-	vec.resize(size);
-	for(auto& v : vec)
-		v = dist(eng);
-	return createTensor(std::move(vec), shape);
+	auto s = as<xt::xarray<float>::shape_type>(shape);
+	return createTensor(std::move(xt::random::rand<float>(s, mean, stddev)));
 }
