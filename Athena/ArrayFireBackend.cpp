@@ -152,10 +152,11 @@ public:
 	{
 		const auto& o = ((AFTensorImpl*)other)->get();
 		int size = std::max(arr_.numdims(), o.numdims());
-		if(size != 2)
-			throw AtError("ArrayFire backend can only support 2D dot product (matmul) now");
-		//TODO: Find a way to not need this transpose
-		af::array res = af::transpose(af::matmulTT(arr_, o));
+		af::array res;
+		if(size >= 2)
+			res = af::transpose(af::matmulTT(arr_, o));
+		else
+			res = af::dot(arr_, o);
 		return new AFTensorImpl(res, shapeFromDim4(res.dims(), size), (ArrayFireBackend*)backend());
 	}
 
