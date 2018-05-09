@@ -392,8 +392,8 @@ public:
 		return pimpl_->dtype();
 	}
 
-	template <typename T> Tensor from(const T& t);
-	template <typename T> T to(const Tensor& t);
+	template <typename T> static Tensor from(const T& t);
+	template <typename T> static T to(const Tensor& t);
 
 protected:
 	inline ReferenceCounter* referenceCounter() const

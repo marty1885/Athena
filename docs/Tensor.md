@@ -11,7 +11,7 @@ For example. This won't work.
 
 ```C++
 //Throws an error
-At::Tensor t = {{1,2,3},{1,2}};;//Missing one value in the second vector
+At::Tensor t = {{1,2,3},{1,2}};//Missing one value in the second vector
 ```
 
 Also be aware that trying to initalize with the last axis having only 1 element will cause ambiguous constructor call. In that case, initalize the tensor with a valid method then reshape it.<br>
@@ -79,3 +79,14 @@ This could be done by calling the `host()` (copy all data of the tensor from wha
 ```C++
 std::vector<float> vec = tensor.host();
 ```
+
+## Xtensor Integration
+With the `XtensorIntegration.hpp` header, `xarray` and `Tensor` can be converted with ease. This allows easy access to `npy` and `csv` data via xtensor. For example.
+```C++
+xt::xarray<float> data = xt::load_npy<float>("data.npy");
+At::Tensor t = At::Tensor::from(data);
+
+//Vise versa
+xt::xarray<float> result = At::Tensor::to<xt::xarray<float>>(t);
+```
+Note that this only works for `xt::xarray<float>`. `xexpression` and other types are not supported for now.

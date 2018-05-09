@@ -22,7 +22,7 @@ inline Tensor Tensor::from(const xt::xarray<float>& arr)
 }
 
 template <> 
-xt::xarray<float> to(const Tensor& t);
+inline xt::xarray<float> Tensor::to(const Tensor& t)
 {
 	auto data = t.host();
 	auto shape = t.shape();
