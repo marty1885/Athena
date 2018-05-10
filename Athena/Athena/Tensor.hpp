@@ -392,6 +392,12 @@ public:
 		return pimpl_->dtype();
 	}
 
+	//Force evaulation since backends can do lazy evaulation
+	void eval()
+	{
+		pimpl_->eval();
+	}
+
 	template <typename T> static Tensor from(const T& t);
 	template <typename T> static T to(const Tensor& t);
 

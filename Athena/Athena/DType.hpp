@@ -28,23 +28,23 @@ inline DType typeToDtype()
 {
 	if(std::is_same<T, float>::value)
 		return DType::float32;
-	else if (std::is_same<T, double>::value)
+	else if(std::is_same<T, double>::value)
 		return DType::float64;
-	else if (std::is_same<T, int32_t>::value)
+	else if(std::is_same<T, int32_t>::value)
 		return DType::int32;
-	else if (std::is_same<T, uint32_t>::value)
+	else if(std::is_same<T, uint32_t>::value)
 		return DType::uint32;
-	else if (std::is_same<T, int16_t>::value)
+	else if(std::is_same<T, int16_t>::value)
 		return DType::int16;
-	else if (std::is_same<T, uint16_t>::value)
+	else if(std::is_same<T, uint16_t>::value)
 		return DType::uint16;
-	else if (std::is_same<T, int64_t>::value)
+	else if(std::is_same<T, int64_t>::value)
 		return DType::int64;
-	else if (std::is_same<T, uint64_t>::value)
+	else if(std::is_same<T, uint64_t>::value)
 		return DType::uint64;
-	else if (std::is_same<T, uint8_t>::value)
+	else if(std::is_same<T, uint8_t>::value)
 		return DType::uint8;
-	else if (std::is_same<T, bool>::value)
+	else if(std::is_same<T, bool>::value)
 		return DType::bool8;
 	else
 		return DType::unknown;

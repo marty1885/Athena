@@ -250,6 +250,11 @@ public:
 		return &arr_[0];
 	}
 
+	virtual void eval() override
+	{
+		//No-op for xtensor.
+	}
+
 protected:
 	xt::xarray<float> arr_;
 };

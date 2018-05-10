@@ -52,6 +52,7 @@ public:
 	virtual TensorImpl* equalTo(float val) const = 0;
 
 	virtual DType dtype() const = 0;
+	virtual void eval() = 0;
 
 
 	virtual float* hostPtr() = 0;

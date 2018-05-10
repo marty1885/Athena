@@ -38,6 +38,32 @@ inline std::vector<int> range(int start, int end)
 	return vec;
 }
 
+static DType afTypeToDType(af::dtype dtype)
+{
+	if(dtype == f32)
+		return DType::float32;
+	else if(dtype == f64)
+		return DType::float64;
+	else if(dtype == s32)
+		return DType::int32;
+	else if(dtype == u32)
+		return DType::uint32;
+	else if(dtype == s64)
+		return DType::int64;
+	else if(dtype == u64)
+		return DType::uint64;
+	else if(dtype == s16)
+		return DType::int16;
+	else if(dtype == u16)
+		return DType::uint16;
+	else if(dtype == u8)
+		return DType::uint8;
+	else if(dtype == b8)
+		return DType::bool8;
+	else
+		return DType::unknown;
+}
+
 //TODO: Really need a better backend. AF only supports upto 4D arrays
 //But 5D is needed for recurrent layer + conv layers
 //And, AF works in fortran order, not C order
@@ -277,7 +303,7 @@ public:
 
 	virtual DType dtype() const override
 	{
-		return DType::float32;
+		return afTypeToDType(arr_.type());
 	}
 
 	//Direct data access is not avliable for ArrayFire
@@ -289,6 +315,11 @@ public:
 	virtual const float* hostPtr() const override
 	{
 		return nullptr;
+	}
+
+	virtual void eval() override
+	{
+		arr_.eval();
 	}
 
 protected:
