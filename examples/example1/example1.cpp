@@ -1,5 +1,5 @@
 #include <Athena/Athena.hpp>
-#include <Athena/ArrayFireBackend.hpp>
+#include <Athena/Backend/ArrayFireBackend.hpp>
 
 #include <Athena/Utils/Archive.hpp>
 

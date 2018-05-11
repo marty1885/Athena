@@ -1,8 +1,8 @@
 #ifndef LAYERS_HPP
 #define LAYERS_HPP
 
-#include <Athena/Optimizer.hpp>
-#include <Athena/Backend.hpp>
+#include <Athena/NN/Optimizer.hpp>
+#include <Athena/Backend/Backend.hpp>
 #include <Athena/Tensor.hpp>
 #include <Athena/Utils/Shape.hpp>
 

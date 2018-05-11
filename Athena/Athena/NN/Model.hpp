@@ -2,12 +2,12 @@
 
 #include <vector>
 
-#include <Athena/Backend.hpp>
+#include <Athena/Backend/Backend.hpp>
 #include <Athena/Tensor.hpp>
-#include <Athena/Optimizer.hpp>
+#include <Athena/NN/Optimizer.hpp>
 #include <Athena/Utils/Shape.hpp>
-#include <Athena/Layers/Layers.hpp>
-#include <Athena/Loss.hpp>
+#include <Athena/NN/Layers.hpp>
+#include <Athena/NN/Loss.hpp>
 
 #include <type_traits>
 

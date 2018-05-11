@@ -1,4 +1,4 @@
-#include <Athena/Model.hpp>
+#include <Athena/NN/Model.hpp>
 #include <Athena/Utils/Archive.hpp>
 
 #include <iostream>

@@ -2,7 +2,7 @@
 
 #include <arrayfire.h>
 
-#include <Athena/Backend.hpp>
+#include <Athena/Backend/Backend.hpp>
 
 namespace At
 {

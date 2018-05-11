@@ -1,6 +1,6 @@
-#include <Athena/ArrayFireBackend.hpp>
+#include <Athena/Backend/ArrayFireBackend.hpp>
 #include <Athena/Utils/Shape.hpp>
-#include <Athena/TensorImpl.hpp>
+#include <Athena/Backend/TensorImpl.hpp>
 #include <Athena/Tensor.hpp>
 
 #include <array>

@@ -1,4 +1,4 @@
-#include <Athena/Layers/Layers.hpp>
+#include <Athena/NN/Layers.hpp>
 
 using namespace At;
 

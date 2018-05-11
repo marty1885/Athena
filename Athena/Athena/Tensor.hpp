@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Athena/Backend.hpp>
+#include <Athena/Backend/Backend.hpp>
 #include <Athena/Utils/ReferenceCounter.hpp>
-#include <Athena/TensorImpl.hpp>
+#include <Athena/Backend/TensorImpl.hpp>
 #include <Athena/Utils/Error.hpp>
 #include <Athena/Utils/BoxedValue.hpp>
 #include <Athena/Utils/Type.hpp>

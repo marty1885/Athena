@@ -1,6 +1,6 @@
 #include <Athena/Athena.hpp>
-#include <Athena/XtensorBackend.hpp>
-#include <Athena/NNPACKBackend.hpp>
+#include <Athena/Backend/XtensorBackend.hpp>
+#include <Athena/Backend/NNPACKBackend.hpp>
 
 #include "mnist_reader.hpp"
 

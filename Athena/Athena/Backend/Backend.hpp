@@ -10,7 +10,7 @@
 #include <Athena/Utils/Shape.hpp>
 #include <Athena/Utils/Delegate.hpp>
 #include <Athena/Utils/BoxedValue.hpp>
-#include <Athena/TensorImpl.hpp>
+#include <Athena/Backend/TensorImpl.hpp>
 
 namespace At
 {

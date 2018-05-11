@@ -1,19 +1,18 @@
-#include <Athena/Backend.hpp>
 #include <Athena/Tensor.hpp>
-#include <Athena/XtensorBackend.hpp>
+#include <Athena/Backend/XtensorBackend.hpp>
 
 #include <xtensor/xarray.hpp>
 #include <xtensor/xrandom.hpp>
 #include <xtensor/xio.hpp>
 #include <xtensor/xvectorize.hpp>
-#include <xtensor/xstrided_view.hpp>
+//#include <xtensor/xstrided_view.hpp>
 
 #include <xtensor-blas/xlinalg.hpp>
 
 #include <random>
 #include <chrono>
 
-#include <Athena/TensorImpl.hpp>
+#include <Athena/Backend/TensorImpl.hpp>
 #include <Athena/Tensor.hpp>
 
 #include <string.h>
