@@ -506,6 +506,7 @@ TensorImpl* ArrayFireBackend::rand(float lEdge, float rEdge, const Shape& shape)
 	float span = rEdge - lEdge;
 	//af::randu genrates float between 0 and 1, map it to the requested range
 	af::array arr = (af::randu(dims)*span)-lEdge;
+	arr.eval();
 	return createTensor(std::move(arr), shape);
 }
 

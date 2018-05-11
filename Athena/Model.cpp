@@ -105,6 +105,7 @@ void SequentialNetwork::fit(Optimizer& optimizer, LossFunction& loss, const Tens
 				const auto& currentInput = layerOutputs[index];
 				Tensor out;
 				layer->forward({&currentInput}, {&out});
+				out.eval();
 				layerOutputs[++index] = std::move(out);
 			}
 
@@ -113,6 +114,7 @@ void SequentialNetwork::fit(Optimizer& optimizer, LossFunction& loss, const Tens
 					+ " but get " + to_string(layerOutputs.back().shape()));
 
 			Tensor dE = loss.df(layerOutputs.back(), y);
+			dE.eval();
 
 			for(int k=layers_.size()-1;k>=0;k--)
 			{
@@ -121,6 +123,7 @@ void SequentialNetwork::fit(Optimizer& optimizer, LossFunction& loss, const Tens
 				layer->backword({&layerOutputs[k]},{&layerOutputs[k+1]}, {&dx}, {&dE});
 				if(layer->trainable())
 					layer->update(&optimizer);
+				dx.eval();
 
 				dE = std::move(dx);
 			}
@@ -142,6 +145,7 @@ Tensor SequentialNetwork::predict(const Tensor& input)
 		layer->forward({&t}, {&y});
 		t = std::move(y);
 	}
+	t.eval();
 
 	return t;
 }

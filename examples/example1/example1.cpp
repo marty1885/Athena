@@ -1,5 +1,5 @@
 #include <Athena/Athena.hpp>
-#include <Athena/XtensorBackend.hpp>
+#include <Athena/ArrayFireBackend.hpp>
 
 #include <Athena/Utils/Archive.hpp>
 
@@ -10,7 +10,7 @@ using namespace std::chrono;
 
 int main()
 {
-	At::XtensorBackend backend;
+	At::ArrayFireBackend backend;
 	At::Tensor::setDefaultBackend(&backend);
 	At::SequentialNetwork net(&backend);
 
