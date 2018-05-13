@@ -64,6 +64,31 @@ static DType afTypeToDType(af::dtype dtype)
 		return DType::unknown;
 }
 
+inline size_t typeToSize(af::dtype dtype)
+{
+	if(dtype == f32)
+		return sizeof(float);
+	else if(dtype == f64)
+		return sizeof(double);
+	else if(dtype == s32)
+		return sizeof(int32_t);
+	else if(dtype == u32)
+		return sizeof(uint32_t);
+	else if(dtype == s64)
+		return sizeof(int64_t);
+	else if(dtype == u64)
+		return sizeof(uint64_t);
+	else if(dtype == s16)
+		return sizeof(int16_t);
+	else if(dtype == u16)
+		return sizeof(uint16_t);
+	else if(dtype == u8)
+		return sizeof(int8_t);
+	else if(dtype == b8)
+		return sizeof(bool);
+	return 0;
+}
+
 //TODO: Really need a better backend. AF only supports upto 4D arrays
 //But 5D is needed for recurrent layer + conv layers
 //And, AF works in fortran order, not C order
@@ -108,7 +133,7 @@ public:
 
 	virtual size_t size() const override
 	{
-		return arr_.bytes()/sizeof(float);//asserting we only have floats in array
+		return arr_.bytes()/typeToSize(arr_.type());
 	}
 
 	virtual Shape shape() const override
