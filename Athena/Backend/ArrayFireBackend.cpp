@@ -46,18 +46,10 @@ static DType afTypeToDType(af::dtype dtype)
 		return DType::float64;
 	else if(dtype == s32)
 		return DType::int32;
-	else if(dtype == u32)
-		return DType::uint32;
 	else if(dtype == s64)
 		return DType::int64;
-	else if(dtype == u64)
-		return DType::uint64;
 	else if(dtype == s16)
 		return DType::int16;
-	else if(dtype == u16)
-		return DType::uint16;
-	else if(dtype == u8)
-		return DType::uint8;
 	else if(dtype == b8)
 		return DType::bool8;
 	else
@@ -72,18 +64,10 @@ inline size_t typeToSize(af::dtype dtype)
 		return sizeof(double);
 	else if(dtype == s32)
 		return sizeof(int32_t);
-	else if(dtype == u32)
-		return sizeof(uint32_t);
 	else if(dtype == s64)
 		return sizeof(int64_t);
-	else if(dtype == u64)
-		return sizeof(uint64_t);
 	else if(dtype == s16)
 		return sizeof(int16_t);
-	else if(dtype == u16)
-		return sizeof(uint16_t);
-	else if(dtype == u8)
-		return sizeof(int8_t);
 	else if(dtype == b8)
 		return sizeof(bool);
 	return 0;
