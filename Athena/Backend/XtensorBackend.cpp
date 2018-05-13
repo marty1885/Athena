@@ -239,12 +239,12 @@ public:
 		return DType::float32;
 	}
 
-	virtual float* hostPtr() override
+	virtual void* hostPtr() override
 	{
 		return &arr_[0];
 	}
 
-	virtual const float* hostPtr() const override
+	virtual const void* hostPtr() const override
 	{
 		return &arr_[0];
 	}

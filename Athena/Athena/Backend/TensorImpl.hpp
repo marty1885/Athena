@@ -55,8 +55,8 @@ public:
 	virtual void eval() = 0;
 
 
-	virtual float* hostPtr() = 0;
-	virtual const float* hostPtr() const = 0;
+	virtual void* hostPtr() = 0;
+	virtual const void* hostPtr() const = 0;
 
 
 	inline Backend* backend()

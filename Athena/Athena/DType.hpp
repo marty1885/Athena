@@ -30,8 +30,6 @@ inline DType typeToDtype()
 		return DType::int32;
 	else if(std::is_same<T, int16_t>::value)
 		return DType::int16;
-	else if(std::is_same<T, int64_t>::value)
-		return DType::int64;
 	else if(std::is_same<T, bool>::value)
 		return DType::bool8;
 	else
@@ -48,8 +46,6 @@ inline std::string dtypeToName(DType dtype)
 		return "int32";
 	else if(dtype == DType::int16)
 		return "int16";
-	else if(dtype == DType::int64)
-		return "int64";
 	else if(dtype == DType::bool8)
 		return "bool8";
 	else 

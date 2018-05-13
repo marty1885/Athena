@@ -38,7 +38,7 @@ inline std::vector<int> range(int start, int end)
 	return vec;
 }
 
-static DType afTypeToDType(af::dtype dtype)
+static DType afTypeToDType (af::dtype dtype)
 {
 	if(dtype == f32)
 		return DType::float32;
@@ -46,8 +46,6 @@ static DType afTypeToDType(af::dtype dtype)
 		return DType::float64;
 	else if(dtype == s32)
 		return DType::int32;
-	else if(dtype == s64)
-		return DType::int64;
 	else if(dtype == s16)
 		return DType::int16;
 	else if(dtype == b8)
@@ -72,6 +70,32 @@ inline size_t typeToSize(af::dtype dtype)
 		return sizeof(bool);
 	return 0;
 }
+
+template <typename T>
+inline void copyToHost(const af::array& arr, T* ptr)
+{
+	if(afTypeToDType(arr.type()) != typeToDtype<T>())
+		throw AtError("Cannot copy data from device to host, type does not match");
+	arr.host(ptr);
+}
+
+template <typename T>
+inline void writeToHost(af::array& arr, const T* ptr)
+{
+	if(afTypeToDType(arr.type()) != typeToDtype<T>())
+		throw AtError("Cannot copy write from host to device, type does not match");
+	arr.write(ptr, arr.bytes(), afHost);
+}
+
+//ArrayFire trats bool8 as char. Special case
+template <>
+inline void writeToHost(af::array& arr, const bool* ptr)
+{
+	if(afTypeToDType(arr.type()) != DType::bool8)
+		throw AtError("Cannot copy write from host to device, type does not match");
+	arr.write((char*)ptr, arr.bytes(), afHost);
+}
+
 
 //TODO: Really need a better backend. AF only supports upto 4D arrays
 //But 5D is needed for recurrent layer + conv layers
@@ -105,14 +129,52 @@ public:
 
 	virtual void host(float* ptr) const override
 	{
-		arr_.host(ptr);
+		copyToHost(arr_, ptr);
 	}
 
-	virtual void device(const float* ptr) override
+	virtual void host(double* ptr) const
 	{
-		//XXX: Hope this works
-		arr_.eval();
-		arr_ = af::array(arr_.dims(), ptr);
+		copyToHost(arr_, ptr);
+	}
+
+	virtual void host(int32_t* ptr) const
+	{
+		copyToHost(arr_, ptr);
+	}
+
+	virtual void host(int16_t* ptr) const
+	{
+		copyToHost(arr_, ptr);
+	}
+
+	virtual void host(bool* ptr) const
+	{
+		copyToHost(arr_, ptr);
+	}
+
+	virtual void device(const float* ptr)
+	{
+		writeToHost(arr_, ptr);
+	}
+
+	virtual void device(const double* ptr)
+	{
+		writeToHost(arr_, ptr);
+	}
+
+	virtual void device(const int32_t* ptr)
+	{
+		writeToHost(arr_, ptr);
+	}
+
+	virtual void device(const int16_t* ptr)
+	{
+		writeToHost(arr_, ptr);
+	}
+
+	virtual void device(const bool* ptr)
+	{
+		writeToHost(arr_, ptr);
 	}
 
 	virtual size_t size() const override
@@ -316,12 +378,12 @@ public:
 	}
 
 	//Direct data access is not avliable for ArrayFire
-	virtual float* hostPtr() override
+	virtual void* hostPtr() override
 	{
 		return nullptr;
 	}
 
-	virtual const float* hostPtr() const override
+	virtual const void* hostPtr() const override
 	{
 		return nullptr;
 	}
@@ -491,10 +553,55 @@ void ArrayFireBackend::destoryTensor(TensorImpl* impl)
 	delete impl;
 }
 
+template <typename T>
+inline af::array arrayFromVec(const std::vector<T>& vec, const Shape& shape)
+{
+	if(vec.size() != (size_t)shape.volume())
+		throw AtError("Cannot create a tenstor with shape " + to_string(shape) + " from vector of size " + std::to_string(vec.size()));
+	auto dims = shapeToDim4(shape);
+	return af::array(dims, &vec[0]);
+}
+
+//std::vector<bool> is a special case where std::vector<bool> stores a array of 1 bit booleans. Expand before use
+template <>
+inline af::array arrayFromVec(const std::vector<bool>& vec, const Shape& shape)
+{
+	if(vec.size() != (size_t)shape.volume())
+		throw AtError("Cannot create a tenstor with shape " + to_string(shape) + " from vector of size " + std::to_string(vec.size()));
+	auto dims = shapeToDim4(shape);
+
+	//AF uses char as bool internally: https://github.com/arrayfire/arrayfire/issues/346
+	char* arr = new char[vec.size()];
+	for(size_t i=0;i<vec.size();i++)
+		arr[i] = (char)vec[i];
+	af::array res = af::array(dims, arr);
+	delete [] arr;
+	return res;
+}
+
 TensorImpl* ArrayFireBackend::createTensor(const std::vector<float>& vec, const Shape& shape)
 {
-	auto dims = shapeToDim4(shape);
-	return new AFTensorImpl(af::array(dims, &vec[0]), shape, this);
+	return new AFTensorImpl(arrayFromVec(vec, shape), shape, this);
+}
+
+TensorImpl* ArrayFireBackend::createTensor(const std::vector<double>& vec, const Shape& shape)
+{
+	return new AFTensorImpl(arrayFromVec(vec, shape), shape, this);
+}
+
+TensorImpl* ArrayFireBackend::createTensor(const std::vector<int32_t>& vec, const Shape& shape)
+{
+	return new AFTensorImpl(arrayFromVec(vec, shape), shape, this);
+}
+
+TensorImpl* ArrayFireBackend::createTensor(const std::vector<int16_t>& vec, const Shape& shape)
+{
+	return new AFTensorImpl(arrayFromVec(vec, shape), shape, this);
+}
+
+TensorImpl* ArrayFireBackend::createTensor(const std::vector<bool>& vec, const Shape& shape)
+{
+	return new AFTensorImpl(arrayFromVec(vec, shape), shape, this);
 }
 
 TensorImpl* ArrayFireBackend::zeros(const Shape& shape)
@@ -525,7 +632,9 @@ TensorImpl* ArrayFireBackend::normal(float mean, float stddev, const Shape& shap
 	if(mean == 0.f && stddev == 1)
 	{
 		auto dims = shapeToDim4(shape);
-		return createTensor(std::move(af::randn(dims)), shape);
+		af::array arr = af::randn(dims);
+		arr.eval();
+		return createTensor(std::move(arr), shape);
 	}
 
 	std::minstd_rand eng; //Should be good enoguh for our purpose

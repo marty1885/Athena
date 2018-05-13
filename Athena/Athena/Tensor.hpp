@@ -308,12 +308,12 @@ public:
 
 	float* hostPtr()
 	{
-		return pimpl_->hostPtr();
+		return (float*)pimpl_->hostPtr();
 	}
 
 	const float* hostPtr() const
 	{
-		return pimpl_->hostPtr();
+		return (const float*)pimpl_->hostPtr();
 	}
 
 	virtual ~Tensor()

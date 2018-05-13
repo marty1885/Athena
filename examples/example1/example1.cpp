@@ -14,6 +14,9 @@ int main()
 	At::Tensor::setDefaultBackend(&backend);
 	At::SequentialNetwork net(&backend);
 
+	At::Tensor t(backend.createTensor(std::vector<double>({1.0,2.0,3.0,4.0}), At::Shape({2,2})));
+	std::cout << t.dtype() << std::endl;
+
 	net.add(At::FullyConnectedLayer(2,5));
 	net.add(At::SigmoidLayer());
 	net.add(At::FullyConnectedLayer(5,1));
