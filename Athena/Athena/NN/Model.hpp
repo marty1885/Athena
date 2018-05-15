@@ -81,7 +81,7 @@ public:
 	template <typename T=Layer>
 	T* layer(const std::string& name)
 	{
-		return const_cast<T*>(static_cast<const SequentialNetwork*>(this)->layer(name));
+		return const_cast<T*>(static_cast<const SequentialNetwork*>(this)->layer<T>(name));
 	}
 
 	template <typename T=Layer>

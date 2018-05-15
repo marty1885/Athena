@@ -67,7 +67,7 @@ void SequentialNetwork::summary(const Shape& inputShape) const
 }
 
 void SequentialNetwork::fit(Optimizer& optimizer, LossFunction& loss, const Tensor& input, const Tensor& desireOutput,
-		size_t batchSize, size_t epoch)
+	size_t batchSize, size_t epoch)
 {
 	fit(optimizer, loss, input, desireOutput, batchSize, epoch, [](float){}, [](float){});
 }

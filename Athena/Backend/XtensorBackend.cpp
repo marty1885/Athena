@@ -66,7 +66,7 @@ public:
 	{
 		release();
 
-		tensorPtr = new xt::xarray<T>(std::move(array));
+		tensorPtr = new xt::xarray<T>(array);
 		dataType = typeToDtype<T>();
 	}
 	
@@ -396,12 +396,12 @@ public:
 	template <typename T>
 	XtensorTensorImpl(xt::xarray<T> arr, XtensorBackend* backend) : TensorImpl(backend)
 	{
-		arr_.setInternalData(std::move(arr));
+		arr_.setInternalData(arr);
 	}
 
 	XtensorTensorImpl(Xarr arr, XtensorBackend* backend) : TensorImpl(backend)
 	{
-		arr_ = std::move(arr);
+		arr_ = arr;
 	}
 
 	const Xarr& xarr() const
