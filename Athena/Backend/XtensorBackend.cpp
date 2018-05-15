@@ -27,7 +27,8 @@ inline ResType as(const InType& shape)
 	return ResType(shape.begin(), shape.end());
 }
 
-namespace {
+namespace
+{
 
 class Xarr
 {
@@ -112,7 +113,7 @@ public:
 	xt::xarray<T>& get()
 	{
 		if(dtype() != typeToDtype<T>())
-			throw AtError("Cannot get xarray. Not the corret dtype");
+			throw AtError(std::string("Requesting xarray<") + dtypeToName(typeToDtype<T>()) + "> from xarray<" + dtypeToName(dtype())+">");
 		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr);
 	}
 
@@ -120,7 +121,7 @@ public:
 	const xt::xarray<T>& get() const
 	{
 		if(dtype() != typeToDtype<T>())
-			throw AtError("Cannot get xarray. Not the corret dtype");
+			throw AtError(std::string("Requesting xarray<") + dtypeToName(typeToDtype<T>()) + "> from xarray<" + dtypeToName(dtype())+">");
 		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr);
 	}
 
@@ -255,7 +256,7 @@ public:
 	inline Xarr stack(const Xarr& arr, size_t axis) const
 	{
 		if(dtype() != arr.dtype())
-			throw AtError("Cannot stack tensors of different type");
+			throw AtError("Cannot stack tensors of different type" + dtypeToName(dtype()) + " vs " + dtypeToName(arr.dtype()));
 		return run<Xarr>([&arr, axis](const auto& a){
 			using ValueType = typename std::decay<decltype(a)>::type::value_type;
 			const auto b = arr.get<ValueType>();
@@ -275,7 +276,7 @@ public:
 	inline Xarr concatenate(const Xarr& arr, size_t axis) const
 	{
 		if(dtype() != arr.dtype())
-			throw AtError("Cannot stack tensors of different type");
+			throw AtError("Cannot stack tensors of different types. " + dtypeToName(dtype()) + " vs " + dtypeToName(arr.dtype()));
 		return run<Xarr>([&arr, axis](const auto& a){
 			using ValueType = typename std::decay<decltype(a)>::type::value_type;
 			const auto b = arr.get<ValueType>();
@@ -312,7 +313,7 @@ protected:
 			return op(*reinterpret_cast<const xt::xarray<int16_t>*>(tensorPtr));
 		else if(dtype() == DType::bool8)
 			return op(*reinterpret_cast<const xt::xarray<bool>*>(tensorPtr));
-		return Ret();
+		throw AtError("Operand type not supported. This is a bug.");
 	}
 
 	template <typename Ret, typename Op>
@@ -328,7 +329,7 @@ protected:
 			return op(*reinterpret_cast<xt::xarray<int16_t>*>(tensorPtr));
 		else if(dtype() == DType::bool8)
 			return op(*reinterpret_cast<xt::xarray<bool>*>(tensorPtr));
-		return Ret();
+		throw AtError("Operand type not supported. This is a bug.");
 	}
 
 	template <typename Ret, typename Op>
@@ -373,7 +374,7 @@ template <typename T>
 void copyToPtr(const Xarr& arr, T* dest)
 {
 	if(arr.dtype() != typeToDtype<T>())
-		throw AtError("Cannot copy data from xarray to pointer. Incompatible data type");
+		throw AtError("Cannot copy data from xarray to pointer. Incompatible data type. " + dtypeToName(typeToDtype<T>()) + " vs " + dtypeToName(arr.dtype()));
 	const auto& array = arr.get<T>();
 	std::copy(array.begin(), array.end(), dest);
 }
@@ -382,7 +383,7 @@ template <typename T>
 void copyFromPtr(Xarr& arr, const T* src)
 {
 	if(arr.dtype() != typeToDtype<T>())
-		throw AtError("Cannot copy data from pointer to xarray. Incompatible data type");
+		throw AtError("Cannot copy data from pointer to xarray. Incompatible data type. " + dtypeToName(arr.dtype()) + " vs " + dtypeToName(typeToDtype<T>()));
 	auto& array = arr.get<T>();
 	memcpy(&array[0], src, array.size()*sizeof(T));
 }
@@ -412,20 +413,15 @@ public:
 		return arr_;
 	}
 
-	//TODO: Improve error message
 	template <typename T>
 	const xt::xarray<T>& get() const
 	{
-		if(arr_.dtype() != typeToDtype<T>())
-			throw AtError("Incorrect request type");
 		return arr_.get<T>();
 	}
 
 	template <typename T>
 	xt::xarray<T>& get()
 	{
-		if(arr_.dtype() != typeToDtype<T>())
-			throw AtError("Incorrect request type");
 		return arr_.get<T>();
 	}
 
