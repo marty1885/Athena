@@ -1,19 +1,18 @@
 #include <Athena/Tensor.hpp>
+#include <Athena/DType.hpp>
 #include <Athena/Backend/XtensorBackend.hpp>
+#include <Athena/Backend/TensorImpl.hpp>
 
 #include <xtensor/xarray.hpp>
 #include <xtensor/xrandom.hpp>
 #include <xtensor/xio.hpp>
 #include <xtensor/xvectorize.hpp>
-//#include <xtensor/xstrided_view.hpp>
+//#include <xtensor/xstrided_view.hpp> //Crashes clang
 
 #include <xtensor-blas/xlinalg.hpp>
 
 #include <random>
 #include <chrono>
-
-#include <Athena/Backend/TensorImpl.hpp>
-#include <Athena/Tensor.hpp>
 
 #include <string.h>
 
@@ -28,6 +27,365 @@ inline ResType as(const InType& shape)
 	return ResType(shape.begin(), shape.end());
 }
 
+class Xarr
+{
+public:
+	Xarr() = default;
+	Xarr(void* ptr, DType dtype) : tensorPtr(ptr), dataType(dtype){}
+	Xarr(const Xarr& other)
+	{
+		dataType = other.dataType;
+		tensorPtr = other.run<void*>([](auto arr){return new decltype(arr)(arr);});
+	}
+
+	Xarr(Xarr&& other) noexcept
+	{
+		dataType = other.dataType;
+		tensorPtr = other.tensorPtr;
+
+		other.tensorPtr = nullptr;
+		other.dataType = DType::unknown;
+	}
+
+	Xarr operator= (const Xarr& other)
+	{
+		release();
+		dataType = other.dataType;
+		tensorPtr = other.run<void*>([](auto arr){return new decltype(arr)(arr);});
+		return *this;
+	}
+
+	template <typename T>
+	Xarr(xt::xarray<T> arr)
+	{
+		setInternalData(arr);
+	}
+
+	template <typename T>
+	void setInternalData(xt::xarray<T> array)
+	{
+		release();
+
+		tensorPtr = new xt::xarray<T>(std::move(array));
+		dataType = typeToDtype<T>();
+	}
+	
+	void release()
+	{
+		if(dtype() == DType::float32)
+			delete reinterpret_cast<xt::xarray<float>*>(tensorPtr);
+		else if(dtype() == DType::float64)
+			delete reinterpret_cast<xt::xarray<double>*>(tensorPtr);
+		else if(dtype() == DType::int32)
+			delete reinterpret_cast<xt::xarray<int32_t>*>(tensorPtr);
+		else if(dtype() == DType::int16)
+			delete reinterpret_cast<xt::xarray<int16_t>*>(tensorPtr);
+		else if(dtype() == DType::bool8)
+			delete reinterpret_cast<xt::xarray<bool>*>(tensorPtr);
+		tensorPtr = nullptr;
+		dataType = DType::unknown;
+	}
+
+	virtual ~Xarr()
+	{
+		release();
+	}
+
+	size_t size() const
+	{
+		return run<size_t>([](const auto& arr){return arr.size();});
+	}
+
+	inline xt::svector<size_t> shape() const
+	{
+		return run<xt::svector<size_t>>([](const auto& arr){return arr.shape();});
+	}
+
+	DType dtype() const
+	{
+		return dataType;
+	}
+
+	template <typename T>
+	xt::xarray<T>& get()
+	{
+		if(dtype() != typeToDtype<T>())
+			throw AtError("Cannot get xarray. Not the corret dtype");
+		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr);
+	}
+
+	template <typename T>
+	const xt::xarray<T>& get() const
+	{
+		if(dtype() != typeToDtype<T>())
+			throw AtError("Cannot get xarray. Not the corret dtype");
+		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr);
+	}
+
+	template <typename T>
+	Xarr operator+ (const T& val) const
+	{
+		static_assert(std::is_scalar<T>::value == true); //Just to be on the safe side
+		return run<Xarr>([val](const auto& a){return a+val;});
+	}
+
+	template <typename T>
+	void operator+= (const T& val)
+	{
+		return run<void>([this, val](auto& a){return setInternalData(xt::eval(a+val));});
+	}
+
+	template <typename T>
+	Xarr operator* (const T& val) const
+	{
+		static_assert(std::is_scalar<T>::value == true); //Just to be on the safe side
+		return run<Xarr>([val](const auto& a){return a*val;});
+	}
+
+	template <typename T>
+	void operator*= (const T& val)
+	{
+		return run<void>([this, val](auto& a){return setInternalData(xt::eval(a*val));});
+	}
+
+	template <typename T>
+	Xarr operator- (const T& val) const
+	{
+		static_assert(std::is_scalar<T>::value == true); //Just to be on the safe side
+		return run<Xarr>([val](const auto& a){return a-val;});
+	}
+
+	template <typename T>
+	Xarr operator/ (const T& val) const
+	{
+		static_assert(std::is_scalar<T>::value == true); //Just to be on the safe side
+		return run<Xarr>([val](const auto& a){return a/val;});
+	}
+
+	Xarr operator< (float val) const
+	{
+		return run<Xarr>([val](const auto& a){return xt::eval(a<val);});
+	}
+
+	Xarr operator> (float val) const
+	{
+		return run<Xarr>([val](const auto& a){return xt::eval(a>val);});
+	}
+
+	Xarr operator<= (float val) const
+	{
+		return run<Xarr>([val](const auto& a){return xt::eval(a<=val);});
+	}
+
+	Xarr operator>= (float val) const
+	{
+		return run<Xarr>([val](const auto& a){return xt::eval(a>=val);});
+	}
+
+	Xarr operator== (float val) const
+	{
+		return run<Xarr>([val](const auto& a){return xt::eval(xt::equal(a, val));});
+	}
+
+
+	void reciprocate()
+	{
+		return run<void>([this](auto& a){setInternalData(xt::eval(1.f/a));});
+	}
+
+	void reshape(xt::svector<size_t> s)
+	{
+		return run<void>([this, s](auto& a){a.reshape(s); setInternalData(a);});
+	}
+
+	Xarr dot(const Xarr& other) const
+	{
+		return run<Xarr>(other, [](const auto& a, const auto& b){
+			using ValueType = typename std::decay<decltype(a)>::type::value_type;
+			xt::xarray<ValueType> res = xt::linalg::dot(a, b);
+			return res;
+		});
+	}
+
+	Xarr sqrt() const
+	{
+		return run<Xarr>([](const auto& a){return xt::eval(xt::sqrt(a));});
+	}
+
+	Xarr transpose() const
+	{
+		return run<Xarr>([](const auto& a){return xt::eval(xt::transpose(a));});
+	}
+
+	Xarr transpose(xt::svector<size_t> axises) const
+	{
+		return run<Xarr>([&axises](const auto& a){return xt::eval(xt::transpose(a, axises));});
+	}
+
+	Xarr sum(xt::svector<size_t> axises) const
+	{
+		return run<Xarr>([&axises](const auto& a){
+			using ValueType = typename std::decay<decltype(a)>::type::value_type;
+			return xt::xarray<ValueType>(xt::sum(a, axises));
+		});
+	}
+
+	Xarr abs() const
+	{
+		return run<Xarr>([](const auto& a){return xt::eval(xt::abs(a));});
+	}
+
+	Xarr exp() const
+	{
+		return run<Xarr>([](const auto& a){return xt::eval(xt::exp(a));});
+	}
+
+	Xarr log() const
+	{
+		return run<Xarr>([](const auto& a){return xt::eval(xt::log(a));});
+	}
+
+	Xarr pow(float val) const
+	{
+		return run<Xarr>([val](const auto& a){return xt::eval(xt::pow(a, val));});
+	}
+
+	Xarr stack(const Xarr& arr, size_t axis) const
+	{
+		if(dtype() != arr.dtype())
+			throw AtError("Cannot stack tensors of different type");
+		return run<Xarr>([&arr, axis](const auto& a){
+			using ValueType = typename std::decay<decltype(a)>::type::value_type;
+			const auto b = arr.get<ValueType>();
+			return (xt::xarray<ValueType>)(xt::stack(xt::xtuple(a, b)), axis);
+		});
+
+	}
+
+	Xarr chunk(xt::slice_vector sv) const
+	{
+		return run<Xarr>([&sv](const auto& a){
+			using DataType = typename std::decay<decltype(a)>::type::value_type;
+			return (xt::xarray<DataType>)xt::dynamic_view(a, sv);
+		});
+	}
+
+	Xarr concatenate(const Xarr& arr, size_t axis) const
+	{
+		if(dtype() != arr.dtype())
+			throw AtError("Cannot stack tensors of different type");
+		return run<Xarr>([&arr, axis](const auto& a){
+			using ValueType = typename std::decay<decltype(a)>::type::value_type;
+			const auto b = arr.get<ValueType>();
+			return (xt::xarray<ValueType>)(xt::concatenate(xt::xtuple(a, b)), axis);
+		});
+	}
+
+	template <typename T>
+	T* data()
+	{
+		return (T*)run<void*>([](auto& a){return &a[0];});
+	}
+
+	template <typename T>
+	const T* data() const
+	{
+		return (const T*)run<const void*>([](const auto& a){return &a[0];});
+	}
+
+
+
+protected:
+
+	template <typename Ret, typename Op>
+	inline Ret run(Op op) const
+	{
+		if(dtype() == DType::float32)
+			return op(*reinterpret_cast<const xt::xarray<float>*>(tensorPtr));
+		else if(dtype() == DType::float64)
+			return op(*reinterpret_cast<const xt::xarray<double>*>(tensorPtr));
+		else if(dtype() == DType::int32)
+			return op(*reinterpret_cast<const xt::xarray<int32_t>*>(tensorPtr));
+		else if(dtype() == DType::int16)
+			return op(*reinterpret_cast<const xt::xarray<int16_t>*>(tensorPtr));
+		else if(dtype() == DType::bool8)
+			return op(*reinterpret_cast<const xt::xarray<bool>*>(tensorPtr));
+		return Ret();
+	}
+
+	template <typename Ret, typename Op>
+	inline Ret run(Op op)
+	{
+		if(dtype() == DType::float32)
+			return op(*reinterpret_cast<xt::xarray<float>*>(tensorPtr));
+		else if(dtype() == DType::float64)
+			return op(*reinterpret_cast<xt::xarray<double>*>(tensorPtr));
+		else if(dtype() == DType::int32)
+			return op(*reinterpret_cast<xt::xarray<int32_t>*>(tensorPtr));
+		else if(dtype() == DType::int16)
+			return op(*reinterpret_cast<xt::xarray<int16_t>*>(tensorPtr));
+		else if(dtype() == DType::bool8)
+			return op(*reinterpret_cast<xt::xarray<bool>*>(tensorPtr));
+		return Ret();
+	}
+
+	template <typename Ret, typename Op>
+	inline Ret run(const Xarr& arr, Op op) const
+	{
+		return run<Ret>([&op, &arr](const auto& a){
+			return arr.run<Ret>([&op, &a](const auto& b)->Ret{
+				return op(a, b);
+			});
+		});
+	}
+
+	void* tensorPtr = nullptr;
+	DType dataType = DType::unknown;
+};
+
+template <>
+Xarr Xarr::operator+ (const Xarr& other) const
+{
+	return run<Xarr>(other, [](const auto& a, const auto& b){return xt::eval(a+b);});
+}
+
+template <>
+Xarr Xarr::operator* (const Xarr& other) const
+{
+	return run<Xarr>(other, [](const auto& a, const auto& b){return xt::eval(a*b);});
+}
+
+template <>
+Xarr Xarr::operator- (const Xarr& other) const
+{
+	return run<Xarr>(other, [](const auto& a, const auto& b){return xt::eval(a-b);});
+}
+
+template <>
+Xarr Xarr::operator/ (const Xarr& other) const
+{
+	return run<Xarr>(other, [](const auto& a, const auto& b){return xt::eval(a/b);});
+}
+
+
+template <typename T>
+void copyToPtr(const Xarr& arr, T* dest)
+{
+	if(arr.dtype() != typeToDtype<T>())
+		throw AtError("Cannot copy data from xarray to pointer. Incompatible data type");
+	const auto& array = arr.get<T>();
+	std::copy(array.begin(), array.end(), dest);
+}
+
+template <typename T>
+void copyFromPtr(Xarr& arr, const T* src)
+{
+	if(arr.dtype() != typeToDtype<T>())
+		throw AtError("Cannot copy data from pointer to xarray. Incompatible data type");
+	auto& array = arr.get<T>();
+	memcpy(&array[0], src, array.size()*sizeof(T));
+}
+
 class XtensorTensorImpl : public TensorImpl
 {
 public:
@@ -35,29 +393,87 @@ public:
 	{
 	}
 
-	XtensorTensorImpl(xt::xarray<float> arr, XtensorBackend* backend) : TensorImpl(backend)
+	template <typename T>
+	XtensorTensorImpl(xt::xarray<T> arr, XtensorBackend* backend) : TensorImpl(backend)
+	{
+		arr_.setInternalData(std::move(arr));
+	}
+
+	XtensorTensorImpl(Xarr arr, XtensorBackend* backend) : TensorImpl(backend)
 	{
 		arr_ = std::move(arr);
 	}
 
-	const xt::xarray<float>& get() const
+	const Xarr& xarr() const
 	{
 		return arr_;
 	}
 
-	xt::xarray<float>& get()
+	//TODO: Improve error message
+	template <typename T>
+	const xt::xarray<T>& get() const
 	{
-		return arr_;
+		if(arr_.dtype() != typeToDtype<T>())
+			throw AtError("Incorrect request type");
+		return arr_.get<T>();
+	}
+
+	template <typename T>
+	xt::xarray<T>& get()
+	{
+		if(arr_.dtype() != typeToDtype<T>())
+			throw AtError("Incorrect request type");
+		return arr_.get<T>();
 	}
 
 	virtual void host(float* ptr) const override
 	{
-		std::copy(arr_.begin(), arr_.end(), ptr);
+		copyToPtr(arr_, ptr);
+	}
+
+	virtual void host(double* ptr) const
+	{
+		copyToPtr(arr_, ptr);
+	}
+
+	virtual void host(int32_t* ptr) const
+	{
+		copyToPtr(arr_, ptr);
+	}
+
+	virtual void host(int16_t* ptr) const
+	{
+		copyToPtr(arr_, ptr);
+	}
+
+	virtual void host(bool* ptr) const
+	{
+		copyToPtr(arr_, ptr);
 	}
 
 	virtual void device(const float* ptr) override
 	{
-		memcpy(&arr_[0], ptr, arr_.size()*sizeof(float));
+		copyFromPtr(arr_, ptr);
+	}
+
+	virtual void device(const double* ptr)
+	{
+		copyFromPtr(arr_, ptr);
+	}
+
+	virtual void device(const int32_t* ptr)
+	{
+		copyFromPtr(arr_, ptr);
+	}
+
+	virtual void device(const int16_t* ptr)
+	{
+		copyFromPtr(arr_, ptr);
+	}
+
+	virtual void device(const bool* ptr)
+	{
+		copyFromPtr(arr_, ptr);
 	}
 
 	virtual size_t size() const override
@@ -84,30 +500,30 @@ public:
 	virtual void add(const TensorImpl* other) override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		arr_ = arr_ + impl->get();
+		arr_ = arr_ + impl->xarr();
 	}
 
 	virtual void mul(const TensorImpl* other) override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		arr_ = arr_ * impl->get();
+		arr_ = arr_ * impl->xarr();
 	}
 
 	virtual void subtract(const TensorImpl* other) override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		arr_ = arr_ - impl->get();
+		arr_ = arr_ - impl->xarr();
 	}
 
 	virtual void divide(const TensorImpl* other) override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		arr_ = arr_ / impl->get();
+		arr_ = arr_ / impl->xarr();
 	}
 
 	virtual void reciprocate() override
 	{
-		arr_ = 1.f/arr_;
+		arr_.reciprocate();
 	}
 
 	virtual TensorImpl* clone() const override
@@ -117,56 +533,55 @@ public:
 
 	virtual void resize(const Shape& wantedShape) override
 	{
-		auto s = as<std::vector<size_t>>(wantedShape);
+		auto s = as<xt::svector<size_t>>(wantedShape);
 		arr_.reshape(s);
 	}
 
 	virtual TensorImpl* reshape(const Shape& wantedShape) const override
 	{
-		auto s = as<std::vector<size_t>>(wantedShape);
-		xt::xarray<float> t = arr_;
-		t.reshape(s);
-		return new XtensorTensorImpl(std::move(t), (XtensorBackend*)backend());
+		auto s = as<xt::svector<size_t>>(wantedShape);
+		Xarr arr = arr_;
+		arr.reshape(s);
+		return new XtensorTensorImpl(arr, (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* dot(const TensorImpl* other) const override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		auto res = xt::linalg::dot(arr_, impl->get());
-		return new XtensorTensorImpl(std::move(res), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.dot(impl->xarr()), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* sqrt() const override
 	{
-		return new XtensorTensorImpl(xt::sqrt(arr_), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.sqrt(), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* transpose() const override
 	{
-		return new XtensorTensorImpl(xt::transpose(arr_), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.transpose(), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* transpose(const std::vector<intmax_t>& axis) const override
 	{
-		auto a = as<xt::xarray<float>::shape_type>(axis);
-		return new XtensorTensorImpl(xt::transpose(arr_, a), (XtensorBackend*)backend());
+		auto a = as<xt::svector<size_t>>(axis);
+		return new XtensorTensorImpl(arr_.transpose(a), (XtensorBackend*)backend());
 	}
 
 
 	virtual TensorImpl* sum(intmax_t axis) const override
 	{
-		return new XtensorTensorImpl(xt::sum(arr_, {axis}), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.sum({(size_t)axis}), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* sum(const std::vector<intmax_t>& axis) const override
 	{
-		auto s = as<xt::xarray<float>::shape_type>(axis);
-		return new XtensorTensorImpl(xt::sum(arr_, s), (XtensorBackend*)backend());
+		auto s = as<xt::svector<size_t>>(axis);
+		return new XtensorTensorImpl(arr_.sum(s), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* pow(float val) const override
 	{
-		return new XtensorTensorImpl(xt::pow(arr_, val), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.pow(val), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* slice(const Shape& begin, const Shape& size) const override
@@ -174,79 +589,75 @@ public:
 		xt::slice_vector sv;
 		for(size_t i=0;i<begin.size();i++)
 			sv.push_back(xt::range((int)begin[i], (int)(begin[i]+size[i])));//Why int...?
-		return new XtensorTensorImpl(std::move(xt::dynamic_view(arr_, sv)), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.chunk(sv), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* abs() const override
 	{
-		return new XtensorTensorImpl(std::move(xt::abs(arr_)), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.abs(), (XtensorBackend*)backend());
 	}
 
 	TensorImpl* stack(const TensorImpl* other, int axis) const override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		return new XtensorTensorImpl(std::move(xt::stack(xtuple(arr_, impl->get()), axis)), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.stack(impl->xarr(), axis), (XtensorBackend*)backend());
 	}
 
 	TensorImpl* concatenate(const TensorImpl* other, int axis) const override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		return new XtensorTensorImpl(std::move(xt::concatenate(xtuple(arr_, impl->get()), axis)), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.concatenate(impl->xarr(), axis), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* exp() const override
 	{
-		return new XtensorTensorImpl(std::move(xt::exp(arr_)), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.exp(), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* log() const override
 	{
-		return new XtensorTensorImpl(std::move(xt::log(arr_)), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_.log(), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* greaterThan(float val) const override
 	{
-		return new XtensorTensorImpl(std::move(arr_ > val), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_ > val, (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* lesserThan(float val) const override
 	{
-		return new XtensorTensorImpl(std::move(arr_ < val), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_ < val, (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* greaterOrEqual(float val) const override
 	{
-		return new XtensorTensorImpl(std::move(arr_ >= val), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_ >= val, (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* lesserOrEqual(float val) const override
 
 	{
-		return new XtensorTensorImpl(std::move(arr_ <= val), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_ <= val, (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* equalTo(float val) const override
 	{
-		//xtensor does not have a equality operator as the time of implementing this
-		xt::xarray<float> arr = xt::zeros<float>(arr_.shape());
-		for(size_t i=0;i<arr.size();i++)
-			arr[i] = (arr_[i] == val ? 1 : 0);
-		return new XtensorTensorImpl(std::move(arr), (XtensorBackend*)backend());
+		return new XtensorTensorImpl(arr_ == val, (XtensorBackend*)backend());
 	}
 
 	virtual DType dtype() const override
 	{
-		return DType::float32;
+		return arr_.dtype();
 	}
 
 	virtual void* hostPtr() override
 	{
-		return &arr_[0];
+		return arr_.data<void>();
 	}
 
 	virtual const void* hostPtr() const override
 	{
-		return &arr_[0];
+		return arr_.data<void>();
 	}
 
 	virtual void eval() override
@@ -255,9 +666,9 @@ public:
 	}
 
 protected:
-	xt::xarray<float> arr_;
+	Xarr arr_;
 };
-
+/*
 inline xt::xarray<float>& get(Tensor& t)
 {
 	return ((XtensorTensorImpl*)t.pimpl())->get();
@@ -267,7 +678,7 @@ inline const xt::xarray<float>& get(const Tensor& t)
 {
 	return ((const XtensorTensorImpl*)t.pimpl())->get();
 }
-
+*/
 inline xt::xarray<float> im2col(const xt::xarray<float>& img, std::array<intmax_t, 2> window, std::array<intmax_t, 2> stride)
 {
 	intmax_t strideY = stride[0];
@@ -379,7 +790,7 @@ inline xt::xarray<float> col2im(const xt::xarray<float>& in, const Shape& imgSiz
 
 XtensorBackend::XtensorBackend()
 {
-	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
+/*	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
 	[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor
 	{
 		const auto& i = get(in);
@@ -551,11 +962,19 @@ XtensorBackend::XtensorBackend()
 
 			return createTensor(res);
 		});
-
+*/
 
 	setType("xtensor");
 }
 
+template <typename T>
+inline xt::xarray<T> makeXarray(const T* ptr, Shape shape)
+{
+	auto s = as<typename xt::xarray<T>::shape_type>(shape);
+	xt::xarray<T> t(s);
+	std::copy(ptr, ptr+shape.volume(), t.begin());
+	return t;
+}
 
 TensorImpl* XtensorBackend::createTensor(const Shape& dims)
 {
@@ -567,10 +986,36 @@ TensorImpl* XtensorBackend::createTensor(const Shape& dims)
 TensorImpl* XtensorBackend::createTensor(const std::vector<float>& vec, const Shape& shape)
 {
 	assert(vec.size() == (size_t)shape.volume());
-	auto s = as<xt::xarray<float>::shape_type>(shape);
-	xt::xarray<float> t(s);
-	std::copy(vec.begin(), vec.end(), t.begin());
-	return new XtensorTensorImpl(std::move(t), this);
+	return new XtensorTensorImpl(makeXarray(&vec[0], shape), this);
+}
+
+TensorImpl* XtensorBackend::createTensor(const std::vector<double>& vec, const Shape& shape)
+{
+	assert(vec.size() == (size_t)shape.volume());
+	return new XtensorTensorImpl(makeXarray(&vec[0], shape), this);
+}
+
+TensorImpl* XtensorBackend::createTensor(const std::vector<int32_t>& vec, const Shape& shape)
+{
+	assert(vec.size() == (size_t)shape.volume());
+	return new XtensorTensorImpl(makeXarray(&vec[0], shape), this);
+}
+
+TensorImpl* XtensorBackend::createTensor(const std::vector<int16_t>& vec, const Shape& shape)
+{
+	assert(vec.size() == (size_t)shape.volume());
+	return new XtensorTensorImpl(makeXarray(&vec[0], shape), this);
+}
+
+TensorImpl* XtensorBackend::createTensor(const std::vector<bool>& vec, const Shape& shape)
+{
+	assert(vec.size() == (size_t)shape.volume());
+
+	//std::vector<bool> is compressed, decomressing
+	std::vector<int8_t> data(vec.size());
+	for(size_t i=0;i<vec.size();i++)
+		data[i] = vec[i];
+	return new XtensorTensorImpl(makeXarray((bool*)data.data(), shape), this);
 }
 
 TensorImpl* XtensorBackend::createTensor(const xt::xarray<float>& arr)
