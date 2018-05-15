@@ -27,6 +27,8 @@ inline ResType as(const InType& shape)
 	return ResType(shape.begin(), shape.end());
 }
 
+namespace {
+
 class Xarr
 {
 public:
@@ -250,7 +252,7 @@ public:
 		return run<Xarr>([val](const auto& a){return xt::eval(xt::pow(a, val));});
 	}
 
-	Xarr stack(const Xarr& arr, size_t axis) const
+	inline Xarr stack(const Xarr& arr, size_t axis) const
 	{
 		if(dtype() != arr.dtype())
 			throw AtError("Cannot stack tensors of different type");
@@ -262,7 +264,7 @@ public:
 
 	}
 
-	Xarr chunk(xt::slice_vector sv) const
+	inline Xarr chunk(xt::slice_vector sv) const
 	{
 		return run<Xarr>([&sv](const auto& a){
 			using DataType = typename std::decay<decltype(a)>::type::value_type;
@@ -270,7 +272,7 @@ public:
 		});
 	}
 
-	Xarr concatenate(const Xarr& arr, size_t axis) const
+	inline Xarr concatenate(const Xarr& arr, size_t axis) const
 	{
 		if(dtype() != arr.dtype())
 			throw AtError("Cannot stack tensors of different type");
@@ -367,7 +369,6 @@ Xarr Xarr::operator/ (const Xarr& other) const
 	return run<Xarr>(other, [](const auto& a, const auto& b){return xt::eval(a/b);});
 }
 
-
 template <typename T>
 void copyToPtr(const Xarr& arr, T* dest)
 {
@@ -384,6 +385,8 @@ void copyFromPtr(Xarr& arr, const T* src)
 		throw AtError("Cannot copy data from pointer to xarray. Incompatible data type");
 	auto& array = arr.get<T>();
 	memcpy(&array[0], src, array.size()*sizeof(T));
+}
+
 }
 
 class XtensorTensorImpl : public TensorImpl
