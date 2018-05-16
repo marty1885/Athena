@@ -52,6 +52,11 @@ inline std::string dtypeToName(DType dtype)
 		return "unknown";
 }
 
+inline std::string to_string(DType dtype)
+{
+	return dtypeToName(dtype);
+}
+
 inline std::ostream& operator<< (std::ostream& os, const DType& dtype)
 {
 	os << dtypeToName(dtype);

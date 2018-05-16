@@ -23,30 +23,23 @@ class Tensor
 public:
 	Tensor() = default;
 
-	Tensor(const std::vector<float>& vec, Backend& backend)
-		: Tensor(backend.createTensor(vec, Shape({1, (intmax_t)vec.size()})))
-	{
-	}
-
 	Tensor(TensorImpl* pimpl)
-		: referenceCounter_(new ReferenceCounter(1)), pimpl_(pimpl)
-	{
-	}
+		: referenceCounter_(new ReferenceCounter(1)), pimpl_(pimpl) {}
 
-	Tensor(const std::vector<float>& vec, const Shape& shape, Backend& backend)
-		: Tensor(backend.createTensor(vec, shape))
-	{
-	}
+	Tensor(const std::vector<float>& vec, const Shape& shape, Backend& backend = *defaultBackend())
+		: Tensor(backend.createTensor(vec, shape)) {}
 
-	Tensor(const std::vector<float>& vec, const Shape& shape)
-		: Tensor(defaultBackend()->createTensor(vec, shape))
-	{
-	}
+	Tensor(const std::vector<double>& vec, const Shape& shape, Backend& backend = *defaultBackend())
+		: Tensor(backend.createTensor(vec, shape)) {}
 
-	Tensor(const std::vector<float>& vec)
-		: Tensor(defaultBackend()->createTensor(vec, Shape({1, (intmax_t)vec.size()})))
-	{
-	}
+	Tensor(const std::vector<int32_t>& vec, const Shape& shape, Backend& backend = *defaultBackend())
+		: Tensor(backend.createTensor(vec, shape)) {}
+
+	Tensor(const std::vector<int16_t>& vec, const Shape& shape, Backend& backend = *defaultBackend())
+		: Tensor(backend.createTensor(vec, shape)) {}
+	
+	Tensor(const std::vector<bool>& vec, const Shape& shape, Backend& backend = *defaultBackend())
+		: Tensor(backend.createTensor(vec, shape)) {}
 
 	Tensor(nested_initializer_list_t<float, 1> l)
 	{
@@ -267,7 +260,8 @@ public:
 		return pimpl_->size();
 	}
 
-	void host(float* ptr) const
+	template <typename T>
+	inline void host(T* ptr) const
 	{
 		pimpl_->host(ptr);
 	}
@@ -306,14 +300,20 @@ public:
 		return other.createTensor(host(), shape());//Optimize this
 	}
 
-	float* hostPtr()
+	template <typename T>
+	inline T* hostPtr()
 	{
-		return (float*)pimpl_->hostPtr();
+		if(typeToDtype<T>() != dtype())
+			throw AtError(std::string("Cannot get a ")  + to_string(typeToDtype<T>()) + " pointer from " + to_string(dtype()));
+		return (T*)pimpl_->hostPtr();
 	}
 
-	const float* hostPtr() const
+	template <typename T>
+	inline const T* hostPtr() const
 	{
-		return (const float*)pimpl_->hostPtr();
+		if(typeToDtype<T>() != dtype())
+			throw AtError(std::string("Cannot get a ")  + to_string(typeToDtype<T>()) + " pointer from " + to_string(dtype()));
+		return (const T*)pimpl_->hostPtr();
 	}
 
 	virtual ~Tensor()

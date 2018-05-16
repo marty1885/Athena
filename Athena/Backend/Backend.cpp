@@ -10,6 +10,26 @@ TensorImpl* Backend::createTensor(const std::vector<float>& vec, const Shape& sh
 	throw AtError(__func__ + notImplementString);
 }
 
+TensorImpl* Backend::createTensor(const std::vector<double>& vec, const Shape& shape)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+TensorImpl* Backend::createTensor(const std::vector<int32_t>& vec, const Shape& shape)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+TensorImpl* Backend::createTensor(const std::vector<int16_t>& vec, const Shape& shape)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+TensorImpl* Backend::createTensor(const std::vector<bool>& vec, const Shape& shape)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
 TensorImpl* Backend::createTensor(const Shape& dims)
 {
 	throw AtError(__func__ + notImplementString);

@@ -56,10 +56,10 @@ void testConv(At::Backend& backend)
 	auto forward2 = backend.getAlgorithm<At::Conv2DForward>("conv2DForward");
 	auto backword2 = backend.getAlgorithm<At::Conv2DBackward>("conv2DBackward");
 
-	Tensor x({1,2,3,4,5,6,7,8,9},{1,1,3,3}, backend);
+	Tensor x((std::vector<float>){1,2,3,4,5,6,7,8,9},{1,1,3,3}, backend);
 	Tensor k = At::ones({1,1,3,3}, backend);
 	Tensor b = At::zeros({1}, backend);
-	Tensor dO({1}, {1}, backend);
+	Tensor dO((std::vector<float>){1}, {1}, backend);
 
 	{
 		Tensor res = forward(x, k, b, {{1,1}});

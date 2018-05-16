@@ -21,11 +21,11 @@ intmax_t NNPackBackend::threads() const
 
 inline Tensor reluWithNegSlope(const Tensor& x, float negSlope, pthreadpool_t threadpool)
 {
-	const float* in = x.hostPtr();
+	const float* in = x.hostPtr<float>();
 	int batchSize = x.shape()[0];
 	int channelNum = x.shape()[1];
 	Tensor res = x.backend()->createTensor(x.shape());
-	float* out = res.hostPtr();
+	float* out = res.hostPtr<float>();
 	auto status = nnp_relu_output(
 		batchSize, channelNum, 
 		in, out,
@@ -40,9 +40,9 @@ inline Tensor reluGradientWithNegSlope(const Tensor& a, const Tensor& b, float n
 	Tensor res = a.backend()->createTensor(a.shape());
 	int batchSize = b.shape()[0];
 	int channelNum = b.shape()[1];
-	float* out = res.hostPtr();
-	const float* grad = a.hostPtr();
-	const float* originalOut = b.hostPtr();
+	float* out = res.hostPtr<float>();
+	const float* grad = a.hostPtr<float>();
+	const float* originalOut = b.hostPtr<float>();
 	auto status = nnp_relu_input_gradient(
 		batchSize, channelNum, 
 		grad, originalOut, out
@@ -57,15 +57,15 @@ inline void nnpMatmul(const Tensor& x, const Tensor& y, Tensor& res, pthreadpool
 {
 	AtAssert(x.dimension() == 2);
 	AtAssert(y.dimension() == 2);
-	const float* xPtr = x.hostPtr();
-	const float* yPtr = y.hostPtr();
+	const float* xPtr = x.hostPtr<float>();
+	const float* yPtr = y.hostPtr<float>();
 	intmax_t batchSize = x.shape()[0];
 	intmax_t inVecSize = x.shape()[1];
 	intmax_t outVecSize = y.shape()[0];
 	intmax_t outSize = inVecSize*outVecSize;
 	if(res.size() != (size_t)outSize)
 		res.resize({inVecSize, outVecSize});
-	float* resPtr = res.hostPtr();
+	float* resPtr = res.hostPtr<float>();
 
 	auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, xPtr, yPtr, resPtr, threadpool, nullptr);
 
@@ -92,9 +92,9 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 	{
 		Tensor tmp = weight.transpose();
 
-		const float* input = in.hostPtr();
-		const float* weights = tmp.hostPtr();
-		const float* biases = bias.hostPtr();
+		const float* input = in.hostPtr<float>();
+		const float* weights = tmp.hostPtr<float>();
+		const float* biases = bias.hostPtr<float>();
 
 		assert(input != nullptr);
 		assert(weights != nullptr);
@@ -115,7 +115,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			for(intmax_t i=0;i<batchSize;i++)
 			{
 				const float* inPtr = input+i*inVecSize;
-				float* outPtr = res.hostPtr()+i*outVecSize;
+				float* outPtr = res.hostPtr<float>()+i*outVecSize;
 				auto status = nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
 				if(status != nnp_status_success)
 					throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
@@ -125,7 +125,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		}
 		else
 		{
-			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res.hostPtr()[0], threadpool_, nullptr);
+			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, &res.hostPtr<float>()[0], threadpool_, nullptr);
 
 			if(status != nnp_status_success)
 				throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
@@ -133,7 +133,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			for(intmax_t i=0;i<batchSize;i++)
 			{
 				for(int j=0;j<outVecSize;j++)
-					res.hostPtr()[i*outVecSize+j] += biases[j];
+					res.hostPtr<float>()[i*outVecSize+j] += biases[j];
 			}
 		}
 
@@ -143,8 +143,8 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
 	[this](const Tensor& dx, const Tensor& weight)->Tensor
 	{
-		const float* input = dx.hostPtr();
-		const float* weights = weight.hostPtr();
+		const float* input = dx.hostPtr<float>();
+		const float* weights = weight.hostPtr<float>();
 
 		assert(input != nullptr);
 		assert(weights != nullptr);
@@ -164,7 +164,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			for(intmax_t i=0;i<batchSize;i++)
 			{
 				const float* inPtr = input+i*inVecSize;
-				float* outPtr = res.hostPtr()+i*outVecSize;
+				float* outPtr = res.hostPtr<float>()+i*outVecSize;
 				auto status = nnp_fully_connected_inference(inVecSize, outVecSize, inPtr, weights, outPtr, threadpool_);
 				if(status != nnp_status_success)
 					throw AtError("nnp_fully_connected_inference execution failed. error " + std::to_string(status));
@@ -172,7 +172,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		}
 		else
 		{
-			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, res.hostPtr(), threadpool_, nullptr);
+			auto status = nnp_fully_connected_output(batchSize, inVecSize, outVecSize, input, weights, res.hostPtr<float>(), threadpool_, nullptr);
 			if(status != nnp_status_success)
 				throw AtError("nnp_fully_connected_output execution failed. error " + std::to_string(status));
 		}
@@ -219,9 +219,9 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 				inputSize,
 				inputPadding,
 				kernelSize,
-				x.hostPtr(),
-				kernel.hostPtr(),
-				bias.hostPtr(),
+				x.hostPtr<float>(),
+				kernel.hostPtr<float>(),
+				bias.hostPtr<float>(),
 				&res[0],
 				threadpool_,
 				nullptr);
@@ -235,7 +235,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 			{
 				size_t imageSize = x.volume()/batchSize;
 				size_t outputImageSize = outputShape.volume()/batchSize;
-				const float* ptr = x.hostPtr() + i*imageSize;
+				const float* ptr = x.hostPtr<float>() + i*imageSize;
 				auto status = nnp_convolution_inference(
 					nnp_convolution_algorithm_auto,
 					nnp_convolution_transform_strategy_compute,
@@ -246,8 +246,8 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 					kernelSize,
 					subsampling,
 					ptr,
-					kernel.hostPtr(),
-					bias.hostPtr(),
+					kernel.hostPtr<float>(),
+					bias.hostPtr<float>(),
 					&res[i*outputImageSize],
 					threadpool_,
 					nullptr
@@ -273,9 +273,9 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 		nnp_size inputSize = {(size_t)prevOut.shape()[3], (size_t)prevOut.shape()[2]};
 		nnp_padding inputPadding = {0, 0, 0, 0};
 		nnp_size kernelSize = {(size_t)kernel.shape()[2], (size_t)kernel.shape()[3]};
-		const float* gradOutput = currDelta.hostPtr();
-		const float* kernelPtr = kernel.hostPtr();
-		const float* inputPtr = prevOut.hostPtr();
+		const float* gradOutput = currDelta.hostPtr<float>();
+		const float* kernelPtr = kernel.hostPtr<float>();
+		const float* inputPtr = prevOut.hostPtr<float>();
 
 		assert(inputChannels == kernel.shape()[1]);
 
@@ -285,7 +285,7 @@ NNPackBackend::NNPackBackend(intmax_t threads)
 
 		if(dW.size() != kernel.size())
 			dW = kernel.backend()->createTensor(kernel.shape());
-		float* gradKernelPtr = dW.hostPtr();
+		float* gradKernelPtr = dW.hostPtr<float>();
 		//TODO: Check for nullptr
 
 		db = currDelta.sum({0, 2, 3});

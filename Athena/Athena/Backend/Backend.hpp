@@ -130,6 +130,10 @@ public:
 	}
 
 	virtual TensorImpl* createTensor(const std::vector<float>& vec, const Shape& shape);
+	virtual TensorImpl* createTensor(const std::vector<double>& vec, const Shape& shape);
+	virtual TensorImpl* createTensor(const std::vector<int32_t>& vec, const Shape& shape);
+	virtual TensorImpl* createTensor(const std::vector<int16_t>& vec, const Shape& shape);
+	virtual TensorImpl* createTensor(const std::vector<bool>& vec, const Shape& shape);
 	virtual TensorImpl* createTensor(const Shape& dims);
 	virtual void destoryTensor(TensorImpl* handle);
 
