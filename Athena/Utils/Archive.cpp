@@ -2,109 +2,143 @@
 
 #include <Athena/Utils/Archive.hpp>
 #include <Athena/Utils/Error.hpp>
+
+#include <fstream>
 using namespace At;
 
-template <typename T>
-nlohmann::json makeChild(std::string type, const T& val)
+template <typename Stream, typename T>
+void packChild(msgpack::packer<Stream>& o, std::string type, const T& val)
 {
-	nlohmann::json j;
-	j["__type"] = type;
-	j["__value"] = val;
-	return j;
+	o.pack_map(1);
+	o.pack(type);
+	o.pack(val);
 }
+
+template <typename T, typename VT>
+inline T unpackChild(VT const& o)
+{
+	T v;
+	o.convert(v);
+	return v;
+}
+
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+namespace adaptor {
+
+template<>
+struct pack<BoxedValues> {
+	template <typename Stream>
+	packer<Stream>& operator()(msgpack::packer<Stream>& o, BoxedValues const& states) const {
+		// packing member variables as an array.
+		o.pack_map(states.size());
+		for(const auto& [key, elem] : states)
+		{
+			o.pack(key);
+			if(auto ptr = box_cast<BoxedValues>(elem); ptr != nullptr)
+				o.pack(ptr->value());
+			else if(auto ptr = box_cast<std::string>(elem); ptr != nullptr)
+				o.pack(ptr->value());
+			else if(auto ptr = box_cast<Shape>(elem); ptr != nullptr)
+				packChild(o, "Shape", ptr->value());
+			else if(auto ptr = box_cast<std::vector<float>>(elem); ptr != nullptr)
+				packChild(o, "FloatVector", ptr->value());
+			else if(auto ptr = box_cast<float>(elem); ptr != nullptr)
+				packChild(o, "Float32", ptr->value());
+			else
+				throw AtError("Not supported type");
+		}
+		return o;
+	}
+};
+
+template<>
+struct convert<BoxedValues> {
+	msgpack::object const& operator()(msgpack::object const& o, BoxedValues& states) const {
+		if (o.type != msgpack::type::MAP) throw msgpack::type_error();
+		const msgpack::object_map& m = o.via.map;
+		auto size = m.size;
+		msgpack::object_kv* kvs = m.ptr;
+		for(size_t i=0;i<size;i++)
+		{
+			std::string key;
+			kvs[i].key.convert(key);
+			const auto& val = kvs[i].val;
+			if(val.type == msgpack::type::STR)
+				states.set(key, unpackChild<std::string>(val));
+			else if(val.type == msgpack::type::MAP)
+			{
+				if(val.via.map.size == 1)
+				{
+					const auto& kv = *val.via.map.ptr;
+					std::string type = kv.key.as<std::string>();
+					if(type == "FloatVector")
+						states.set(key, unpackChild<std::vector<float>>(kv.val));
+					else if(type == "Shape")
+						states.set(key, unpackChild<Shape>(kv.val));
+					else if(type == "Float32")
+						states.set(key, unpackChild<float>(kv.val));
+				}
+				else
+					states.set(key, unpackChild<BoxedValues>(val));
+			}
+			else
+				states.set(key, unpackChild<BoxedValues>(val));
+		}
+		return o;
+	}
+};
+
+template<>
+struct pack<Shape> {
+	template <typename Stream>
+	packer<Stream>& operator()(msgpack::packer<Stream>& o, Shape const& s) const {
+		// packing member variables as an array.
+		o.pack_array(s.size());
+		for(auto v : s)
+			o.pack(v);
+		
+		return o;
+	}
+};
+
+template<>
+struct convert<Shape> {
+	msgpack::object const& operator()(msgpack::object const& o, Shape& s) const {
+		if (o.type != msgpack::type::ARRAY) throw msgpack::type_error();
+		auto size = o.via.array.size;
+		s.resize(size);
+		for(size_t i=0;i<size;i++)
+			s[i] = o.via.array.ptr[i].as<Shape::value_type>();
+		return o;
+	}
+};
+
+} // namespace adaptor
+} // MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS)
+} // namespace msgpack
+
 
 void Archiver::save(const BoxedValues& states, std::string path)
 {
-	nlohmann::json j;
-	boxToJson(j, states);
-
 	std::ofstream out(path);
 	if(out.good() == false)
-		throw AtError("Cannot write to file " + path);
-	out << j.dump(2);
+		throw AtError("Cannot save to " + path);
+	msgpack::pack(out, states);
 	out.close();
 }
 
-void Archiver::boxToJson(nlohmann::json& j, const BoxedValues& states)
-{
-	using json = nlohmann::json;
-	for(const auto& [key, elem] : states)
-	{
-		if(auto ptr = box_cast<BoxedValues>(elem); ptr != nullptr)
-		{
-			json child;
-			boxToJson(child, ptr->value());
-			j[key] = child;
-		}
-		else if(auto ptr = box_cast<std::vector<float>>(elem); ptr != nullptr)
-		{
-			j[key] = makeChild("FloatVector", ptr->value());
-		}
-		else if(auto ptr = box_cast<Shape>(elem); ptr != nullptr)
-		{
-			j[key] = makeChild("Shape", ptr->value());
-		}
-		else if(auto ptr = box_cast<std::string>(elem); ptr != nullptr)
-		{
-			j[key] = ptr->value();
-		}
-		else if(auto ptr = box_cast<float>(elem); ptr != nullptr)
-		{
-			j[key] = makeChild("Float32", ptr->value());
-		}
-		else
-		{
-			throw AtError("Not supported type");
-		}
-	}
-}
-
-
-void Archiver::jsonToBox(const nlohmann::json& j, BoxedValues& states)
-{
-	for (auto it=j.begin(); it!=j.end(); ++it)
-	{
-		const nlohmann::json& elem = it.value();
-		std::string key = it.key();
-		if(elem.is_object() == true)
-		{
-			std::string type = elem["__type"];
-			if(type == "FloatVector")
-			{
-				states.set<std::vector<float>>(key, elem["__value"]);
-			}
-			else if(type == "Shape")
-			{
-				states.set<Shape>(key, elem["__value"]);
-			}
-			else if(type == "Float32")
-			{
-				states.set<float>(key, elem["__value"]);
-			}
-			else
-			{
-				BoxedValues params;
-				jsonToBox(elem, params);
-				states.set<BoxedValues>(key, params);
-			}
-		}
-		else if(elem.is_string())
-		{
-			states.set<std::string>(key, elem);
-		}
-	}
-}
 
 BoxedValues Archiver::load(std::string path)
 {
+	BoxedValues vals;
 	std::ifstream in(path);
 	if(in.good() == false)
-		throw AtError("Can't read file " + path);
-	nlohmann::json j;
-	in >> j;
-	in.close();
-
-	BoxedValues vals;
-	jsonToBox(j, vals);
+		throw AtError("Cannot load file : " + path);
+	std::stringstream buffer;
+	buffer << in.rdbuf();
+	msgpack::object_handle oh = msgpack::unpack(buffer.str().data(), buffer.str().size());
+	msgpack::object obj = oh.get();
+	obj.convert(vals);
 	return vals;
 }

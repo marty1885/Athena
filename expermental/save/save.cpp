@@ -49,7 +49,16 @@ int main()
 
 	using namespace At;
 	At::Archiver archiver;
-	archiver.save(net.states(), "b.json");
-	auto data = archiver.load("b.json");
+	std::cout << "Saving trained network" << std::endl;
+	archiver.save(net.states(), "b.net");
+	std::cerr << "Loading saved network and testing the loaded network" << std::endl;
+	auto data = archiver.load("b.net");
 	net.loadStates(data);
+
+	for(int i=0;i<X.shape()[0];i++)
+	{
+		At::Tensor x = X.slice({i},{1});
+		auto res = net.predict(x);
+		std::cout << "input = " << x << ", result = " << res << std::endl;
+	}
 }
