@@ -52,6 +52,8 @@ public:
 
 	Xarr operator= (const Xarr& other)
 	{
+		if(this == &other)
+			return *this;
 		release();
 		dataType = other.dataType;
 		tensorPtr = other.run<void*>([](auto arr){return new decltype(arr)(arr);});
@@ -667,17 +669,19 @@ public:
 protected:
 	Xarr arr_;
 };
-/*
-inline xt::xarray<float>& get(Tensor& t)
+
+template <typename T>
+inline xt::xarray<T>& get(Tensor& t)
 {
-	return ((XtensorTensorImpl*)t.pimpl())->get();
+	return ((XtensorTensorImpl*)t.pimpl())->get<T>();
 }
 
+template <typename T>
 inline const xt::xarray<float>& get(const Tensor& t)
 {
-	return ((const XtensorTensorImpl*)t.pimpl())->get();
+	return ((const XtensorTensorImpl*)t.pimpl())->get<T>();
 }
-*/
+
 inline xt::xarray<float> im2col(const xt::xarray<float>& img, std::array<intmax_t, 2> window, std::array<intmax_t, 2> stride)
 {
 	intmax_t strideY = stride[0];
@@ -789,46 +793,46 @@ inline xt::xarray<float> col2im(const xt::xarray<float>& in, const Shape& imgSiz
 
 XtensorBackend::XtensorBackend()
 {
-/*	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
+	addAlgorithm<FCForwardFunction>("fullyconnectedForward",
 	[this](const Tensor& in, const Tensor& weight, const Tensor& bias)->Tensor
 	{
-		const auto& i = get(in);
-		const auto& w = get(weight);
-		const auto& b = get(bias);
+		const auto& i = get<float>(in);
+		const auto& w = get<float>(weight);
+		const auto& b = get<float>(bias);
 		auto res = new XtensorTensorImpl(
-			std::move(xt::linalg::dot(i,w)+b), this
+			xt::eval(xt::linalg::dot(i,w)+b), this
 		);
 		return res;
 	});
-
+/*
 	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
-		[this](const Tensor& dx, const Tensor& weight)->Tensor
-		{
-			const auto& i = get(dx);
-			const auto& w = get(weight);
-			return createTensor(
-				std::move(xt::linalg::dot(i,xt::transpose(w))));
-		});
-
+	[this](const Tensor& dx, const Tensor& weight)->Tensor
+	{
+		const auto& i = get<float>(dx);
+		const auto& w = get<float>(weight);
+		xt::xarray<float> arr = xt::eval(xt::linalg::dot(i,xt::transpose(w)));
+		return createTensor(arr);
+	});
+*/
 	addAlgorithm<SigmoidForward>("sigmoidForward",
 		[this](const Tensor& x)->Tensor
 		{
-			const auto& t = get(x);
-			return createTensor(std::move(1/(1+xt::exp(-t))));
+			const auto& t = get<float>(x);
+			return createTensor(xt::eval(1/(1+xt::exp(-t))));
 		});
 
 	addAlgorithm<SigmoidBackward>("sigmoidBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const auto& dy = get(a);
-			const auto& y = get(b);
-			return createTensor(std::move(dy*(y*(1-y))));
+			const auto& dy = get<float>(a);
+			const auto& y = get<float>(b);
+			return createTensor(xt::eval(dy*(y*(1-y))));
 		});
 
 	addAlgorithm<TanhForward>("tanhForward",
 		[this](const Tensor& x)->Tensor
 		{
-			const auto& t = get(x);
+			const auto& t = get<float>(x);
 			xt::xarray<float> res = xt::tanh(t);
 			return createTensor(std::move(res));
 		});
@@ -836,8 +840,8 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<TanhBackward>("tanhBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const auto& dy = get(a);
-			const auto& y = get(b);
+			const auto& dy = get<float>(a);
+			const auto& y = get<float>(b);
 			xt::xarray<float> res = dy * (1 - xt::pow(xt::tanh(y), 2));
 			return createTensor(std::move(res));
 		});
@@ -845,7 +849,7 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<ReluForward>("reluForward",
 		[this](const Tensor& x)->Tensor
 		{
-			const auto& t = get(x);
+			const auto& t = get<float>(x);
 			xt::xarray<float> res = (t>0)*t;
 			return createTensor(std::move(res));
 		});
@@ -853,8 +857,8 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<ReluBackward>("reluBackward",
 		[this](const Tensor& a, const Tensor& b)->Tensor
 		{
-			const auto& dy = get(a);
-			const auto& y = get(b);
+			const auto& dy = get<float>(a);
+			const auto& y = get<float>(b);
 			xt::xarray<float> res = dy*(y>0);
 			return createTensor(std::move(res));
 		});
@@ -862,7 +866,7 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<LeakyReluForward>("leakyReluForward",
 		[this](const Tensor& x, float alpha)->Tensor
 		{
-			const auto& t = get(x);
+			const auto& t = get<float>(x);
 			auto f = xt::vectorize([&](float v){return (v>0?v:v*alpha);});
 			xt::xarray<float> res = f(t);
 			return createTensor(std::move(res));
@@ -871,8 +875,8 @@ XtensorBackend::XtensorBackend()
 	addAlgorithm<LeakyReluBackward>("leakyReluBackward",
 		[this](const Tensor& a, const Tensor& b, float alpha)->Tensor
 		{
-			const auto& dy = get(a);
-			const auto& y = get(b);
+			const auto& dy = get<float>(a);
+			const auto& y = get<float>(b);
 			auto f = xt::vectorize([&](float y, float dy){return dy*(y>0?1.f:alpha);});
 			xt::xarray<float> res = f(y, dy);
 			return createTensor(std::move(res));
@@ -882,9 +886,9 @@ XtensorBackend::XtensorBackend()
 		[this](const Tensor& x, const Tensor& weights, const Tensor& bias, const Shape& strides)->Tensor
 		{
 			//assuming input format of N C H W
-			const auto& t = get(x);
-			const auto& kernels = get(weights);
-			const auto& b = get(bias);
+			const auto& t = get<float>(x);
+			const auto& kernels = get<float>(weights);
+			const auto& b = get<float>(bias);
 
 			intmax_t inputNums = x.shape()[0];
 			intmax_t inputChannels = x.shape()[1];
@@ -938,9 +942,9 @@ XtensorBackend::XtensorBackend()
 			intmax_t batchSize = prevOut.shape()[0];
 			intmax_t numFilters = kernel.shape()[0];
 
-			const auto& dout = get(currDelta);
-			const auto& x = get(prevOut);
-			const auto& w = get(kernel);
+			const auto& dout = get<float>(currDelta);
+			const auto& x = get<float>(prevOut);
+			const auto& w = get<float>(kernel);
 
 			db = currDelta.sum({0, 2, 3});
 			db.resize({db.shape()[0], db.shape().volume()/db.shape()[0]});
@@ -961,7 +965,7 @@ XtensorBackend::XtensorBackend()
 
 			return createTensor(res);
 		});
-*/
+
 
 	setType("xtensor");
 }

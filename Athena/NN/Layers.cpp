@@ -177,6 +177,8 @@ Tensor Conv2DLayer::forward(const Tensor& x)
 		throw AtError("Conv2D expecting a 4D tensor but got " + std::to_string(x.dimension()) + "D. Shape = " + to_string(x.shape()));
 	if(x.shape()[1] != inputChannels_)
 		throw AtError("Expecting " + std::to_string(inputChannels_) + " input channes, but get " + std::to_string(x.shape()[1]));
+	if((bool)forwardAlgorithm_ == false)
+		throw AtError("No conv2d algorithm avliable.");
 	Tensor t = forwardAlgorithm_(x, kernel_, bias_, strides_);
 	return t;
 }
