@@ -33,7 +33,7 @@ At::Tensor mat2Tensor(const Mat& image, At::Backend& backend)
 Mat tensor2Mat(const At::Tensor& image)
 {
 	Mat res(image.shape()[2]*image.shape()[1]*image.shape()[0], image.shape()[3], CV_32F);
-	auto data = image.host();
+	auto data = image.host<float>();
 	memcpy(res.data, &data[0], data.size()*sizeof(float));
 	return res;
 }

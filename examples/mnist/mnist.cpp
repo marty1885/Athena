@@ -109,7 +109,7 @@ int main()
 	{
 		At::Tensor x = testingImage.slice({i},{1});
 		At::Tensor res = net.predict(x);
-		int predictLabel = maxElementIndex(res.host());
+		int predictLabel = maxElementIndex(res.host<float>());
 		if(predictLabel == dataset.test_labels[i])
 			correct++;
 	}

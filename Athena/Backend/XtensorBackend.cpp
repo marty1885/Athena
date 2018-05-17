@@ -432,22 +432,22 @@ public:
 		copyToPtr(arr_, ptr);
 	}
 
-	virtual void host(double* ptr) const
+	virtual void host(double* ptr) const override
 	{
 		copyToPtr(arr_, ptr);
 	}
 
-	virtual void host(int32_t* ptr) const
+	virtual void host(int32_t* ptr) const override
 	{
 		copyToPtr(arr_, ptr);
 	}
 
-	virtual void host(int16_t* ptr) const
+	virtual void host(int16_t* ptr) const override
 	{
 		copyToPtr(arr_, ptr);
 	}
 
-	virtual void host(bool* ptr) const
+	virtual void host(bool* ptr) const override
 	{
 		copyToPtr(arr_, ptr);
 	}

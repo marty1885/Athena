@@ -127,7 +127,7 @@ void SequentialNetwork::fit(Optimizer& optimizer, LossFunction& loss, const Tens
 
 				dE = std::move(dx);
 			}
-			float batchLoss = loss.f(layerOutputs.back(), y).host()[0];
+			float batchLoss = loss.f(layerOutputs.back(), y).host<float>()[0];
 			onBatchEnumerate(batchLoss);
 			epochLoss += batchLoss*((float)(sliceSize)/datasetSize);
 		}
@@ -153,7 +153,7 @@ Tensor SequentialNetwork::predict(const Tensor& input)
 float SequentialNetwork::test(const Tensor& input, const Tensor& desireOutput, LossFunction& loss)
 {
 	Tensor t = predict(input);
-	return loss.f(t, desireOutput).host()[0];
+	return loss.f(t, desireOutput).host<float>()[0];
 }
 
 void SequentialNetwork::compile()

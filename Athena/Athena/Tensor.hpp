@@ -278,9 +278,10 @@ public:
 		return t;
 	}
 
-	std::vector<float> host() const
+	template <typename T>
+	std::vector<T> host() const
 	{
-		std::vector<float> v(pimpl_->size());
+		std::vector<T> v(pimpl_->size());
 		pimpl_->host(&v[0]);
 		return v;
 	}
@@ -297,7 +298,7 @@ public:
 
 	Tensor withBackend(Backend& other)
 	{
-		return other.createTensor(host(), shape());//Optimize this
+		return other.createTensor(host<float>(), shape());//Optimize this
 	}
 
 	template <typename T>
@@ -361,7 +362,7 @@ public:
 	{
 		BoxedValues params;
 		params.set<std::string>("__type", "Tensor");
-		params.set<std::vector<float>>("values", host());
+		params.set<std::vector<float>>("values", host<float>());
 		params.set<Shape>("shape", shape());
 		return params;
 	}
@@ -497,6 +498,17 @@ protected:
 	static Backend* defaultBackend_;
 };
 
+template <>
+inline std::vector<bool> Tensor::host() const
+{
+	std::vector<bool> v(pimpl_->size());
+	std::vector<char> c(pimpl_->size());
+	pimpl_->host((bool*)&c[0]);
+	for(size_t i=0;i<v.size();i++)
+		v[i] = c[i];
+	return v;
+}
+
 inline Tensor rand(float lEdge, float rEdge, const Shape& shape, Backend& backend)
 {
 	return Tensor(backend.rand(lEdge, rEdge ,shape));
@@ -574,7 +586,8 @@ inline Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
 	return t.stack(q, axis);
 }
 
-static int prittyPrintTensor (std::ostream& os, float* arr, Shape shape, int depth, int maxDepth, int maxLength=0)
+template <typename T>
+static int prittyPrintTensor (std::ostream& os, T* arr, Shape shape, int depth, int maxDepth, int maxLength=0)
 {
 	auto floatToStr = [&](float val)->std::string
 	{
@@ -641,8 +654,34 @@ inline std::ostream& operator<< (std::ostream& os, const Tensor& t)
 		return os;
 	}
 
-	std::vector<float> v = t.host();
-	prittyPrintTensor(os, &v[0], t.shape(), 0, t.shape().size());
+	if(t.dtype() == DType::float32)
+	{
+		auto v = t.host<float>();
+		prittyPrintTensor(os, &v[0], t.shape(), 0, t.shape().size());
+	}
+	else if(t.dtype() == DType::float64)
+	{
+		auto v = t.host<double>();
+		prittyPrintTensor(os, &v[0], t.shape(), 0, t.shape().size());
+	}
+	else if(t.dtype() == DType::int32)
+	{
+		auto v = t.host<int32_t>();
+		prittyPrintTensor(os, &v[0], t.shape(), 0, t.shape().size());
+	}
+	else if(t.dtype() == DType::int16)
+	{
+		auto v = t.host<int16_t>();
+		prittyPrintTensor(os, &v[0], t.shape(), 0, t.shape().size());
+	}
+	else if(t.dtype() == DType::bool8)
+	{
+		// auto v = t.host<bool>();
+		// prittyPrintTensor(os, &v[0], t.shape(), 0, t.shape().size());
+		throw AtError("Printing bool8 tensors not supported now");
+	}
+	else
+		throw AtError("Cannot print tensor with type: " + to_string(t.dtype()));
 	return os;
 }
 

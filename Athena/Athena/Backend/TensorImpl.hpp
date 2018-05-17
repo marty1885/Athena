@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <Athena/DType.hpp>
+#include <Athena/Utils/Shape.hpp>
 
 namespace At
 {
@@ -16,6 +17,10 @@ public:
 	virtual ~TensorImpl(){}
 
 	virtual void host(float* ptr) const = 0;
+	virtual void host(double* ptr) const = 0;
+	virtual void host(int32_t* ptr) const = 0;
+	virtual void host(int16_t* ptr) const = 0;
+	virtual void host(bool* ptr) const = 0;
 	virtual void device(const float* ptr) = 0;
 	virtual size_t size() const = 0;
 	virtual Shape shape() const = 0;

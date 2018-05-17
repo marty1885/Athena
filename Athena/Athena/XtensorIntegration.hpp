@@ -7,30 +7,90 @@
 namespace At
 {
 
-//TODO: Make accept different types
-template<>
-inline Tensor Tensor::from(const xt::xarray<float>& arr)
+template <typename T>
+inline Tensor __xtToTensor(const xt::xarray<T>& arr)
 {
 	auto shape = arr.shape();
 	Shape s(shape.begin(), shape.end());
 
-	//TODO: Anailate this copying of data
-	std::vector<float> v(arr.size());
+	//TODO: Annihilate this copying of data
+	std::vector<T> v(arr.size());
 	for(size_t i=0;i<arr.size();i++)
 		v[i] = arr[i];
-	return At::Tensor(v, s);
+	return Tensor(v, s);
 }
 
-template <> 
-inline xt::xarray<float> Tensor::to(const Tensor& t)
+template <typename T>
+inline xt::xarray<T> __TensorToXt(const Tensor& t)
 {
-	auto data = t.host();
+	auto data = t.host<T>();
 	auto shape = t.shape();
-	xt::xarray<float>::shape_type s(shape.begin(), shape.end());
-	xt::xarray<float> arr = xt::xarray<float>::from_shape(s);
+	typename xt::xarray<T>::shape_type s(shape.begin(), shape.end());
+	xt::xarray<T> arr = xt::xarray<T>::from_shape(s);
 	for(size_t i=0;i<data.size();i++)
 		arr[i] = data[i];
 	return arr;
 }
+
+template<>
+inline Tensor Tensor::from(const xt::xarray<float>& arr)
+{
+	return __xtToTensor(arr);
+}
+
+template<>
+inline Tensor Tensor::from(const xt::xarray<double>& arr)
+{
+	return __xtToTensor(arr);
+}
+
+template<>
+inline Tensor Tensor::from(const xt::xarray<int32_t>& arr)
+{
+	return __xtToTensor(arr);
+}
+
+template<>
+inline Tensor Tensor::from(const xt::xarray<int16_t>& arr)
+{
+	return __xtToTensor(arr);
+}
+
+template<>
+inline Tensor Tensor::from(const xt::xarray<bool>& arr)
+{
+	return __xtToTensor(arr);
+}
+
+template <>
+inline xt::xarray<float> Tensor::to(const Tensor& t)
+{
+	return __TensorToXt<float>(t);
+}
+
+template <>
+inline xt::xarray<double> Tensor::to(const Tensor& t)
+{
+	return __TensorToXt<double>(t);
+}
+
+template <>
+inline xt::xarray<int32_t> Tensor::to(const Tensor& t)
+{
+	return __TensorToXt<int32_t>(t);
+}
+
+template <>
+inline xt::xarray<int16_t> Tensor::to(const Tensor& t)
+{
+	return __TensorToXt<int16_t>(t);
+}
+
+template <>
+inline xt::xarray<bool> Tensor::to(const Tensor& t)
+{
+	return __TensorToXt<bool>(t);
+}
+
 
 }

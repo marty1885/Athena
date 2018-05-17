@@ -30,7 +30,7 @@ template<>
 struct pack<BoxedValues> {
 	template <typename Stream>
 	packer<Stream>& operator()(msgpack::packer<Stream>& o, BoxedValues const& states) const {
-		// packing member variables as an array.
+		// packing member variables as a map
 		o.pack_map(states.size());
 		for(const auto& [key, elem] : states)
 		{

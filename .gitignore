@@ -59,3 +59,4 @@ CTestTestfile.cmake
 .vscode
 *.~
 CMakeLists.txt.user
+.buildconfig
