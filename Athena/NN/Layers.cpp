@@ -203,7 +203,7 @@ void Conv2DLayer::build()
 		kernel_ = weightInitalizer_->create({outputChannels_,inputChannels,windowSize_[0], windowSize_[1]}
 			, windowSize_[0]*windowSize_[1], 1, backend());
 	if((bool)bias_ == false)
-		bias_ = At::zeros({outputChannels_}, *backend());
+		bias_ = At::normal(-1, 1, {outputChannels_}, *backend());
 	config.set<Shape>("kernelShape", kernel_.shape());
 	config.set<Shape>("stride", strides_);
 
