@@ -89,4 +89,4 @@ At::Tensor t = At::Tensor::from(data);
 //Vise versa
 xt::xarray<float> result = At::Tensor::to<xt::xarray<float>>(t);
 ```
-Note that this only works for `xt::xarray<float>`. `xexpression` and other types are not supported for now.
+Note that this only works with xarrays if types suppored by Tensor. Eg: `float`, `double`, `int`, `short` and `bool`.
