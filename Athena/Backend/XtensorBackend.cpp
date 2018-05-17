@@ -137,7 +137,7 @@ public:
 	template <typename T>
 	void operator+= (const T& val)
 	{
-		return run<void>([this, val](auto& a){return setInternalData(xt::eval(a+val));});
+		return run<void>([this, val](auto& a){return this->setInternalData(xt::eval(a+val));});
 	}
 
 	template <typename T>
@@ -150,7 +150,7 @@ public:
 	template <typename T>
 	void operator*= (const T& val)
 	{
-		return run<void>([this, val](auto& a){return setInternalData(xt::eval(a*val));});
+		return run<void>([this, val](auto& a){return this->setInternalData(xt::eval(a*val));});
 	}
 
 	template <typename T>

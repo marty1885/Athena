@@ -152,7 +152,7 @@ public:
 		copyToHost(arr_, ptr);
 	}
 
-	virtual void device(const float* ptr)
+	virtual void device(const float* ptr) override
 	{
 		writeToHost(arr_, ptr);
 	}
@@ -313,7 +313,7 @@ public:
 		if(tensorDims == 3)
 			arr = arr_(dim[0], dim[1], dim[2], af::span);
 		if(tensorDims == 4)
-			arr = arr_(dim[0], dim[1], dim[2], dim[4]);
+			arr = arr_(dim[0], dim[1], dim[2], dim[3]);
 		return new AFTensorImpl(arr, s, (ArrayFireBackend*)backend());
 	}
 

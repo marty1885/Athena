@@ -79,7 +79,7 @@ int main()
 	opt.alpha_ = 0.1f;
 	At::MSELoss loss;
 
-	size_t epoch = 10;
+	size_t epoch = 8;
 	size_t batchSize = 16;
 
 	int count = 0;

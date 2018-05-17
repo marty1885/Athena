@@ -37,7 +37,7 @@ using MSE = MSELoss;
 class AbsoluteLoss : public LossFunction
 {
 public:
-	virtual Tensor f(const Tensor& y, const Tensor& t)
+	virtual Tensor f(const Tensor& y, const Tensor& t) override
 	{
 		return sum(abs(y-t));
 	}
@@ -56,7 +56,7 @@ using L1Loss = AbsoluteLoss;
 class CrossEntropy : public LossFunction
 {
 public:
-	virtual Tensor f(const Tensor& y, const Tensor& t)
+	virtual Tensor f(const Tensor& y, const Tensor& t) override
 	{
 		return sum(
 			-t*log(y) - (1.f-t)*log(1-y)

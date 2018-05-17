@@ -15,10 +15,10 @@ public:
 	virtual ~XtensorBackend() = default;
 
 	virtual TensorImpl* createTensor(const std::vector<float>& vec, const Shape& shape) override;
-	virtual TensorImpl* createTensor(const std::vector<double>& vec, const Shape& shape);
-	virtual TensorImpl* createTensor(const std::vector<int32_t>& vec, const Shape& shape);
-	virtual TensorImpl* createTensor(const std::vector<int16_t>& vec, const Shape& shape);
-	virtual TensorImpl* createTensor(const std::vector<bool>& vec, const Shape& shape);
+	virtual TensorImpl* createTensor(const std::vector<double>& vec, const Shape& shape) override;
+	virtual TensorImpl* createTensor(const std::vector<int32_t>& vec, const Shape& shape) override;
+	virtual TensorImpl* createTensor(const std::vector<int16_t>& vec, const Shape& shape) override;
+	virtual TensorImpl* createTensor(const std::vector<bool>& vec, const Shape& shape) override;
 
 	virtual TensorImpl* createTensor(const Shape& dims) override;
 	TensorImpl* createTensor(const xt::xarray<float>& arr);

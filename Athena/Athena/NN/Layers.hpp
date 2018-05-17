@@ -16,6 +16,7 @@ namespace At
 class WeightInitalizer
 {
 public:
+	virtual ~WeightInitalizer() = default;
 	virtual Tensor create(const Shape& shape , intmax_t fanIn, intmax_t fanOut, Backend* backend) const = 0;
 };
 
