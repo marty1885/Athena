@@ -271,7 +271,7 @@ public:
 	{
 		return run<Xarr>([&sv](const auto& a){
 			using DataType = typename std::decay<decltype(a)>::type::value_type;
-			return (xt::xarray<DataType>)xt::dynamic_view(a, sv);
+			return (xt::xarray<DataType>)xt::strided_view(a, sv);
 		});
 	}
 
