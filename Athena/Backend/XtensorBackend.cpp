@@ -804,7 +804,7 @@ XtensorBackend::XtensorBackend()
 		);
 		return res;
 	});
-/*
+
 	addAlgorithm<FCBackwardFunction>("fullyconnectedBackward",
 	[this](const Tensor& dx, const Tensor& weight)->Tensor
 	{
@@ -813,7 +813,7 @@ XtensorBackend::XtensorBackend()
 		xt::xarray<float> arr = xt::eval(xt::linalg::dot(i,xt::transpose(w)));
 		return createTensor(arr);
 	});
-*/
+
 	addAlgorithm<SigmoidForward>("sigmoidForward",
 		[this](const Tensor& x)->Tensor
 		{

@@ -26,6 +26,9 @@ More backends built on faster libraries like `Eigen` and, `MIOpen` are planed.
 `example1` in the `examples` folder demostrates how to implement a MLP to solve the XOR problem in Athena.<br>
 `mnist` contains an example using a MLP to classify MNIST digits.
 
+## Note
+If possable, use `clang` as the compiler to build Athena. GCC seems to bug out the mathmetic calculations and generate NaN out of nowhere.
+
 ## Development and contribution
 
 Since deep learning and it's community is rapidly growing, we'd love to get contribution from you to accelerate Athena's development. Feel free to open a pull request or an issue to report a bug or request features.
