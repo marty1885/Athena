@@ -278,11 +278,44 @@ public:
 	inline Xarr concatenate(const Xarr& arr, size_t axis) const
 	{
 		if(dtype() != arr.dtype())
-			throw AtError("Cannot stack tensors of different types. " + dtypeToName(dtype()) + " vs " + dtypeToName(arr.dtype()));
+			throw AtError("Cannot concatenate tensors of different types. " + dtypeToName(dtype()) + " vs " + dtypeToName(arr.dtype()));
+		return concatenate({this, &arr}, axis);
+	}
+
+	inline Xarr concatenate(const std::vector<const Xarr*>& arr, size_t axis) const
+	{
+		assert(arr.size() > 1);
+		auto type = arr[0]->dtype();
+		for(auto a : arr)
+		{
+			if(a->dtype() != type)
+				throw AtError("Cannot concatenate tensors of different types. ");
+			if(a->shape().size() < axis)
+				throw AtError("Concatenate axis out of bounds");
+		}
+
 		return run<Xarr>([&arr, axis](const auto& a){
 			using ValueType = typename std::decay<decltype(a)>::type::value_type;
-			const auto b = arr.get<ValueType>();
-			return (xt::xarray<ValueType>)(xt::concatenate(xt::xtuple(a, b)), axis);
+			auto s = arr[0]->get<ValueType>().shape();
+
+			s[axis] = 0;
+			for(auto a : arr)
+				s[axis] += a->get<ValueType>().shape()[axis];
+			auto res = xt::xarray<ValueType>::from_shape(s);
+			size_t currentLoc = 0;
+			xt::slice_vector sv;
+			for(size_t i=0;i<s.size();i++)
+				sv.push_back(xt::all());
+
+			for(auto a : arr)
+			{
+				auto& xtarr = a->get<ValueType>();
+				auto arrShape = xtarr.shape()[axis];
+				sv[axis] = xt::range((int)currentLoc, (int)currentLoc+arrShape);
+				currentLoc += arrShape;
+				xt::strided_view(res, sv) = xtarr;
+			}
+			return (xt::xarray<ValueType>)res;
 		});
 	}
 
