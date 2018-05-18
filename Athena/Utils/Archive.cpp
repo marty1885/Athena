@@ -44,8 +44,16 @@ struct pack<BoxedValues> {
 				packChild(o, "Shape", ptr->value());
 			else if(auto ptr = box_cast<std::vector<float>>(elem); ptr != nullptr)
 				packChild(o, "FloatVector", ptr->value());
+			else if(auto ptr = box_cast<std::vector<int32_t>>(elem); ptr != nullptr)
+				packChild(o, "Int32Vector", ptr->value());
+			else if(auto ptr = box_cast<std::vector<int16_t>>(elem); ptr != nullptr)
+				packChild(o, "Int16Vector", ptr->value());
+			else if(auto ptr = box_cast<std::vector<double>>(elem); ptr != nullptr)
+				packChild(o, "Float64Vector", ptr->value());
 			else if(auto ptr = box_cast<float>(elem); ptr != nullptr)
 				packChild(o, "Float32", ptr->value());
+			else if(auto ptr = box_cast<int>(elem); ptr != nullptr)
+				packChild(o, "Int32", ptr->value());
 			else
 				throw AtError("Not supported type");
 		}
@@ -75,10 +83,18 @@ struct convert<BoxedValues> {
 					std::string type = kv.key.as<std::string>();
 					if(type == "FloatVector")
 						states.set(key, unpackChild<std::vector<float>>(kv.val));
+					if(type == "Float64Vector")
+						states.set(key, unpackChild<std::vector<double>>(kv.val));
+					else if(type == "Int32Vector")
+						states.set(key, unpackChild<std::vector<int32_t>>(kv.val));
+					else if(type == "Int16Vector")
+						states.set(key, unpackChild<std::vector<int16_t>>(kv.val));
 					else if(type == "Shape")
 						states.set(key, unpackChild<Shape>(kv.val));
 					else if(type == "Float32")
 						states.set(key, unpackChild<float>(kv.val));
+					else if(type == "Int32")
+						states.set(key, unpackChild<int>(kv.val));
 				}
 				else
 					states.set(key, unpackChild<BoxedValues>(val));
