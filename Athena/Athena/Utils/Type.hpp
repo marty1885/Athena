@@ -1,6 +1,8 @@
 #pragma once
 
 #include <type_traits>
+#include <initializer_list>
+#include <vector>
 
 namespace At
 {

@@ -11,7 +11,7 @@ namespace At
 
 struct BoxedValueBase
 {
-	virtual ~BoxedValueBase(){}
+	virtual ~BoxedValueBase() = default;
 	virtual BoxedValueBase* allocateCopy() const = 0;
 };
 
@@ -44,6 +44,14 @@ public:
 		//Overrite all the keys
 		for(const auto& [key, ptr] : other)
 			operator[](key) = ptr->allocateCopy();
+	}
+
+	BoxedValues operator= (const BoxedValues& other)
+	{
+		clear();
+		for(const auto& [key, ptr] : other)
+			operator[](key) = ptr->allocateCopy();
+		return *this;
 	}
 
 	template<typename T>
