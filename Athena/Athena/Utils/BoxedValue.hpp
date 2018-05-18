@@ -26,7 +26,7 @@ struct BoxedValue : public BoxedValueBase
 	T value_;
 };
 
-//TODO: Should I use shared_ptr instead of allocating and coping everything?
+//XXX: Should I use shared_ptr instead of allocating and coping everything?
 class BoxedValues : public std::map<std::string, BoxedValueBase*>
 {
 public:
@@ -60,6 +60,15 @@ public:
 		operator[](name) = new BoxedValue<T>(value);
 	}
 
+	template <typename T = BoxedValueBase>
+	T* ptr(const std::string& name) const
+	{
+		auto it = find(name);
+		if(it == end())
+			return nullptr;
+		return it->second;
+	}
+
 	template<typename T>
 	const T& get(const std::string& name) const
 	{
@@ -70,6 +79,12 @@ public:
 		if(ptr == nullptr)
 			throw AtError("Variable \"" + name + "\" does not have type " + typeid(T).name());
 		return ptr->value();
+	}
+
+	inline bool contains(const std::string name)
+	{
+		auto it = find(name);
+		return it != end();
 	}
 };
 

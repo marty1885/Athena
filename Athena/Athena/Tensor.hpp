@@ -358,20 +358,33 @@ public:
 		return pimpl_ != nullptr;
 	}
 
-	BoxedValues states() const
-	{
-		BoxedValues params;
-		params.set<std::string>("__type", "Tensor");
-		params.set<std::vector<float>>("values", host<float>());
-		params.set<Shape>("shape", shape());
-		return params;
-	}
+	BoxedValues states() const;
 
 	void loadStates(const BoxedValues& states)
 	{
-		const auto& values = states.get<std::vector<float>>("values");
 		const auto& s = states.get<Shape>("shape");
-		*this = Tensor(values, s);
+		auto boxedPtr = states.ptr("values");
+
+		if(auto ptr = boxed_cast<std::vector<float>>(boxedPtr); boxedPtr != nullptr)
+		{
+			const auto& values = states.get<std::vector<float>>("values");
+			*this = Tensor(values, s);
+		}
+		else if(auto ptr = boxed_cast<std::vector<double>>(boxedPtr); boxedPtr != nullptr)
+		{
+			const auto& values = states.get<std::vector<double>>("values");
+			*this = Tensor(values, s);
+		}
+		else if(auto ptr = boxed_cast<std::vector<int32_t>>(boxedPtr); boxedPtr != nullptr)
+		{
+			const auto& values = states.get<std::vector<int32_t>>("values");
+			*this = Tensor(values, s);
+		}
+		else if(auto ptr = boxed_cast<std::vector<int32_t>>(boxedPtr); boxedPtr != nullptr)
+		{
+			const auto& values = states.get<std::vector<int32_t>>("values");
+			*this = Tensor(values, s);
+		}
 	}
 
 	void release()
@@ -507,6 +520,24 @@ inline std::vector<bool> Tensor::host() const
 	for(size_t i=0;i<v.size();i++)
 		v[i] = c[i];
 	return v;
+}
+
+inline BoxedValues Tensor::states() const
+{
+	BoxedValues params;
+	params.set<std::string>("__type", "Tensor");
+	if(dtype() == DType::float32)
+		params.set<std::vector<float>>("values", host<float>());
+	else if(dtype() == DType::float64)
+		params.set<std::vector<double>>("values", host<double>());
+	else if(dtype() == DType::int32)
+		params.set<std::vector<int32_t>>("values", host<int32_t>());
+	else if(dtype() == DType::int16)
+		params.set<std::vector<int16_t>>("values", host<int16_t>());
+	else if(dtype() == DType::bool8)
+		params.set<std::vector<bool>>("values", host<bool>());
+	params.set<Shape>("shape", shape());
+	return params;
 }
 
 inline Tensor rand(float lEdge, float rEdge, const Shape& shape, Backend& backend)

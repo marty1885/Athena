@@ -50,6 +50,8 @@ struct pack<BoxedValues> {
 				packChild(o, "Int16Vector", ptr->value());
 			else if(auto ptr = box_cast<std::vector<double>>(elem); ptr != nullptr)
 				packChild(o, "Float64Vector", ptr->value());
+			else if(auto ptr = box_cast<std::vector<bool>>(elem); ptr != nullptr)
+				packChild(o, "BoolVector", ptr->value());
 			else if(auto ptr = box_cast<float>(elem); ptr != nullptr)
 				packChild(o, "Float32", ptr->value());
 			else if(auto ptr = box_cast<int>(elem); ptr != nullptr)
@@ -89,6 +91,8 @@ struct convert<BoxedValues> {
 						states.set(key, unpackChild<std::vector<int32_t>>(kv.val));
 					else if(type == "Int16Vector")
 						states.set(key, unpackChild<std::vector<int16_t>>(kv.val));
+					else if(type == "BoolVector")
+						states.set(key, unpackChild<std::vector<bool>>(kv.val));
 					else if(type == "Shape")
 						states.set(key, unpackChild<Shape>(kv.val));
 					else if(type == "Float32")
