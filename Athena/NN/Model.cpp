@@ -181,9 +181,7 @@ BoxedValues SequentialNetwork::states() const
 	BoxedValues params;
 	params.set<std::string>("__type", "SequentialNetwork");
 	for(const auto& layer : layers_)
-	{
 		params.set<BoxedValues>(layer->name(), layer->states());
-	}
 	return params;
 }
 
