@@ -1012,6 +1012,25 @@ inline xt::xarray<T> makeXarray(const T* ptr, Shape shape)
 	return t;
 }
 
+template <typename Ret, typename Op>
+Ret run(DType dtype, Op op)
+{
+	if(dtype == DType::float32)
+		return op(0.f);
+	else if(dtype == DType::float64)
+		return op(0.0);
+	else if (dtype == DType::int32)
+		return op(0);
+	else if (dtype == DType::int16)
+		return op((int16_t)0);
+	else if (dtype == DType::bool8)
+		return op(false);
+	AtAssert(dtype!=DType::unknown, "Reaching end of internal function, This is a bug");
+
+	throw AtError("Reaching after assert failed. Something is really wrong");
+	return Ret();
+}
+
 TensorImpl* XtensorBackend::createTensor(const Shape& dims)
 {
 	std::vector<size_t> size(dims.size());
@@ -1065,14 +1084,15 @@ void XtensorBackend::destoryTensor(TensorImpl* impl)
 	delete impl;
 }
 
-TensorImpl* XtensorBackend::zeros(const Shape& shape)
+TensorImpl* XtensorBackend::zeros(const Shape& shape, DType dtype)
 {
-	return createTensor(xt::zeros<float>(shape));
+	return new XtensorTensorImpl(run<Xarr>(dtype, [&shape](auto dummy){return xt::eval(xt::zeros<decltype(dummy)>(shape));}), this);
 }
 
-TensorImpl* XtensorBackend::ones(const Shape& shape)
+
+TensorImpl* XtensorBackend::ones(const Shape& shape, DType dtype)
 {
-	return createTensor(xt::ones<float>(shape));
+	return new XtensorTensorImpl(run<Xarr>(dtype, [&shape](auto dummy){return xt::eval(xt::ones<decltype(dummy)>(shape));}), this);
 }
 
 TensorImpl* XtensorBackend::rand(float lEdge, float rEdge, const Shape& shape)

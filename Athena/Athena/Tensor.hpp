@@ -525,14 +525,14 @@ inline Tensor normal(float mean, float stddev, const Shape& shape, Backend& back
 	return Tensor(backend.normal(mean, stddev, shape));
 }
 
-inline Tensor zeros(const Shape& shape, Backend& backend)
+inline Tensor zeros(const Shape& shape, DType dtype, Backend& backend)
 {
-	return backend.zeros(shape);
+	return backend.zeros(shape, dtype);
 }
 
-inline Tensor ones(const Shape& shape, Backend& backend)
+inline Tensor ones(const Shape& shape, DType dtype, Backend& backend)
 {
-	return backend.ones(shape);
+	return backend.ones(shape, dtype);
 }
 
 
@@ -546,16 +546,15 @@ inline Tensor normal(float mean, float stddev, const Shape& shape)
 	return normal(mean, stddev, shape, *Tensor::defaultBackend());
 }
 
-inline Tensor zeros(const Shape& shape)
+inline Tensor zeros(const Shape& shape, DType dtype=DType::float32)
 {
-	return zeros(shape, *Tensor::defaultBackend());
+	return zeros(shape, dtype, *Tensor::defaultBackend());
 }
 
-inline Tensor ones(const Shape& shape )
+inline Tensor ones(const Shape& shape, DType dtype=DType::float32)
 {
-	return ones(shape, *Tensor::defaultBackend());
+	return ones(shape, dtype, *Tensor::defaultBackend());
 }
-
 
 inline Tensor dot(const Tensor& a, const Tensor& b)
 {

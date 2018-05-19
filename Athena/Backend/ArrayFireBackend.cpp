@@ -38,7 +38,7 @@ inline std::vector<int> range(int start, int end)
 	return vec;
 }
 
-static DType afTypeToDType (af::dtype dtype)
+inline DType afTypeToDType (af::dtype dtype)
 {
 	if(dtype == f32)
 		return DType::float32;
@@ -52,6 +52,21 @@ static DType afTypeToDType (af::dtype dtype)
 		return DType::bool8;
 	else
 		return DType::unknown;
+}
+
+inline af_dtype dtypeToAFType(DType dtype)
+{
+	if(dtype == DType::float32)
+		return f32;
+	else if(dtype == DType::float64)
+		return f64;
+	else if(dtype == DType::int32)
+		return s32;
+	else if(dtype == DType::int16)
+		return s16;
+	else if(dtype == DType::bool8)
+		return b8;
+	throw AtError(std::string("Cannot convert ") + to_string(dtype) + " to ArrayFire type");
 }
 
 inline size_t typeToSize(af::dtype dtype)
@@ -604,16 +619,16 @@ TensorImpl* ArrayFireBackend::createTensor(const std::vector<bool>& vec, const S
 	return new AFTensorImpl(arrayFromVec(vec, shape), shape, this);
 }
 
-TensorImpl* ArrayFireBackend::zeros(const Shape& shape)
+TensorImpl* ArrayFireBackend::zeros(const Shape& shape, DType dtype)
 {
 	auto dims = shapeToDim4(shape);
-	return new AFTensorImpl(std::move(af::constant(0, dims)), shape, this);
+	return new AFTensorImpl(std::move(af::constant(0, dims, dtypeToAFType(dtype))), shape, this);
 }
 
-TensorImpl* ArrayFireBackend::ones(const Shape& shape)
+TensorImpl* ArrayFireBackend::ones(const Shape& shape, DType dtype)
 {
 	auto dims = shapeToDim4(shape);
-	return new AFTensorImpl(std::move(af::constant(1, dims)), shape, this);
+	return new AFTensorImpl(std::move(af::constant(1, dims, dtypeToAFType(dtype))), shape, this);
 }
 
 TensorImpl* ArrayFireBackend::rand(float lEdge, float rEdge, const Shape& shape)

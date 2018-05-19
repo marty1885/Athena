@@ -40,12 +40,12 @@ void Backend::destoryTensor(TensorImpl* handle)
 	throw AtError(__func__ + notImplementString);
 }
 
-TensorImpl* Backend::zeros(const Shape& shape)
+TensorImpl* Backend::zeros(const Shape& shape, DType detype)
 {
 	throw AtError(__func__ + notImplementString);
 }
 
-TensorImpl* Backend::ones(const Shape& shape)
+TensorImpl* Backend::ones(const Shape& shape, DType detype)
 {
 	throw AtError(__func__ + notImplementString);
 }

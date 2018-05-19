@@ -137,8 +137,8 @@ public:
 	virtual TensorImpl* createTensor(const Shape& dims);
 	virtual void destoryTensor(TensorImpl* handle);
 
-	virtual TensorImpl* zeros(const Shape& shape);
-	virtual TensorImpl* ones(const Shape& shape);
+	virtual TensorImpl* zeros(const Shape& shape, DType dtype=DType::float32);
+	virtual TensorImpl* ones(const Shape& shape, DType dtype=DType::float32);
 	virtual TensorImpl* rand(float lEdge, float rEdge, const Shape& shape);
 	virtual TensorImpl* normal(float mean, float stddev, const Shape& shape);
 

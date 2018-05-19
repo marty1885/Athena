@@ -31,7 +31,7 @@ void FullyConnectedLayer::build()
 	if((bool)w_ != true)
 		w_ = weightInitalizer_->create({inputSize_, outputSize_}, inputSize_, outputSize_, backend());
 	if((bool)b_ != true)
-		b_ = At::zeros({outputSize_}, *backend());
+		b_ = At::normal(-1, 1,{outputSize_}, *backend());
 
 	forwardAlgorithm_ = backend()->getAlgorithm<FCForwardFunction>("fullyconnectedForward");
 	backwardAlgorithm_ = backend()->getAlgorithm<FCBackwardFunction>("fullyconnectedBackward");

@@ -32,8 +32,8 @@ public:
 	TensorImpl* createTensor(const af::array& arr, const Shape& s);
 	virtual void destoryTensor(TensorImpl* handle) override;
 
-	virtual TensorImpl* zeros(const Shape& shape) override;
-	virtual TensorImpl* ones(const Shape& shape) override;
+	virtual TensorImpl* zeros(const Shape& shape, DType dtype=DType::float32) override;
+	virtual TensorImpl* ones(const Shape& shape, DType dtype=DType::float32) override;
 	virtual TensorImpl* rand(float lEdge, float rEdge, const Shape& shape) override;
 	virtual TensorImpl* normal(float mean, float stddev, const Shape& shape) override;
 
