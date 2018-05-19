@@ -535,7 +535,6 @@ inline Tensor ones(const Shape& shape, DType dtype=DType::float32, Backend& back
 	return backend.ones(shape, dtype);
 }
 
-
 inline Tensor rand(float lEdge, float rEdge, const Shape& shape)
 {
 	return rand(lEdge, rEdge, shape, *Tensor::defaultBackend());

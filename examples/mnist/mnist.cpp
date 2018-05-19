@@ -86,7 +86,8 @@ int main()
 	auto onBatch = [&](float l)
 	{
 		int sampleNum = traningImage.shape()[0];
-		std::cout << count << "/" << sampleNum << "\r" << std::flush;
+		std::cout << "\033[2K\r"
+			<< count << "/" << sampleNum << ", Loss = " << l << std::flush;
 		count += batchSize;
 	};
 
