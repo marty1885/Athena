@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Athena/Backend/Backend.hpp>
-#include <Athena/Utils/ReferenceCounter.hpp>
 #include <Athena/Backend/TensorImpl.hpp>
+#include <Athena/Utils/ReferenceCounter.hpp>
 #include <Athena/Utils/Error.hpp>
 #include <Athena/Utils/BoxedValue.hpp>
 #include <Athena/Utils/Type.hpp>
@@ -489,9 +489,9 @@ protected:
 template <>
 inline std::vector<bool> Tensor::host() const
 {
-	std::vector<bool> v(pimpl_->size());
 	std::vector<char> c(pimpl_->size());
 	pimpl_->host((bool*)&c[0]);
+	std::vector<bool> v(pimpl_->size());
 	for(size_t i=0;i<v.size();i++)
 		v[i] = c[i];
 	return v;
@@ -525,12 +525,12 @@ inline Tensor normal(float mean, float stddev, const Shape& shape, Backend& back
 	return Tensor(backend.normal(mean, stddev, shape));
 }
 
-inline Tensor zeros(const Shape& shape, DType dtype, Backend& backend)
+inline Tensor zeros(const Shape& shape, DType dtype=DType::float32, Backend& backend=*Tensor::defaultBackend())
 {
 	return backend.zeros(shape, dtype);
 }
 
-inline Tensor ones(const Shape& shape, DType dtype, Backend& backend)
+inline Tensor ones(const Shape& shape, DType dtype=DType::float32, Backend& backend=*Tensor::defaultBackend())
 {
 	return backend.ones(shape, dtype);
 }
@@ -544,16 +544,6 @@ inline Tensor rand(float lEdge, float rEdge, const Shape& shape)
 inline Tensor normal(float mean, float stddev, const Shape& shape)
 {
 	return normal(mean, stddev, shape, *Tensor::defaultBackend());
-}
-
-inline Tensor zeros(const Shape& shape, DType dtype=DType::float32)
-{
-	return zeros(shape, dtype, *Tensor::defaultBackend());
-}
-
-inline Tensor ones(const Shape& shape, DType dtype=DType::float32)
-{
-	return ones(shape, dtype, *Tensor::defaultBackend());
 }
 
 inline Tensor dot(const Tensor& a, const Tensor& b)
