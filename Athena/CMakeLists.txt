@@ -6,7 +6,7 @@ option(ATHENA_ENABLE_ARRAYFIRE "Enable the ArrayFire backend in Athena" ON)
 set(ATHENA_SRC)
 set(ATHENA_LIB)
 
-list(APPEND ATHENA_SRC Athena.cpp Backend/Backend.cpp Backend/XtensorBackend.cpp NN/Model.cpp NN/Layers.cpp Utils/Archive.cpp)
+list(APPEND ATHENA_SRC Athena.cpp Tensor.cpp Backend/Backend.cpp Backend/XtensorBackend.cpp NN/Model.cpp NN/Layers.cpp Utils/Archive.cpp)
 
 if(ATHENA_ENABLE_NNPACK)
 	list(APPEND ATHENA_SRC Backend/NNPACKBackend.cpp)
