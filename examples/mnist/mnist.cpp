@@ -55,9 +55,9 @@ int main()
 	At::XtensorBackend backend;
 
 	//Use the NNPACK backend to accelerate things. Remove if NNPACK is not avliable
-	At::NNPackBackend nnpBackend;
-	backend.useAlgorithm<At::FCForwardFunction>("fullyconnectedForward", nnpBackend);
-	backend.useAlgorithm<At::FCBackwardFunction>("fullyconnectedBackward", nnpBackend);
+	//At::NNPackBackend nnpBackend;
+	//backend.useAlgorithm<At::FCForwardFunction>("fullyconnectedForward", nnpBackend);
+	//backend.useAlgorithm<At::FCBackwardFunction>("fullyconnectedBackward", nnpBackend);
 
 	At::SequentialNetwork net(&backend);
 
@@ -75,8 +75,7 @@ int main()
 
 	net.summary({At::Shape::None, 784});
 
-	At::NestrovOptimizer opt;
-	opt.alpha_ = 0.1f;
+	At::AdamOptimizer opt;
 	At::MSELoss loss;
 
 	size_t epoch = 8;
@@ -93,7 +92,8 @@ int main()
 
 	auto onEpoch = [&](float l)
 	{
-		std::cout << "Epoch Loss: " << l << std::endl;
+		std::cout << "\033[2K\r"
+			<< "Epoch Loss: " << l << std::endl;
 		count = 0;
 	};
 

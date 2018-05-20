@@ -34,19 +34,19 @@ class Xarr
 {
 public:
 	Xarr() = default;
-	Xarr(void* ptr, DType dtype) : tensorPtr(ptr), dataType(dtype){}
+	Xarr(void* ptr, DType dtype) : tensorPtr_(ptr), dataType(dtype){}
 	Xarr(const Xarr& other)
 	{
 		dataType = other.dataType;
-		tensorPtr = other.run<void*>([](auto arr){return new decltype(arr)(arr);});
+		tensorPtr_ = other.run<void*>([](auto arr){return new decltype(arr)(arr);});
 	}
 
 	Xarr(Xarr&& other) noexcept
 	{
 		dataType = other.dataType;
-		tensorPtr = other.tensorPtr;
+		tensorPtr_ = other.tensorPtr_;
 
-		other.tensorPtr = nullptr;
+		other.tensorPtr_ = nullptr;
 		other.dataType = DType::unknown;
 	}
 
@@ -56,7 +56,7 @@ public:
 			return *this;
 		release();
 		dataType = other.dataType;
-		tensorPtr = other.run<void*>([](auto arr){return new decltype(arr)(arr);});
+		tensorPtr_ = other.run<void*>([](auto arr){return new decltype(arr)(arr);});
 		return *this;
 	}
 
@@ -69,25 +69,28 @@ public:
 	template <typename T>
 	void setInternalData(xt::xarray<T> array)
 	{
+		if(dtype() == typeToDtype<T>() && tensorPtr_ != nullptr)
+		{
+
+			get<T>() = array;
+			return;
+		}
 		release();
 
-		tensorPtr = new xt::xarray<T>(array);
+		tensorPtr_ = new xt::xarray<T>(array);
 		dataType = typeToDtype<T>();
 	}
 	
 	void release()
 	{
-		if(dtype() == DType::float32)
-			delete reinterpret_cast<xt::xarray<float>*>(tensorPtr);
-		else if(dtype() == DType::float64)
-			delete reinterpret_cast<xt::xarray<double>*>(tensorPtr);
-		else if(dtype() == DType::int32)
-			delete reinterpret_cast<xt::xarray<int32_t>*>(tensorPtr);
-		else if(dtype() == DType::int16)
-			delete reinterpret_cast<xt::xarray<int16_t>*>(tensorPtr);
-		else if(dtype() == DType::bool8)
-			delete reinterpret_cast<xt::xarray<bool>*>(tensorPtr);
-		tensorPtr = nullptr;
+		//WORKARROUND: if(...) delete ... else if(...) delete... does not work and produces NaN
+		// for no apparent reason.  Maybe a compiler bug?
+		delete static_cast<xt::xarray<float>*>(dtype() == DType::float32 ? tensorPtr_ : nullptr);
+		delete static_cast<xt::xarray<double>*>(dtype() == DType::float64 ? tensorPtr_ : nullptr);
+		delete static_cast<xt::xarray<int16_t>*>(dtype() == DType::int16 ? tensorPtr_ : nullptr);
+		delete static_cast<xt::xarray<int32_t>*>(dtype() == DType::int32 ? tensorPtr_ : nullptr);
+		delete static_cast<xt::xarray<bool>*>(dtype() == DType::bool8 ? tensorPtr_ : nullptr);
+		tensorPtr_ = nullptr;
 		dataType = DType::unknown;
 	}
 
@@ -116,7 +119,7 @@ public:
 	{
 		if(dtype() != typeToDtype<T>())
 			throw AtError(std::string("Requesting xarray<") + dtypeToName(typeToDtype<T>()) + "> from xarray<" + dtypeToName(dtype())+">");
-		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr);
+		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr_);
 	}
 
 	template <typename T>
@@ -124,7 +127,7 @@ public:
 	{
 		if(dtype() != typeToDtype<T>())
 			throw AtError(std::string("Requesting xarray<") + dtypeToName(typeToDtype<T>()) + "> from xarray<" + dtypeToName(dtype())+">");
-		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr);
+		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr_);
 	}
 
 	template <typename T>
@@ -161,10 +164,22 @@ public:
 	}
 
 	template <typename T>
+	void operator-= (const T& val)
+	{
+		return run<void>([this, val](auto& a){return this->setInternalData(xt::eval(a-val));});
+	}
+
+	template <typename T>
 	Xarr operator/ (const T& val) const
 	{
 		static_assert(std::is_scalar<T>::value == true); //Just to be on the safe side
 		return run<Xarr>([val](const auto& a){return a/val;});
+	}
+
+	template <typename T>
+	void operator/= (const T& val)
+	{
+		return run<void>([this, val](auto& a){return this->setInternalData(xt::eval(a/val));});
 	}
 
 	Xarr operator< (float val) const
@@ -339,15 +354,15 @@ protected:
 	inline Ret run(Op op) const
 	{
 		if(dtype() == DType::float32)
-			return op(*reinterpret_cast<const xt::xarray<float>*>(tensorPtr));
+			return op(get<float>());
 		else if(dtype() == DType::float64)
-			return op(*reinterpret_cast<const xt::xarray<double>*>(tensorPtr));
+			return op(get<double>());
 		else if(dtype() == DType::int32)
-			return op(*reinterpret_cast<const xt::xarray<int32_t>*>(tensorPtr));
+			return op(get<int32_t>());
 		else if(dtype() == DType::int16)
-			return op(*reinterpret_cast<const xt::xarray<int16_t>*>(tensorPtr));
+			return op(get<int16_t>());
 		else if(dtype() == DType::bool8)
-			return op(*reinterpret_cast<const xt::xarray<bool>*>(tensorPtr));
+			return op(get<bool>());
 		throw AtError("Operand type not supported. This is a bug.");
 	}
 
@@ -355,15 +370,15 @@ protected:
 	inline Ret run(Op op)
 	{
 		if(dtype() == DType::float32)
-			return op(*reinterpret_cast<xt::xarray<float>*>(tensorPtr));
+			return op(get<float>());
 		else if(dtype() == DType::float64)
-			return op(*reinterpret_cast<xt::xarray<double>*>(tensorPtr));
+			return op(get<double>());
 		else if(dtype() == DType::int32)
-			return op(*reinterpret_cast<xt::xarray<int32_t>*>(tensorPtr));
+			return op(get<int32_t>());
 		else if(dtype() == DType::int16)
-			return op(*reinterpret_cast<xt::xarray<int16_t>*>(tensorPtr));
+			return op(get<int16_t>());
 		else if(dtype() == DType::bool8)
-			return op(*reinterpret_cast<xt::xarray<bool>*>(tensorPtr));
+			return op(get<bool>());
 		throw AtError("Operand type not supported. This is a bug.");
 	}
 
@@ -377,7 +392,17 @@ protected:
 		});
 	}
 
-	void* tensorPtr = nullptr;
+	template <typename Ret, typename Op>
+	inline Ret run(const Xarr& arr, Op op)
+	{
+		return run<Ret>([&op, &arr](auto& a){
+			return arr.run<Ret>([&op, &a](const auto& b)->Ret{
+				return op(a, b);
+			});
+		});
+	}
+
+	void* tensorPtr_ = nullptr;
 	DType dataType = DType::unknown;
 };
 
@@ -404,6 +429,31 @@ Xarr Xarr::operator/ (const Xarr& other) const
 {
 	return run<Xarr>(other, [](const auto& a, const auto& b){return xt::eval(a/b);});
 }
+
+template <>
+void Xarr::operator+= (const Xarr& val)
+{
+	return run<void>(val, [](auto& a, const auto& b){a += b;});
+}
+
+template <>
+void Xarr::operator*= (const Xarr& val)
+{
+	return run<void>(val, [](auto& a, const auto& b){a *= b;});
+}
+
+template <>
+void Xarr::operator/= (const Xarr& val)
+{
+	return run<void>(val, [](auto& a, const auto& b){a /= b;});
+}
+
+template <>
+void Xarr::operator-= (const Xarr& val)
+{
+	return run<void>(val, [](auto& a, const auto& b){a -= b;});
+}
+
 
 template <typename T>
 void copyToPtr(const Xarr& arr, T* dest)
@@ -534,25 +584,25 @@ public:
 	virtual void add(const TensorImpl* other) override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		arr_ = arr_ + impl->xarr();
+		arr_ += impl->xarr();
 	}
 
 	virtual void mul(const TensorImpl* other) override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		arr_ = arr_ * impl->xarr();
+		arr_ *= impl->xarr();
 	}
 
 	virtual void subtract(const TensorImpl* other) override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		arr_ = arr_ - impl->xarr();
+		arr_ -= impl->xarr();
 	}
 
 	virtual void divide(const TensorImpl* other) override
 	{
 		auto impl = (const XtensorTensorImpl*)other;
-		arr_ = arr_ / impl->xarr();
+		arr_ /= impl->xarr();
 	}
 
 	virtual void reciprocate() override
