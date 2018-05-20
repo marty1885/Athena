@@ -36,9 +36,7 @@ template <int N>
 class StatefulOptimizer : public Optimizer
 {
 public:
-	StatefulOptimizer()
-	{
-	}
+	StatefulOptimizer() = default;
 
 	virtual void reset() override
 	{
@@ -64,7 +62,7 @@ protected:
 class MomentumOptimizer : public StatefulOptimizer<1>
 {
 public:
-	MomentumOptimizer()
+	MomentumOptimizer(float alpha=0.01, float mu=0.9): alpha_(alpha), mu_(mu)
 	{
 	}
 
@@ -82,7 +80,7 @@ public:
 class NestrovOptimizer : public StatefulOptimizer<1>
 {
 public:
-	NestrovOptimizer()
+	NestrovOptimizer(float alpha=0.01, float momentum=0.9): alpha_(alpha), momentum_(momentum)
 	{
 	}
 
@@ -102,7 +100,7 @@ public:
 class AdaGradOptimizer : public StatefulOptimizer<1>
 {
 public:
-	AdaGradOptimizer()
+	AdaGradOptimizer(float alpha=0.01): alpha_(alpha)
 	{
 	}
 
@@ -119,7 +117,7 @@ public:
 class RMSPropOptimizer : public StatefulOptimizer<1>
 {
 public:
-	RMSPropOptimizer() : alpha_(0.0001f), momentum_(0.99f)
+	RMSPropOptimizer(float alpha=0.0001, float momentum=0.99) : alpha_(alpha), momentum_(momentum)
 	{
 	}
 
@@ -139,8 +137,9 @@ protected:
 class AdamOptimizer : public StatefulOptimizer<2>
 {
 public:
-	AdamOptimizer() : alpha_(0.001f), b1_(0.9), b2_(0.999)
-		, b1T_(0.9), b2T_(0.999) 
+	AdamOptimizer(float alpha=0.001, float b1=0.9, float b2=0.999, float b1T=0.9, float b2T=0.999)
+	: alpha_(alpha), b1_(b1), b2_(b2)
+		, b1T_(b1T), b2T_(b2T) 
 	{
 	}
 
