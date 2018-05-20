@@ -7,6 +7,8 @@
 namespace At
 {
 
+namespace {
+
 template <typename T>
 inline Tensor __xtToTensor(const xt::xarray<T>& arr)
 {
@@ -30,6 +32,8 @@ inline xt::xarray<T> __TensorToXt(const Tensor& t)
 	for(size_t i=0;i<data.size();i++)
 		arr[i] = data[i];
 	return arr;
+}
+
 }
 
 template<>

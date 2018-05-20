@@ -109,7 +109,7 @@ public:
 	{
 		T* ptr = dynamic_cast<T*>(layers_[i]);
 		if(ptr == nullptr)
-			throw AtError("Layer " + std::to_string(i) + "in network cannot be casted to " + typeid(T).name());
+			throw AtError("Layer " + std::to_string(i) + " in network cannot be casted to " + typeid(T).name());
 		return ptr;
 	}
 

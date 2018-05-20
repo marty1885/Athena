@@ -143,6 +143,7 @@ Tensor SequentialNetwork::predict(const Tensor& input)
 	{
 		Tensor y;
 		layer->forward({&t}, {&y});
+		y.eval();
 		t = std::move(y);
 	}
 	t.eval();
