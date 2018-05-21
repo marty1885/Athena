@@ -71,7 +71,6 @@ public:
 	{
 		if(dtype() == typeToDType<T>() && tensorPtr_ != nullptr)
 		{
-
 			get<T>() = array;
 			return;
 		}
@@ -83,13 +82,16 @@ public:
 	
 	void release()
 	{
-		//WORKARROUND: if(...) delete ... else if(...) delete... does not work and produces NaN
-		// for no apparent reason.  Maybe a compiler bug?
-		delete static_cast<xt::xarray<float>*>(dtype() == DType::float32 ? tensorPtr_ : nullptr);
-		delete static_cast<xt::xarray<double>*>(dtype() == DType::float64 ? tensorPtr_ : nullptr);
-		delete static_cast<xt::xarray<int16_t>*>(dtype() == DType::int16 ? tensorPtr_ : nullptr);
-		delete static_cast<xt::xarray<int32_t>*>(dtype() == DType::int32 ? tensorPtr_ : nullptr);
-		delete static_cast<xt::xarray<bool>*>(dtype() == DType::bool8 ? tensorPtr_ : nullptr);
+		if(dtype() == DType::float32)
+			delete static_cast<xt::xarray<float>*>(tensorPtr_);
+		else if(dtype() == DType::float64)
+			delete static_cast<xt::xarray<double>*>(tensorPtr_);
+		else if(dtype() == DType::int16)
+			delete static_cast<xt::xarray<int16_t>*>(tensorPtr_);
+		else if(dtype() == DType::int32)
+			delete static_cast<xt::xarray<int32_t>*>(tensorPtr_);
+		else if(dtype() == DType::bool8)
+			delete static_cast<xt::xarray<bool>*>(tensorPtr_);
 		tensorPtr_ = nullptr;
 		dataType = DType::unknown;
 	}
