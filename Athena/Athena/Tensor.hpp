@@ -678,9 +678,11 @@ inline std::ostream& operator<< (std::ostream& os, const Tensor& t)
 	}
 	else if(t.dtype() == DType::bool8)
 	{
-		// auto v = t.host<bool>();
-		// prittyPrintTensor(os, &v[0], t.shape(), 0, t.shape().size());
-		throw AtError("Printing bool8 tensors not supported now");
+		auto v = t.host<bool>();
+		bool* arr = new bool[v.size()];
+		std::copy(v.begin(), v.end(), arr);
+		prittyPrintTensor(os, arr, t.shape(), 0, t.shape().size());
+		delete [] arr;
 	}
 	else
 		throw AtError("Cannot print tensor with type: " + to_string(t.dtype()));
