@@ -5,6 +5,7 @@
 #include <typeinfo>
 #include <string>
 #include <array>
+#include <memory>
 
 #include <Athena/Utils/Error.hpp>
 #include <Athena/Utils/Shape.hpp>
@@ -120,14 +121,7 @@ RetType invoke(FunctoinWrapper& wrapper, Args&& ... args)
 class Backend
 {
 public:
-	virtual ~Backend()
-	{
-		for(auto& it : algorithms_)
-		{
-			for(auto& ptr : it.second)
-				delete ptr;
-		}
-	}
+	virtual ~Backend() = default;
 
 	virtual TensorImpl* createTensor(const std::vector<float>& vec, const Shape& shape);
 	virtual TensorImpl* createTensor(const std::vector<double>& vec, const Shape& shape);
@@ -203,7 +197,7 @@ public:
 	template<typename FT>
 	inline void addAlgorithm(const std::string& name, delegate<FT> f, AlgorithmSelector selector = [](const BoxedValues& config)->bool{return true;})
 	{
-		algorithms_[name].push_back(new FunctionContainer<FT>(f, selector));
+		algorithms_[name].push_back(std::make_shared<FunctionContainer<FT>>(f, selector));
 	}
 
 	template<typename FT>
@@ -212,7 +206,7 @@ public:
 		auto it = algorithms_.find(name);
 		if(it != algorithms_.end())
 		{
-			auto ptr = dynamic_cast<FunctionContainer<FT>*>(it->second.back());
+			auto ptr = dynamic_cast<FunctionContainer<FT>*>(it->second.back().get());
 			return *ptr;
 		}
 		throw AtError("Cannot find algorithm " + name + ".");
@@ -224,10 +218,9 @@ public:
 		auto it = algorithms_.find(name);
 		if(it != algorithms_.end())
 		{
-			//Remove RTTI if it turns out to be too slow
 			for(auto& algo : backwards(it->second))
 			{
-				FunctionContainer<FT>* container = dynamic_cast<FunctionContainer<FT>*>(algo);
+				FunctionContainer<FT>* container = dynamic_cast<FunctionContainer<FT>*>(algo.get());
 				bool good = true;
 				if(checkConditions == true && config.size() != 0)
 					good = algo->sutiable(config);
@@ -255,6 +248,23 @@ public:
 		addAlgorithm<FT>(name, algo.get(), algo.selector());
 	}
 
+	const std::unordered_map<std::string, std::vector<std::shared_ptr<FunctoinWrapper>>>& algorithms() const
+	{
+		return algorithms_;
+	}
+
+	void useAllAlgorithm(const Backend& other)
+	{
+		if(&other == this)
+			return;
+		for(auto [name, algos] : algorithms_)
+		{
+			auto& vec = algorithms_[name];
+			vec.reserve(vec.size() + algos.size());
+			vec.insert(vec.end(), algos.begin(), algos.end());
+		}
+	}
+
 protected:
 
 	void setType(const std::string& str)
@@ -262,7 +272,7 @@ protected:
 		type_ = str;
 	}
 
-	std::unordered_map<std::string, std::vector<FunctoinWrapper*>> algorithms_;
+	std::unordered_map<std::string, std::vector<std::shared_ptr<FunctoinWrapper>>> algorithms_;
 	std::string type_;
 };
 
