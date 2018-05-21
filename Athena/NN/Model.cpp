@@ -87,8 +87,8 @@ void SequentialNetwork::fit(Optimizer& optimizer, LossFunction& loss, const Tens
 		for(size_t j=0;j<datasetSize;j+=batchSize)
 		{
 			intmax_t sliceSize = std::min((intmax_t)batchSize, (intmax_t)(datasetSize-j));
-			Tensor x = input.slice({(intmax_t)j}, {sliceSize});
-			Tensor y = desireOutput.slice({(intmax_t)j} ,{sliceSize});
+			Tensor x = input.chunk({(intmax_t)j}, {sliceSize});
+			Tensor y = desireOutput.chunk({(intmax_t)j} ,{sliceSize});
 
 			inputShape[0] = sliceSize;
 			outputShape[0] = sliceSize;

@@ -504,6 +504,34 @@ void ArrayFireBackend::selfDiv(TensorImpl* impl, const TensorImpl* other)
 	ptr->arr_ /= o->arr_;
 }
 
+TensorImpl* ArrayFireBackend::add(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	auto o = (const AFTensorImpl*)other;
+	return new AFTensorImpl(ptr->arr_+o->arr_, ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::mul(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	auto o = (const AFTensorImpl*)other;
+	return new AFTensorImpl(ptr->arr_*o->arr_, ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::sub(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	auto o = (const AFTensorImpl*)other;
+	return new AFTensorImpl(ptr->arr_-o->arr_, ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::div(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	auto o = (const AFTensorImpl*)other;
+	return new AFTensorImpl(ptr->arr_/o->arr_, ptr->arrShape_, this);
+}
+
 TensorImpl* ArrayFireBackend::sqrt(const TensorImpl* impl)
 {
 	auto ptr = (const AFTensorImpl*)impl;

@@ -156,6 +156,10 @@ public:
 	virtual void selfMul(TensorImpl* impl, const TensorImpl* other);
 	virtual void selfSub(TensorImpl* impl, const TensorImpl* other);
 	virtual void selfDiv(TensorImpl* impl, const TensorImpl* other);
+	virtual TensorImpl* add(const TensorImpl* impl, const TensorImpl* other);
+	virtual TensorImpl* mul(const TensorImpl* impl, const TensorImpl* other);
+	virtual TensorImpl* sub(const TensorImpl* impl, const TensorImpl* other);
+	virtual TensorImpl* div(const TensorImpl* impl, const TensorImpl* other);
 
 	virtual TensorImpl* sqrt(const TensorImpl* impl);
 	virtual TensorImpl* abs(const TensorImpl* impl);

@@ -42,7 +42,7 @@ int main()
 
 	for(int i=0;i<X.shape()[0];i++)
 	{
-		At::Tensor x = X.slice({i},{1});
+		At::Tensor x = X.chunk({i},{1});
 		auto res = net.predict(x);
 		std::cout << "input = " << x << ", result = " << res << std::endl;
 	}
@@ -57,7 +57,7 @@ int main()
 
 	for(int i=0;i<X.shape()[0];i++)
 	{
-		At::Tensor x = X.slice({i},{1});
+		At::Tensor x = X.chunk({i},{1});
 		auto res = net.predict(x);
 		std::cout << "input = " << x << ", result = " << res << std::endl;
 	}

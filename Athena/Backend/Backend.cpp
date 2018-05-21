@@ -119,6 +119,26 @@ void Backend::selfDiv(TensorImpl* impl, const TensorImpl* other)
 	throw AtError(__func__ + notImplementString);
 }
 
+TensorImpl* Backend::add(const TensorImpl* impl, const TensorImpl* other)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+TensorImpl* Backend::mul(const TensorImpl* impl, const TensorImpl* other)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+TensorImpl* Backend::sub(const TensorImpl* impl, const TensorImpl* other)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
+TensorImpl* Backend::div(const TensorImpl* impl, const TensorImpl* other)
+{
+	throw AtError(__func__ + notImplementString);
+}
+
 TensorImpl* Backend::sqrt(const TensorImpl* impl)
 {
 	throw AtError(__func__ + notImplementString);

@@ -989,6 +989,34 @@ void XtensorBackend::selfDiv(TensorImpl* impl, const TensorImpl* other)
 	ptr->xarr() /= o->xarr();
 }
 
+TensorImpl* XtensorBackend::add(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	return new XtensorTensorImpl(ptr->xarr()+o->xarr(), this);
+}
+
+TensorImpl* XtensorBackend::mul(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	return new XtensorTensorImpl(ptr->xarr()*o->xarr(), this);
+}
+
+TensorImpl* XtensorBackend::sub(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	return new XtensorTensorImpl(ptr->xarr()-o->xarr(), this);
+}
+
+TensorImpl* XtensorBackend::div(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	return new XtensorTensorImpl(ptr->xarr()/o->xarr(), this);
+}
+
 TensorImpl* XtensorBackend::sqrt(const TensorImpl* impl)
 {
 	auto ptr = (const XtensorTensorImpl*)impl;

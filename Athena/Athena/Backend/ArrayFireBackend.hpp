@@ -51,6 +51,10 @@ public:
 	virtual void selfMul(TensorImpl* impl, const TensorImpl* other) override;
 	virtual void selfSub(TensorImpl* impl, const TensorImpl* other) override;
 	virtual void selfDiv(TensorImpl* impl, const TensorImpl* other) override;
+	virtual TensorImpl* add(const TensorImpl* impl, const TensorImpl* other) override;
+	virtual TensorImpl* mul(const TensorImpl* impl, const TensorImpl* other) override;
+	virtual TensorImpl* sub(const TensorImpl* impl, const TensorImpl* other) override;
+	virtual TensorImpl* div(const TensorImpl* impl, const TensorImpl* other) override;
 
 	virtual TensorImpl* sqrt(const TensorImpl* impl) override;
 	virtual TensorImpl* abs(const TensorImpl* impl) override;

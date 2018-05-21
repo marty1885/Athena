@@ -55,9 +55,9 @@ int main()
 	At::XtensorBackend backend;
 
 	//Use the NNPACK backend to accelerate things. Remove if NNPACK is not avliable
-	//At::NNPackBackend nnpBackend;
-	//backend.useAlgorithm<At::FCForwardFunction>("fullyconnectedForward", nnpBackend);
-	//backend.useAlgorithm<At::FCBackwardFunction>("fullyconnectedBackward", nnpBackend);
+	At::NNPackBackend nnpBackend;
+	backend.useAlgorithm<At::FCForwardFunction>("fullyconnectedForward", nnpBackend);
+	backend.useAlgorithm<At::FCBackwardFunction>("fullyconnectedBackward", nnpBackend);
 
 	At::SequentialNetwork net(&backend);
 
@@ -108,7 +108,7 @@ int main()
 	int correct = 0;
 	for(intmax_t i=0;i<testingImage.shape()[0];i++)
 	{
-		At::Tensor x = testingImage.slice({i},{1});
+		At::Tensor x = testingImage.chunk({i},{1});
 		At::Tensor res = net.predict(x);
 		int predictLabel = maxElementIndex(res.host<float>());
 		if(predictLabel == dataset.test_labels[i])

@@ -127,7 +127,7 @@ public:
 		backend()->selfReciprocate(pimpl_);
 	}
 
-	Tensor slice(const Shape& begin, const Shape& size={1}) const
+	Tensor chunk(const Shape& begin, const Shape& size={1}) const
 	{
 		return backend()->chunk(pimpl_, begin, size);
 	}
@@ -706,30 +706,22 @@ inline Tensor operator-(const Tensor& t)
 inline Tensor operator+(const Tensor& t, const Tensor& other)
 {
 	//assert(t.backend() == t.backend());
-	Tensor res(t.clone());
-	res.backend()->selfAdd(res.pimpl(), other.pimpl());
-	return res;
+	return t.backend()->add(t.pimpl(), other.pimpl());
 }
 
 inline Tensor operator-(const Tensor& t, const Tensor& other)
 {
-	Tensor res(t.clone());
-	res.backend()->selfSub(res.pimpl(), other.pimpl());
-	return res;
+	return t.backend()->sub(t.pimpl(), other.pimpl());
 }
 
 inline Tensor operator*(const Tensor& t, const Tensor& other)
 {
-	Tensor res(t.clone());
-	res.backend()->selfMul(res.pimpl(), other.pimpl());
-	return res;
+	return t.backend()->mul(t.pimpl(), other.pimpl());
 }
 
 inline Tensor operator/(const Tensor& t, const Tensor& other)
 {
-	Tensor res(t.clone());
-	res.backend()->selfDiv(res.pimpl(), other.pimpl());
-	return res;
+	return t.backend()->div(t.pimpl(), other.pimpl());
 }
 
 inline void operator-=(Tensor& t, const Tensor& other)
