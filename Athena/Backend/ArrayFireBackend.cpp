@@ -345,10 +345,29 @@ public:
 
 	TensorImpl* concatenate(const TensorImpl* other, int axis) const override
 	{
-		const auto& o = ((AFTensorImpl*)(other))->get();
-		auto s = shape();
-		s[axis] += other->shape()[axis];
-		return new AFTensorImpl(af::join(shape().size()-axis-1, arr_, o), s, (ArrayFireBackend*)backend());
+		return concatenate({this, other}, axis);
+	}
+
+	TensorImpl* concatenate(std::vector<TensorImpl const*> arrs, int axis) const
+	{
+		size_t maxNumDims = 0;
+		Shape s = arrs[0]->shape();
+		s[axis] = 0;
+		//TODO: Check all array has the same # of dims
+		for(auto t : arrs)
+		{
+			auto impl = (AFTensorImpl const*)t;
+			maxNumDims = std::max(maxNumDims, impl->shape().size());
+
+			s[axis] += impl->shape()[axis];
+		}
+		std::vector<af_array> inputs(arrs.size());
+		for(size_t i=0;i<arrs.size();i++)
+			inputs[i] = ((AFTensorImpl*)arrs[i])->get().get();
+		af_array arr;
+		af_join_many(&arr, maxNumDims-axis-1, arrs.size(), &inputs[0]);
+
+		return new AFTensorImpl(af::array(arr), s, (ArrayFireBackend*)backend());
 	}
 
 	virtual TensorImpl* exp() const override
