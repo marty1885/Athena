@@ -30,6 +30,11 @@ inline Shape shapeFromDim4(const af::dim4& dim, intmax_t num)
 	return s;
 }
 
+inline Shape shapeFromArray(const af::array& arr, intmax_t num)
+{
+	return shapeFromDim4(arr.dims(), num);
+}
+
 inline std::vector<int> range(int start, int end)
 {
 	std::vector<int> vec(end-start+1);
@@ -115,6 +120,8 @@ inline void writeToDevice(af::array& arr, const bool* ptr)
 //TODO: Really need a better backend. AF only supports upto 4D arrays
 //But 5D is needed for recurrent layer + conv layers
 //And, AF works in fortran order, not C order
+//And, AF's way to specisify dimentions is bad. AF can't discernment between
+//arrays of shape [2 2 1 1]  and [2 2].
 class AFTensorImpl : public TensorImpl
 {
 public:
@@ -140,6 +147,12 @@ public:
 	af::array& get()
 	{
 		return arr_;
+	}
+
+	void set(const af::array& arr, intmax_t numDims)
+	{
+		arr_ = arr;
+		arrShape_ = shapeFromArray(arr, numDims);
 	}
 
 	af::array arr_;
@@ -461,75 +474,79 @@ DType ArrayFireBackend::dtype(const TensorImpl* impl) const
 void ArrayFireBackend::selfReciprocate(TensorImpl* impl)
 {
 	auto ptr = (AFTensorImpl*)impl;
-	ptr->arr_ = 1.f/ptr->arr_;
+	ptr->set(1.f/ptr->arr_, shape(ptr).size());
 }
 
 void ArrayFireBackend::selfAdd(TensorImpl* impl, float val)
 {
 	auto ptr = (AFTensorImpl*)impl;
-	ptr->arr_ += val;
+	ptr->set(1.f+ptr->arr_, shape(ptr).size());
 }
 
 void ArrayFireBackend::selfMul(TensorImpl* impl, float val)
 {
 	auto ptr = (AFTensorImpl*)impl;
-	ptr->arr_ *= val;
+	ptr->set(1.f*ptr->arr_, shape(ptr).size());
 }
 
 void ArrayFireBackend::selfAdd(TensorImpl* impl, const TensorImpl* other)
 {
 	auto ptr = (AFTensorImpl*)impl;
 	auto o = (const AFTensorImpl*)other;
-	ptr->arr_ += o->arr_;
+	ptr->set(ptr->arr_+o->arr_, shape(ptr).size());
 }
 
 void ArrayFireBackend::selfMul(TensorImpl* impl, const TensorImpl* other)
 {
 	auto ptr = (AFTensorImpl*)impl;
 	auto o = (const AFTensorImpl*)other;
-	ptr->arr_ *= o->arr_;
+	ptr->set(ptr->arr_*o->arr_, shape(ptr).size());
 }
 
 void ArrayFireBackend::selfSub(TensorImpl* impl, const TensorImpl* other)
 {
 	auto ptr = (AFTensorImpl*)impl;
 	auto o = (const AFTensorImpl*)other;
-	ptr->arr_ -= o->arr_;
+	ptr->set(ptr->arr_-o->arr_, shape(ptr).size());
 }
 
 void ArrayFireBackend::selfDiv(TensorImpl* impl, const TensorImpl* other)
 {
 	auto ptr = (AFTensorImpl*)impl;
 	auto o = (const AFTensorImpl*)other;
-	ptr->arr_ /= o->arr_;
+	ptr->set(ptr->arr_/o->arr_, shape(ptr).size());
 }
 
 TensorImpl* ArrayFireBackend::add(const TensorImpl* impl, const TensorImpl* other)
 {
 	auto ptr = (const AFTensorImpl*)impl;
 	auto o = (const AFTensorImpl*)other;
-	return new AFTensorImpl(ptr->arr_+o->arr_, ptr->arrShape_, this);
+	auto res = ptr->arr_+o->arr_;
+	return new AFTensorImpl(res, shapeFromArray(res, std::max(shape(ptr).size(), shape(o).size())), this);
 }
 
 TensorImpl* ArrayFireBackend::mul(const TensorImpl* impl, const TensorImpl* other)
 {
 	auto ptr = (const AFTensorImpl*)impl;
 	auto o = (const AFTensorImpl*)other;
-	return new AFTensorImpl(ptr->arr_*o->arr_, ptr->arrShape_, this);
+	auto res = ptr->arr_*o->arr_;
+	return new AFTensorImpl(res, shapeFromArray(res, std::max(shape(ptr).size(), shape(o).size())), this);
 }
 
 TensorImpl* ArrayFireBackend::sub(const TensorImpl* impl, const TensorImpl* other)
 {
 	auto ptr = (const AFTensorImpl*)impl;
 	auto o = (const AFTensorImpl*)other;
-	return new AFTensorImpl(ptr->arr_-o->arr_, ptr->arrShape_, this);
+	auto res = ptr->arr_-o->arr_;
+	return new AFTensorImpl(res, shapeFromArray(res, std::max(shape(ptr).size(), shape(o).size())), this);
 }
 
 TensorImpl* ArrayFireBackend::div(const TensorImpl* impl, const TensorImpl* other)
 {
 	auto ptr = (const AFTensorImpl*)impl;
 	auto o = (const AFTensorImpl*)other;
-	return new AFTensorImpl(ptr->arr_/o->arr_, ptr->arrShape_, this);
+	auto res = ptr->arr_/o->arr_;
+	return new AFTensorImpl(res, shapeFromArray(res, std::max(shape(ptr).size(), shape(o).size())), this);
 }
 
 TensorImpl* ArrayFireBackend::sqrt(const TensorImpl* impl)
