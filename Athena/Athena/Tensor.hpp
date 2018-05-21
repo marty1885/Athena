@@ -575,6 +575,14 @@ inline Tensor concatenate(const Tensor& t, const Tensor& q, intmax_t axis)
 	return t.concatenate(q, axis);
 }
 
+inline Tensor concatenate(std::vector<Tensor>& t, const Tensor& q, intmax_t axis)
+{
+	std::vector<TensorImpl const*> impls(t.size());
+	for(size_t i=0;i<t.size();i++)
+		impls[i] = t[i].pimpl();
+	return t[0].pimpl()->concatenate(impls, axis);
+}
+
 inline Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
 {
 	return t.stack(q, axis);

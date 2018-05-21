@@ -297,7 +297,7 @@ public:
 		return concatenate({this, &arr}, axis);
 	}
 
-	inline Xarr concatenate(const std::vector<const Xarr*>& arr, size_t axis) const
+	inline Xarr concatenate(const std::vector<Xarr const*>& arr, size_t axis) const
 	{
 		assert(arr.size() > 1);
 		auto type = arr[0]->dtype();
@@ -691,6 +691,14 @@ public:
 	{
 		auto impl = (const XtensorTensorImpl*)other;
 		return new XtensorTensorImpl(arr_.concatenate(impl->xarr(), axis), (XtensorBackend*)backend());
+	}
+
+	TensorImpl* concatenate(const std::vector<TensorImpl const*>& arrs, int axis) const override
+	{
+		std::vector<Xarr const*> vec(arrs.size());
+		for(size_t i=0;i<arrs.size();i++)
+			vec[i] = &((XtensorTensorImpl const*)arrs[i])->xarr();
+		return new XtensorTensorImpl(vec[0]->concatenate(vec, axis), (XtensorBackend*)backend());
 	}
 
 	virtual TensorImpl* exp() const override

@@ -348,7 +348,7 @@ public:
 		return concatenate({this, other}, axis);
 	}
 
-	TensorImpl* concatenate(std::vector<TensorImpl const*> arrs, int axis) const
+	TensorImpl* concatenate(const std::vector<TensorImpl const*>& arrs, int axis) const override
 	{
 		size_t maxNumDims = 0;
 		Shape s = arrs[0]->shape();
