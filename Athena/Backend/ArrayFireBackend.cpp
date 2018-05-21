@@ -95,7 +95,7 @@ inline void copyToHost(const af::array& arr, T* ptr)
 }
 
 template <typename T>
-inline void writeToHost(af::array& arr, const T* ptr)
+inline void writeToDevice(af::array& arr, const T* ptr)
 {
 	if(afTypeToDType(arr.type()) != typeToDType<T>())
 		throw AtError("Cannot copy write from host to device, type does not match");
@@ -104,7 +104,7 @@ inline void writeToHost(af::array& arr, const T* ptr)
 
 //ArrayFire trats bool8 as char. Special case
 template <>
-inline void writeToHost(af::array& arr, const bool* ptr)
+inline void writeToDevice(af::array& arr, const bool* ptr)
 {
 	if(afTypeToDType(arr.type()) != DType::bool8)
 		throw AtError("Cannot copy write from host to device, type does not match");
@@ -142,292 +142,6 @@ public:
 		return arr_;
 	}
 
-	virtual void host(float* ptr) const override
-	{
-		copyToHost(arr_, ptr);
-	}
-
-	virtual void host(double* ptr) const override
-	{
-		copyToHost(arr_, ptr);
-	}
-
-	virtual void host(int32_t* ptr) const override
-	{
-		copyToHost(arr_, ptr);
-	}
-
-	virtual void host(int16_t* ptr) const override
-	{
-		copyToHost(arr_, ptr);
-	}
-
-	virtual void host(bool* ptr) const override
-	{
-		copyToHost(arr_, ptr);
-	}
-
-	virtual void device(const float* ptr) override
-	{
-		writeToHost(arr_, ptr);
-	}
-
-	virtual void device(const double* ptr)
-	{
-		writeToHost(arr_, ptr);
-	}
-
-	virtual void device(const int32_t* ptr)
-	{
-		writeToHost(arr_, ptr);
-	}
-
-	virtual void device(const int16_t* ptr)
-	{
-		writeToHost(arr_, ptr);
-	}
-
-	virtual void device(const bool* ptr)
-	{
-		writeToHost(arr_, ptr);
-	}
-
-	virtual size_t size() const override
-	{
-		return arr_.bytes()/typeToSize(arr_.type());
-	}
-
-	virtual Shape shape() const override
-	{
-		return arrShape_;
-	}
-
-	virtual void add(float val) override
-	{
-		arr_ += val;
-	}
-
-	virtual void mul(float val) override
-	{
-		arr_ *= val;
-	}
-
-	virtual void add(const TensorImpl* other) override
-	{
-		auto impl = (const AFTensorImpl*)other;
-		arr_ = arr_ + impl->get();
-	}
-
-	virtual void mul(const TensorImpl* other) override
-	{
-		auto impl = (const AFTensorImpl*)other;
-		arr_ = arr_ * impl->get();
-	}
-
-	virtual void subtract(const TensorImpl* other) override
-	{
-		auto impl = (const AFTensorImpl*)other;
-		arr_ = arr_ - impl->get();
-	}
-
-	virtual void divide(const TensorImpl* other) override
-	{
-		auto impl = (const AFTensorImpl*)other;
-		arr_ = arr_ / impl->get();
-	}
-
-	virtual void reciprocate() override
-	{
-		arr_ = 1.f/arr_;
-	}
-
-	virtual TensorImpl* clone() const override
-	{
-		return new AFTensorImpl(arr_.copy(), arrShape_, (ArrayFireBackend*) backend());
-	}
-
-	virtual void resize(const Shape& wantedShape) override
-	{
-		auto dims = shapeToDim4(wantedShape);
-		arrShape_ = wantedShape;
-		arr_ = moddims(arr_, dims);
-	}
-
-	virtual TensorImpl* reshape(const Shape& wantedShape) const override
-	{
-		TensorImpl* res = clone();
-		res->resize(wantedShape);
-		return res;
-	}
-
-	virtual TensorImpl* dot(const TensorImpl* other) const override
-	{
-		const auto& o = ((AFTensorImpl*)other)->get();
-		int size = std::max(arr_.numdims(), o.numdims());
-		af::array res;
-		if(size >= 2)
-			res = af::transpose(af::matmulTT(arr_, o));
-		else
-			res = af::dot(arr_, o);
-		return new AFTensorImpl(res, shapeFromDim4(res.dims(), size), (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* sqrt() const override
-	{
-		return new AFTensorImpl(af::sqrt(arr_), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* transpose() const override
-	{
-		Shape s = arrShape_;
-		std::reverse(s.begin(), s.end());
-		return new AFTensorImpl(af::transpose(arr_), s, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* transpose(const std::vector<intmax_t>& axis) const override
-	{
-		throw AtError("Not supported now");
-	}
-
-	virtual TensorImpl* sum(intmax_t axis) const override
-	{
-		Shape s = shapeFromDim4(arr_.dims(), arrShape_.size());
-		return new AFTensorImpl(af::sum(arr_, arrShape_.size()-axis-1), {s[axis]}, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* sum(const std::vector<intmax_t>& axis) const override
-	{
-		throw AtError("Not supported now");
-	}
-
-	virtual TensorImpl* pow(float val) const override
-	{
-		return new AFTensorImpl(af::pow(arr_, val), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* slice(const Shape& begin, const Shape& size) const override
-	{
-		AtAssert(begin.size() == size.size() && begin.size() <= 4);
-		af::seq dim[4];
-		size_t sliceDims = begin.size();
-		Shape s = shape();
-		size_t tensorDims = s.size();
-		AtAssert(sliceDims != 0);
-		//XXX: af::end and af::span seem not to work when stored as af::seq. This is a workarround
-		for(size_t i=0;i<sliceDims;i++)
-		{
-			dim[s.size()-i-1] = af::seq(begin[i], begin[i]+size[i]-1);
-			s[i] = size[i];
-		}
-
-		af::array arr;
-		if(tensorDims == 1)
-			arr = arr_(dim[0], af::span, af::span, af::span);
-		if(tensorDims == 2)
-			arr = arr_(dim[0], dim[1], af::span, af::span);
-		if(tensorDims == 3)
-			arr = arr_(dim[0], dim[1], dim[2], af::span);
-		if(tensorDims == 4)
-			arr = arr_(dim[0], dim[1], dim[2], dim[3]);
-		return new AFTensorImpl(arr, s, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* abs() const override
-	{
-		return new AFTensorImpl(std::move(af::abs(arr_)), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	TensorImpl* stack(const TensorImpl* other, int axis) const override
-	{
-		throw AtError("stack not implemented now");
-		return nullptr;
-	}
-
-	TensorImpl* concatenate(const TensorImpl* other, int axis) const override
-	{
-		return concatenate({this, other}, axis);
-	}
-
-	TensorImpl* concatenate(const std::vector<TensorImpl const*>& arrs, int axis) const override
-	{
-		size_t maxNumDims = 0;
-		Shape s = arrs[0]->shape();
-		s[axis] = 0;
-		//TODO: Check all array has the same # of dims
-		for(auto t : arrs)
-		{
-			auto impl = (AFTensorImpl const*)t;
-			maxNumDims = std::max(maxNumDims, impl->shape().size());
-
-			s[axis] += impl->shape()[axis];
-		}
-		std::vector<af_array> inputs(arrs.size());
-		for(size_t i=0;i<arrs.size();i++)
-			inputs[i] = ((AFTensorImpl*)arrs[i])->get().get();
-		af_array arr;
-		af_join_many(&arr, maxNumDims-axis-1, arrs.size(), &inputs[0]);
-
-		return new AFTensorImpl(af::array(arr), s, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* exp() const override
-	{
-		return new AFTensorImpl(std::move(af::exp(arr_)), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* log() const override
-	{
-		return new AFTensorImpl(std::move(af::log(arr_)), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* greaterThan(float val) const override
-	{
-		return new AFTensorImpl(std::move(arr_ > val), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* lesserThan(float val) const override
-	{
-		return new AFTensorImpl(std::move(arr_ < val), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* greaterOrEqual(float val) const override
-	{
-		return new AFTensorImpl(std::move(arr_ >= val), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* lesserOrEqual(float val) const override
-
-	{
-		return new AFTensorImpl(std::move(arr_ <= val), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual TensorImpl* equalTo(float val) const override
-	{
-		return new AFTensorImpl(std::move(arr_ == val), arrShape_, (ArrayFireBackend*)backend());
-	}
-
-	virtual DType dtype() const override
-	{
-		return afTypeToDType(arr_.type());
-	}
-
-	//Direct data access is not avliable for ArrayFire
-	virtual void* hostPtr() override
-	{
-		return nullptr;
-	}
-
-	virtual const void* hostPtr() const override
-	{
-		return nullptr;
-	}
-
-	virtual void eval() override
-	{
-		arr_.eval();
-	}
-
-protected:
 	af::array arr_;
 	//A seprate variable to track the shape of the array
 	//due to AF alwas have a 4D array and is not in C order
@@ -638,6 +352,12 @@ TensorImpl* ArrayFireBackend::createTensor(const std::vector<bool>& vec, const S
 	return new AFTensorImpl(arrayFromVec(vec, shape), shape, this);
 }
 
+TensorImpl* ArrayFireBackend::clone(const TensorImpl* handle)
+{
+	auto ptr = (const AFTensorImpl*)handle;
+	return new AFTensorImpl(ptr->arr_.copy(), ptr->arrShape_, (ArrayFireBackend*) this);
+}
+
 TensorImpl* ArrayFireBackend::zeros(const Shape& shape, DType dtype)
 {
 	auto dims = shapeToDim4(shape);
@@ -682,6 +402,12 @@ TensorImpl* ArrayFireBackend::normal(float mean, float stddev, const Shape& shap
 	return createTensor(std::move(vec), shape);
 }
 
+void ArrayFireBackend::eval(TensorImpl* impl)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	ptr->arr_.eval();
+}
+
 ArrayFireBackend::AFBackend ArrayFireBackend::getAFBackend() const
 {
 	auto b = af::getActiveBackend();
@@ -713,4 +439,280 @@ void ArrayFireBackend::setAFBackend(AFBackend type)
 	{
 		throw AtError(std::string("Failed to set AF backend.\n") + e.what());
 	}
+}
+
+Shape ArrayFireBackend::shape(const TensorImpl* impl) const
+{
+	return ((const AFTensorImpl*)impl)->arrShape_;
+}
+
+intmax_t ArrayFireBackend::size(const TensorImpl* impl) const
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return (intmax_t)(ptr->arr_.bytes()/typeToSize(ptr->arr_.type()));
+}
+
+DType ArrayFireBackend::dtype(const TensorImpl* impl) const
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return afTypeToDType(ptr->arr_.type());
+}
+
+void ArrayFireBackend::selfReciprocate(TensorImpl* impl)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	ptr->arr_ = 1.f/ptr->arr_;
+}
+
+void ArrayFireBackend::selfAdd(TensorImpl* impl, float val)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	ptr->arr_ += val;
+}
+
+void ArrayFireBackend::selfMul(TensorImpl* impl, float val)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	ptr->arr_ *= val;
+}
+
+void ArrayFireBackend::selfAdd(TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	auto o = (const AFTensorImpl*)other;
+	ptr->arr_ += o->arr_;
+}
+
+void ArrayFireBackend::selfMul(TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	auto o = (const AFTensorImpl*)other;
+	ptr->arr_ *= o->arr_;
+}
+
+void ArrayFireBackend::selfSub(TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	auto o = (const AFTensorImpl*)other;
+	ptr->arr_ -= o->arr_;
+}
+
+void ArrayFireBackend::selfDiv(TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	auto o = (const AFTensorImpl*)other;
+	ptr->arr_ /= o->arr_;
+}
+
+TensorImpl* ArrayFireBackend::sqrt(const TensorImpl* impl)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(af::sqrt(ptr->arr_), ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::abs(const TensorImpl* impl)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(af::abs(ptr->arr_), ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::exp(const TensorImpl* impl)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(af::exp(ptr->arr_), ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::log(const TensorImpl* impl)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(af::log(ptr->arr_), ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::pow(const TensorImpl* impl, float val)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(af::pow(ptr->arr_, val), ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::dot(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto& a1 = ((const AFTensorImpl*)impl)->arr_;
+	auto& a2 = ((const AFTensorImpl*)other)->arr_;;
+	int size = std::max(a1.numdims(), a2.numdims());
+	af::array res;
+	if(size >= 2)
+		res = af::transpose(af::matmulTT(a1, a2));
+	else
+		res = af::dot(a1, a2);
+	return new AFTensorImpl(res, shapeFromDim4(res.dims(), size), this);
+}
+
+void ArrayFireBackend::modDims(TensorImpl* impl, const Shape& wantedShape)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	auto dims = shapeToDim4(wantedShape);
+	ptr->arrShape_ = wantedShape;
+	ptr->arr_ = af::moddims(ptr->arr_, dims);
+}
+
+TensorImpl* ArrayFireBackend::reshape(const TensorImpl* impl, const Shape& wantedShape)
+{
+	AFTensorImpl* res = (AFTensorImpl*)clone(impl);
+	modDims(res, wantedShape);
+	return res;
+}
+
+TensorImpl* ArrayFireBackend::transpose(const TensorImpl* impl)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	Shape s = ptr->arrShape_;
+	std::reverse(s.begin(), s.end());
+	return new AFTensorImpl(af::transpose(ptr->arr_), s, this);
+}
+
+TensorImpl* ArrayFireBackend::concatenate(const std::vector<TensorImpl const*>& arrs, int axis)
+{
+	size_t maxNumDims = 0;
+	Shape s = shape(arrs[0]);
+	s[axis] = 0;
+	//TODO: Check all array has the same # of dims
+	for(auto t : arrs)
+	{
+		auto impl = (AFTensorImpl const*)t;
+		maxNumDims = std::max(maxNumDims, shape(impl).size());
+
+		s[axis] += shape(impl)[axis];
+	}
+	std::vector<af_array> inputs(arrs.size());
+	for(size_t i=0;i<arrs.size();i++)
+		inputs[i] = ((AFTensorImpl*)arrs[i])->get().get();
+	af_array arr;
+	af_join_many(&arr, maxNumDims-axis-1, arrs.size(), &inputs[0]);
+
+	return new AFTensorImpl(af::array(arr), s, this);
+}
+
+TensorImpl* ArrayFireBackend::chunk(const TensorImpl* impl, const Shape& begin, const Shape& size)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	AtAssert(begin.size() == size.size() && begin.size() <= 4);
+	af::seq dim[4];
+	size_t sliceDims = begin.size();
+	Shape s = shape(ptr);
+	size_t tensorDims = s.size();
+	AtAssert(sliceDims != 0);
+	//XXX: af::end and af::span seem not to work when stored as af::seq. This is a workarround
+	for(size_t i=0;i<sliceDims;i++)
+	{
+		dim[s.size()-i-1] = af::seq(begin[i], begin[i]+size[i]-1);
+		s[i] = size[i];
+	}
+
+	af::array arr;
+	if(tensorDims == 1)
+		arr = ptr->arr_(dim[0], af::span, af::span, af::span);
+	if(tensorDims == 2)
+		arr = ptr->arr_(dim[0], dim[1], af::span, af::span);
+	if(tensorDims == 3)
+		arr = ptr->arr_(dim[0], dim[1], dim[2], af::span);
+	if(tensorDims == 4)
+		arr = ptr->arr_(dim[0], dim[1], dim[2], dim[3]);
+	return new AFTensorImpl(arr, s, this);
+}
+
+TensorImpl* ArrayFireBackend::sum(const TensorImpl* impl, intmax_t axis)
+{
+	auto ptr = (AFTensorImpl*)impl;
+	Shape s = shapeFromDim4(ptr->arr_.dims(), ptr->arrShape_.size());
+	return new AFTensorImpl(af::sum(ptr->arr_, ptr->arrShape_.size()-axis-1), {s[axis]}, this);
+}
+
+void ArrayFireBackend::host(const TensorImpl* impl, float* ptr) const
+{
+	auto& arr = ((const AFTensorImpl*)impl)->arr_;
+	copyToHost(arr, ptr);
+}
+
+void ArrayFireBackend::host(const TensorImpl* impl, double* ptr) const
+{
+	auto& arr = ((const AFTensorImpl*)impl)->arr_;
+	copyToHost(arr, ptr);
+}
+
+void ArrayFireBackend::host(const TensorImpl* impl, int32_t* ptr) const
+{
+	auto& arr = ((const AFTensorImpl*)impl)->arr_;
+	copyToHost(arr, ptr);
+}
+
+void ArrayFireBackend::host(const TensorImpl* impl, int16_t* ptr) const
+{
+	auto& arr = ((const AFTensorImpl*)impl)->arr_;
+	copyToHost(arr, ptr);
+}
+
+void ArrayFireBackend::host(const TensorImpl* impl, bool* ptr) const
+{
+	auto& arr = ((const AFTensorImpl*)impl)->arr_;
+	copyToHost(arr, ptr);
+}
+
+void ArrayFireBackend::device(TensorImpl* impl, const float* ptr)
+{
+	auto& arr = ((AFTensorImpl*)impl)->arr_;
+	writeToDevice(arr, ptr);
+}
+
+void ArrayFireBackend::device(TensorImpl* impl, const double* ptr)
+{
+	auto& arr = ((AFTensorImpl*)impl)->arr_;
+	writeToDevice(arr, ptr);
+}
+
+void ArrayFireBackend::device(TensorImpl* impl, const int32_t* ptr)
+{
+	auto& arr = ((AFTensorImpl*)impl)->arr_;
+	writeToDevice(arr, ptr);
+}
+
+void ArrayFireBackend::device(TensorImpl* impl, const int16_t* ptr)
+{
+	auto& arr = ((AFTensorImpl*)impl)->arr_;
+	writeToDevice(arr, ptr);
+}
+
+void ArrayFireBackend::device(TensorImpl* impl, const bool* ptr)
+{
+	auto& arr = ((AFTensorImpl*)impl)->arr_;
+	writeToDevice(arr, ptr);
+}
+
+TensorImpl* ArrayFireBackend::greaterThan(const TensorImpl* impl,float val)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(ptr->arr_ > val, ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::lesserThan(const TensorImpl* impl,float val)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(ptr->arr_ < val, ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::greaterOrEqual(const TensorImpl* impl,float val)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(ptr->arr_ >= val, ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::lesserOrEqual(const TensorImpl* impl,float val)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(ptr->arr_ <= val, ptr->arrShape_, this);
+}
+
+TensorImpl* ArrayFireBackend::equalTo(const TensorImpl* impl,float val)
+{
+	auto ptr = (const AFTensorImpl*)impl;
+	return new AFTensorImpl(ptr->arr_ == val, ptr->arrShape_, this);
 }

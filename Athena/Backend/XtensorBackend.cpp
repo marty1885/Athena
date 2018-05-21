@@ -346,10 +346,6 @@ public:
 		return (const T*)run<const void*>([](const auto& a){return &a[0];});
 	}
 
-
-
-protected:
-
 	template <typename Ret, typename Op>
 	inline Ret run(Op op) const
 	{
@@ -498,6 +494,11 @@ public:
 		return arr_;
 	}
 
+	Xarr& xarr()
+	{
+		return arr_;
+	}
+
 	template <typename T>
 	const xt::xarray<T>& get() const
 	{
@@ -508,253 +509,6 @@ public:
 	xt::xarray<T>& get()
 	{
 		return arr_.get<T>();
-	}
-
-	virtual void host(float* ptr) const override
-	{
-		copyToPtr(arr_, ptr);
-	}
-
-	virtual void host(double* ptr) const override
-	{
-		copyToPtr(arr_, ptr);
-	}
-
-	virtual void host(int32_t* ptr) const override
-	{
-		copyToPtr(arr_, ptr);
-	}
-
-	virtual void host(int16_t* ptr) const override
-	{
-		copyToPtr(arr_, ptr);
-	}
-
-	virtual void host(bool* ptr) const override
-	{
-		copyToPtr(arr_, ptr);
-	}
-
-	virtual void device(const float* ptr) override
-	{
-		copyFromPtr(arr_, ptr);
-	}
-
-	virtual void device(const double* ptr)
-	{
-		copyFromPtr(arr_, ptr);
-	}
-
-	virtual void device(const int32_t* ptr)
-	{
-		copyFromPtr(arr_, ptr);
-	}
-
-	virtual void device(const int16_t* ptr)
-	{
-		copyFromPtr(arr_, ptr);
-	}
-
-	virtual void device(const bool* ptr)
-	{
-		copyFromPtr(arr_, ptr);
-	}
-
-	virtual size_t size() const override
-	{
-		return arr_.size();
-	}
-
-	virtual Shape shape() const override
-	{
-		return as<Shape>(arr_.shape());
-	}
-
-	virtual void add(float val) override
-	{
-		arr_ += val;
-	}
-
-	virtual void mul(float val) override
-	{
-		arr_ *= val;
-	}
-
-	//TODO: Check if the incoming impl is a XtensorTensorImpl
-	virtual void add(const TensorImpl* other) override
-	{
-		auto impl = (const XtensorTensorImpl*)other;
-		arr_ += impl->xarr();
-	}
-
-	virtual void mul(const TensorImpl* other) override
-	{
-		auto impl = (const XtensorTensorImpl*)other;
-		arr_ *= impl->xarr();
-	}
-
-	virtual void subtract(const TensorImpl* other) override
-	{
-		auto impl = (const XtensorTensorImpl*)other;
-		arr_ -= impl->xarr();
-	}
-
-	virtual void divide(const TensorImpl* other) override
-	{
-		auto impl = (const XtensorTensorImpl*)other;
-		arr_ /= impl->xarr();
-	}
-
-	virtual void reciprocate() override
-	{
-		arr_.reciprocate();
-	}
-
-	virtual TensorImpl* clone() const override
-	{
-		return new XtensorTensorImpl(arr_, (XtensorBackend*) backend());
-	}
-
-	virtual void resize(const Shape& wantedShape) override
-	{
-		auto s = as<xt::svector<size_t>>(wantedShape);
-		arr_.reshape(s);
-	}
-
-	virtual TensorImpl* reshape(const Shape& wantedShape) const override
-	{
-		auto s = as<xt::svector<size_t>>(wantedShape);
-		Xarr arr = arr_;
-		arr.reshape(s);
-		return new XtensorTensorImpl(arr, (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* dot(const TensorImpl* other) const override
-	{
-		auto impl = (const XtensorTensorImpl*)other;
-		return new XtensorTensorImpl(arr_.dot(impl->xarr()), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* sqrt() const override
-	{
-		return new XtensorTensorImpl(arr_.sqrt(), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* transpose() const override
-	{
-		return new XtensorTensorImpl(arr_.transpose(), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* transpose(const std::vector<intmax_t>& axis) const override
-	{
-		auto a = as<xt::svector<size_t>>(axis);
-		return new XtensorTensorImpl(arr_.transpose(a), (XtensorBackend*)backend());
-	}
-
-
-	virtual TensorImpl* sum(intmax_t axis) const override
-	{
-		return new XtensorTensorImpl(arr_.sum({(size_t)axis}), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* sum(const std::vector<intmax_t>& axis) const override
-	{
-		auto s = as<xt::svector<size_t>>(axis);
-		return new XtensorTensorImpl(arr_.sum(s), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* pow(float val) const override
-	{
-		return new XtensorTensorImpl(arr_.pow(val), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* slice(const Shape& begin, const Shape& size) const override
-	{
-		xt::slice_vector sv;
-		for(size_t i=0;i<begin.size();i++)
-			sv.push_back(xt::range((int)begin[i], (int)(begin[i]+size[i])));//Why int...?
-		return new XtensorTensorImpl(arr_.chunk(sv), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* abs() const override
-	{
-		return new XtensorTensorImpl(arr_.abs(), (XtensorBackend*)backend());
-	}
-
-	TensorImpl* stack(const TensorImpl* other, int axis) const override
-	{
-		auto impl = (const XtensorTensorImpl*)other;
-		return new XtensorTensorImpl(arr_.stack(impl->xarr(), axis), (XtensorBackend*)backend());
-	}
-
-	TensorImpl* concatenate(const TensorImpl* other, int axis) const override
-	{
-		auto impl = (const XtensorTensorImpl*)other;
-		return new XtensorTensorImpl(arr_.concatenate(impl->xarr(), axis), (XtensorBackend*)backend());
-	}
-
-	TensorImpl* concatenate(const std::vector<TensorImpl const*>& arrs, int axis) const override
-	{
-		std::vector<Xarr const*> vec(arrs.size());
-		for(size_t i=0;i<arrs.size();i++)
-			vec[i] = &((XtensorTensorImpl const*)arrs[i])->xarr();
-		return new XtensorTensorImpl(vec[0]->concatenate(vec, axis), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* exp() const override
-	{
-		return new XtensorTensorImpl(arr_.exp(), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* log() const override
-	{
-		return new XtensorTensorImpl(arr_.log(), (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* greaterThan(float val) const override
-	{
-		return new XtensorTensorImpl(arr_ > val, (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* lesserThan(float val) const override
-	{
-		return new XtensorTensorImpl(arr_ < val, (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* greaterOrEqual(float val) const override
-	{
-		return new XtensorTensorImpl(arr_ >= val, (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* lesserOrEqual(float val) const override
-
-	{
-		return new XtensorTensorImpl(arr_ <= val, (XtensorBackend*)backend());
-	}
-
-	virtual TensorImpl* equalTo(float val) const override
-	{
-		return new XtensorTensorImpl(arr_ == val, (XtensorBackend*)backend());
-	}
-
-	virtual DType dtype() const override
-	{
-		return arr_.dtype();
-	}
-
-	virtual void* hostPtr() override
-	{
-		return arr_.data<void>();
-	}
-
-	virtual const void* hostPtr() const override
-	{
-		return arr_.data<void>();
-	}
-
-	virtual void eval() override
-	{
-		//No-op for xtensor.
 	}
 
 protected:
@@ -1038,7 +792,7 @@ XtensorBackend::XtensorBackend()
 			const auto& w = get<float>(kernel);
 
 			db = currDelta.sum({0, 2, 3});
-			db.resize({db.shape()[0], db.shape().volume()/db.shape()[0]});
+			db.resize({db.shape()[0], db.volume()/db.shape()[0]});
 
 			xt::xarray<float> xCol = im2col(x, {{kernel.shape()[2], kernel.shape()[3]}}, {{strides[0], strides[1]}});
 
@@ -1131,6 +885,12 @@ TensorImpl* XtensorBackend::createTensor(const std::vector<bool>& vec, const Sha
 	return new XtensorTensorImpl(makeXarray((bool*)data.data(), shape), this);
 }
 
+TensorImpl* XtensorBackend::clone(const TensorImpl* handle)
+{
+	auto ptr = (const XtensorTensorImpl*)handle;
+	return new XtensorTensorImpl(ptr->xarr(), this);
+}
+
 TensorImpl* XtensorBackend::createTensor(const xt::xarray<float>& arr)
 {
 	xt::xarray<float> t(arr);
@@ -1163,4 +923,259 @@ TensorImpl* XtensorBackend::normal(float mean, float stddev, const Shape& shape)
 {
 	auto s = as<xt::xarray<float>::shape_type>(shape);
 	return createTensor(std::move(xt::random::rand<float>(s, mean, stddev)));
+}
+
+Shape XtensorBackend::shape(const TensorImpl* impl) const
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return as<Shape>(ptr->xarr().shape());
+}
+
+intmax_t XtensorBackend::size(const TensorImpl* impl) const
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return (intmax_t)ptr->xarr().run<size_t>([](const auto& a){return a.size();});
+}
+
+DType XtensorBackend::dtype(const TensorImpl* impl) const
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return ptr->xarr().dtype();
+}
+
+void XtensorBackend::selfReciprocate(TensorImpl* impl)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	ptr->xarr().run<void>([](auto& arr){arr = 1.f/arr;});
+}
+
+void XtensorBackend::selfAdd(TensorImpl* impl, float val)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	ptr->xarr() += val;
+}
+
+void XtensorBackend::selfMul(TensorImpl* impl, float val)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	ptr->xarr() *= val;
+}
+
+void XtensorBackend::selfAdd(TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	ptr->xarr() += o->xarr();
+}
+
+void XtensorBackend::selfMul(TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	ptr->xarr() *= o->xarr();
+}
+
+void XtensorBackend::selfSub(TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	ptr->xarr() -= o->xarr();
+}
+
+void XtensorBackend::selfDiv(TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	ptr->xarr() /= o->xarr();
+}
+
+TensorImpl* XtensorBackend::sqrt(const TensorImpl* impl)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().sqrt(), this);
+}
+
+TensorImpl* XtensorBackend::abs(const TensorImpl* impl)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().abs(), this);
+}
+
+TensorImpl* XtensorBackend::exp(const TensorImpl* impl)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().exp(), this);
+}
+
+TensorImpl* XtensorBackend::log(const TensorImpl* impl)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().log(), this);
+}
+
+TensorImpl* XtensorBackend::pow(const TensorImpl* impl, float val)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().pow(val), this);
+}
+
+TensorImpl* XtensorBackend::dot(const TensorImpl* impl, const TensorImpl* other)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().dot(((const XtensorTensorImpl*)other)->xarr()), this);
+}
+
+void XtensorBackend::modDims(TensorImpl* impl, const Shape& wantedShape)
+{
+	auto ptr = (XtensorTensorImpl*)impl;
+	ptr->xarr().reshape(as<xt::svector<size_t>>(wantedShape));
+}
+
+TensorImpl* XtensorBackend::reshape(const TensorImpl* impl, const Shape& wantedShape)
+{
+	XtensorTensorImpl* res = (XtensorTensorImpl*)clone(impl);
+	modDims(res, wantedShape);
+	return res;
+}
+
+TensorImpl* XtensorBackend::transpose(const TensorImpl* impl)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().transpose(), this);
+}
+
+TensorImpl* XtensorBackend::stack(const TensorImpl* impl, const TensorImpl* other, int axis)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	auto o = (const XtensorTensorImpl*)other;
+	return new XtensorTensorImpl(ptr->xarr().stack(o->xarr(), axis), this);
+}
+
+TensorImpl* XtensorBackend::concatenate(const std::vector<TensorImpl const*>& arrs, int axis)
+{
+	std::vector<Xarr const*> vec(arrs.size());
+	for(size_t i=0;i<arrs.size();i++)
+		vec[i] = &((XtensorTensorImpl const*)arrs[i])->xarr();
+	return new XtensorTensorImpl(vec[0]->concatenate(vec, axis), this);
+}
+
+TensorImpl* XtensorBackend::chunk(const TensorImpl* impl, const Shape& begin, const Shape& size)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	xt::slice_vector sv;
+	for(size_t i=0;i<begin.size();i++)
+		sv.push_back(xt::range((int)begin[i], (int)(begin[i]+size[i])));//Why int...?
+	return new XtensorTensorImpl(ptr->xarr().chunk(sv), this);
+}
+
+TensorImpl* XtensorBackend::sum(const TensorImpl* impl, intmax_t axis)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().sum({(size_t)axis}), this);
+}
+
+TensorImpl* XtensorBackend::sum(const TensorImpl* impl, const std::vector<intmax_t>& axis)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr().sum(as<xt::svector<size_t>>(axis)), this);
+}
+
+void XtensorBackend::host(const TensorImpl* impl, float* ptr) const
+{
+	auto& arr = ((const XtensorTensorImpl*)impl)->xarr();
+	copyToPtr(arr, ptr);
+}
+
+void XtensorBackend::host(const TensorImpl* impl, double* ptr) const
+{
+	auto& arr = ((const XtensorTensorImpl*)impl)->xarr();
+	copyToPtr(arr, ptr);
+}
+
+void XtensorBackend::host(const TensorImpl* impl, int32_t* ptr) const
+{
+	auto& arr = ((const XtensorTensorImpl*)impl)->xarr();
+	copyToPtr(arr, ptr);
+}
+
+void XtensorBackend::host(const TensorImpl* impl, int16_t* ptr) const
+{
+	auto& arr = ((const XtensorTensorImpl*)impl)->xarr();
+	copyToPtr(arr, ptr);
+}
+
+void XtensorBackend::host(const TensorImpl* impl, bool* ptr) const
+{
+	auto& arr = ((const XtensorTensorImpl*)impl)->xarr();
+	copyToPtr(arr, ptr);
+}
+
+void XtensorBackend::device(TensorImpl* impl, const float* ptr)
+{
+	auto& arr = ((XtensorTensorImpl*)impl)->xarr();
+	copyFromPtr(arr, ptr);
+}
+
+void XtensorBackend::device(TensorImpl* impl, const double* ptr)
+{
+	auto& arr = ((XtensorTensorImpl*)impl)->xarr();
+	copyFromPtr(arr, ptr);
+}
+
+void XtensorBackend::device(TensorImpl* impl, const int32_t* ptr)
+{
+	auto& arr = ((XtensorTensorImpl*)impl)->xarr();
+	copyFromPtr(arr, ptr);
+}
+
+void XtensorBackend::device(TensorImpl* impl, const int16_t* ptr)
+{
+	auto& arr = ((XtensorTensorImpl*)impl)->xarr();
+	copyFromPtr(arr, ptr);
+}
+
+void XtensorBackend::device(TensorImpl* impl, const bool* ptr)
+{
+	auto& arr = ((XtensorTensorImpl*)impl)->xarr();
+	copyFromPtr(arr, ptr);
+}
+
+void* XtensorBackend::hostPtr(TensorImpl* impl)
+{
+	return ((XtensorTensorImpl*)impl)->xarr().data<void>();
+}
+
+const void* XtensorBackend::hostPtr(const TensorImpl* impl)
+{
+	return ((const XtensorTensorImpl*)impl)->xarr().data<void>();
+}
+
+TensorImpl* XtensorBackend::greaterThan(const TensorImpl* impl,float val)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr() > val, this);
+}
+
+TensorImpl* XtensorBackend::lesserThan(const TensorImpl* impl,float val)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr() < val, this);
+}
+
+TensorImpl* XtensorBackend::greaterOrEqual(const TensorImpl* impl,float val)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr() >= val, this);
+}
+
+TensorImpl* XtensorBackend::lesserOrEqual(const TensorImpl* impl,float val)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr() <= val, this);
+}
+
+TensorImpl* XtensorBackend::equalTo(const TensorImpl* impl,float val)
+{
+	auto ptr = (const XtensorTensorImpl*)impl;
+	return new XtensorTensorImpl(ptr->xarr() == val, this);
 }

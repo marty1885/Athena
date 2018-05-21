@@ -114,77 +114,72 @@ public:
 
 	inline void add(float val)
 	{
-		pimpl_->add(val);
+		backend()->selfAdd(pimpl_, val);
 	}
 
 	inline void mul(float val)
 	{
-		pimpl_->mul(val);
+		backend()->selfMul(pimpl_, val);
 	}
 
 	inline void reciprocate()
 	{
-		pimpl_->reciprocate();
+		backend()->selfReciprocate(pimpl_);
 	}
 
 	Tensor slice(const Shape& begin, const Shape& size={1}) const
 	{
-		return pimpl_->slice(begin, size);
+		return backend()->chunk(pimpl_, begin, size);
 	}
 
 	Tensor transpose() const
 	{
-		return pimpl_->transpose();
-	}
-
-	Tensor transpose(const std::vector<intmax_t>& axis) const
-	{
-		return pimpl_->transpose(axis);
+		return backend()->transpose(pimpl_);
 	}
 
 	Tensor clone() const
 	{
-		return Tensor(pimpl_->clone());
+		return Tensor(backend()->clone(pimpl_));
 	}
 
 	Tensor sum(intmax_t axis) const
 	{
-		return pimpl_->sum(axis);
+		return backend()->sum(pimpl_, axis);
 	}
 
 	Tensor sum(const std::vector<intmax_t>& axis) const
 	{
-		return pimpl_->sum(axis);
+		return backend()->sum(pimpl_, axis);
 	}
 
 	Tensor pow(float e)
 	{
-		return pimpl_->pow(e);
+		return backend()->pow(pimpl_, e);
 	}
 
 	Tensor dot(const Tensor& t) const
 	{
-		return pimpl_->dot(t.pimpl());
+		return backend()->dot(pimpl_, t.pimpl());
 	}
 
 	Tensor sqrt() const
 	{
-		return pimpl_->sqrt();
+		return backend()->sqrt(pimpl_);
 	}
 
 	Tensor abs() const
 	{
-		return pimpl_->abs();
+		return backend()->abs(pimpl_);
 	}
 
 	Tensor stack(const Tensor& t, intmax_t axis) const
 	{
-		return pimpl_->stack(t.pimpl(), axis);
+		return backend()->stack(pimpl(), t.pimpl(), axis);
 	}
 
 	const Shape shape() const
 	{
-		return pimpl_->shape();
+		return backend()->shape(pimpl_);
 	}
 
 	Tensor reshape(const Shape& s) const
@@ -204,66 +199,66 @@ public:
 	void resize(const Shape& s)
 	{
 		if(s.contains(Shape::None))
-			pimpl_->resize(solveUnknownDim(shape(), s));
+			backend()->modDims(pimpl_, solveUnknownDim(shape(), s));
 		else
 		{
 			if(s.volume() != volume())
 				throw AtError("Cannot resize from " + to_string(shape()) + " to " + to_string(s));
-			pimpl_->resize(s);
+			backend()->modDims(pimpl_, s);
 		}
 	}
 
 	Tensor greaterThan(float val) const
 	{
-		return pimpl_->greaterThan(val);
+		return backend()->greaterThan(pimpl_, val);
 	}
 
 	Tensor lesserThan(float val) const
 	{
-		return pimpl_->lesserThan(val);
+		return backend()->lesserThan(pimpl_, val);
 	}
 
 	Tensor greaterOrEqual(float val) const
 	{
-		return pimpl_->greaterOrEqual(val);
+		return backend()->greaterOrEqual(pimpl_, val);
 	}
 
 	Tensor lesserOrEqual(float val) const
 	{
-		return pimpl_->lesserOrEqual(val);
+		return backend()->lesserOrEqual(pimpl_, val);
 	}
 
 	Tensor equalTo(float val) const
 	{
-		return pimpl_->equalTo(val);
+		return backend()->equalTo(pimpl_, val);
 	}
 
 	Tensor concatenate(const Tensor& other, intmax_t axis) const
 	{
-		return pimpl_->concatenate(other.pimpl(), axis);
+		return backend()->concatenate({pimpl_, other.pimpl()}, axis);
 	}
 
 	Tensor exp() const
 	{
-		return pimpl_->exp();
+		return backend()->exp(pimpl_);
 	}
 
 	Tensor log() const
 	{
-		return pimpl_->log();
+		return backend()->log(pimpl_);
 	}
 
 	size_t size() const
 	{
 		if((bool)(*this) == false)
 			return 0;
-		return pimpl_->size();
+		return backend()->size(pimpl_);
 	}
 
 	template <typename T>
 	inline void host(T* ptr) const
 	{
-		pimpl_->host(ptr);
+		backend()->host(pimpl_, ptr);
 	}
 
 	void flat()
@@ -281,8 +276,8 @@ public:
 	template <typename T>
 	std::vector<T> host() const
 	{
-		std::vector<T> v(pimpl_->size());
-		pimpl_->host(&v[0]);
+		std::vector<T> v(size());
+		backend()->host(pimpl_, &v[0]);
 		return v;
 	}
 
@@ -306,7 +301,7 @@ public:
 	{
 		if(typeToDType<T>() != dtype())
 			throw AtError(std::string("Cannot get a ")  + to_string(typeToDType<T>()) + " pointer from " + to_string(dtype()));
-		return (T*)pimpl_->hostPtr();
+		return (T*)backend()->hostPtr(pimpl_);
 	}
 
 	template <typename T>
@@ -314,7 +309,7 @@ public:
 	{
 		if(typeToDType<T>() != dtype())
 			throw AtError(std::string("Cannot get a ")  + to_string(typeToDType<T>()) + " pointer from " + to_string(dtype()));
-		return (const T*)pimpl_->hostPtr();
+		return (const T*)backend()->hostPtr(pimpl_);
 	}
 
 	virtual ~Tensor()
@@ -378,13 +373,13 @@ public:
 
 	DType dtype() const
 	{
-		return pimpl_->dtype();
+		return backend()->dtype(pimpl_);
 	}
 
 	//Force evaulation since backends can do lazy evaulation
 	void eval()
 	{
-		pimpl_->eval();
+		backend()->eval(pimpl_);
 	}
 
 	template <typename T> static Tensor from(const T& t);
@@ -489,9 +484,9 @@ protected:
 template <>
 inline std::vector<bool> Tensor::host() const
 {
-	std::vector<char> c(pimpl_->size());
-	pimpl_->host((bool*)&c[0]);
-	std::vector<bool> v(pimpl_->size());
+	std::vector<char> c(size());
+	backend()->host(pimpl_, (bool*)&c[0]);
+	std::vector<bool> v(size());
 	for(size_t i=0;i<v.size();i++)
 		v[i] = c[i];
 	return v;
@@ -580,7 +575,7 @@ inline Tensor concatenate(std::vector<Tensor>& t, const Tensor& q, intmax_t axis
 	std::vector<TensorImpl const*> impls(t.size());
 	for(size_t i=0;i<t.size();i++)
 		impls[i] = t[i].pimpl();
-	return t[0].pimpl()->concatenate(impls, axis);
+	return t[0].backend()->concatenate(impls, axis);
 }
 
 inline Tensor stack(const Tensor& t, const Tensor& q, intmax_t axis)
@@ -712,34 +707,34 @@ inline Tensor operator+(const Tensor& t, const Tensor& other)
 {
 	//assert(t.backend() == t.backend());
 	Tensor res(t.clone());
-	res.pimpl()->add(other.pimpl());
+	res.backend()->selfAdd(res.pimpl(), other.pimpl());
 	return res;
 }
 
 inline Tensor operator-(const Tensor& t, const Tensor& other)
 {
 	Tensor res(t.clone());
-	res.pimpl()->subtract(other.pimpl());
+	res.backend()->selfSub(res.pimpl(), other.pimpl());
 	return res;
 }
 
 inline Tensor operator*(const Tensor& t, const Tensor& other)
 {
 	Tensor res(t.clone());
-	res.pimpl()->mul(other.pimpl());
+	res.backend()->selfMul(res.pimpl(), other.pimpl());
 	return res;
 }
 
 inline Tensor operator/(const Tensor& t, const Tensor& other)
 {
 	Tensor res(t.clone());
-	res.pimpl()->divide(other.pimpl());
+	res.backend()->selfDiv(res.pimpl(), other.pimpl());
 	return res;
 }
 
 inline void operator-=(Tensor& t, const Tensor& other)
 {
-	t.pimpl()->subtract(other.pimpl());
+	t.backend()->selfSub(t.pimpl(), other.pimpl());
 }
 
 inline void operator-=(Tensor& t, const float& x)
@@ -749,7 +744,7 @@ inline void operator-=(Tensor& t, const float& x)
 
 inline void operator+=(Tensor& t, const Tensor& other)
 {
-	t.pimpl()->add(other.pimpl());
+	t.backend()->selfAdd(t.pimpl(), other.pimpl());
 }
 
 inline void operator+=(Tensor& t, const float& x)
@@ -759,7 +754,7 @@ inline void operator+=(Tensor& t, const float& x)
 
 inline void operator*=(Tensor& t, const Tensor& other)
 {
-	t.pimpl()->mul(other.pimpl());
+	t.backend()->selfMul(t.pimpl(), other.pimpl());
 }
 
 inline void operator*=(Tensor& t, const float& x)
@@ -769,7 +764,7 @@ inline void operator*=(Tensor& t, const float& x)
 
 inline void operator/=(Tensor& t, const Tensor& other)
 {
-	t.pimpl()->divide(other.pimpl());
+	t.backend()->selfDiv(t.pimpl(), other.pimpl());
 }
 
 inline void operator/=(Tensor& t, const float& x)

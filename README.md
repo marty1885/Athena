@@ -7,7 +7,7 @@
 `Athena` provides
 
 - A computation backend that can be easily implemented
-- Tensor operators colsely resambles TensorFlow's
+- Tensor operators colsely resambles numpy's
 - High level neural netowrk API
 
 ## Tensor and Backends
@@ -26,8 +26,6 @@ More backends built on faster libraries like `Eigen` and, `MIOpen` are planed.
 `example1` in the `examples` folder demostrates how to implement a MLP to solve the XOR problem in Athena.<br>
 `mnist` contains an example using a MLP to classify MNIST digits.
 
-## Note
-If possable, use `clang` as the compiler to build Athena. GCC seems to bug out the mathmetic calculations and generate NaN out of nowhere.
 
 ## Development and contribution
 

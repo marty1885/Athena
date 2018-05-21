@@ -135,12 +135,66 @@ public:
 	virtual TensorImpl* createTensor(const std::vector<int16_t>& vec, const Shape& shape);
 	virtual TensorImpl* createTensor(const std::vector<bool>& vec, const Shape& shape);
 	virtual TensorImpl* createTensor(const Shape& dims);
+	virtual TensorImpl* clone(const TensorImpl* handle);
 	virtual void destoryTensor(TensorImpl* handle);
 
 	virtual TensorImpl* zeros(const Shape& shape, DType dtype=DType::float32);
 	virtual TensorImpl* ones(const Shape& shape, DType dtype=DType::float32);
 	virtual TensorImpl* rand(float lEdge, float rEdge, const Shape& shape);
 	virtual TensorImpl* normal(float mean, float stddev, const Shape& shape);
+
+	virtual void eval(TensorImpl* impl);
+
+	virtual Shape shape(const TensorImpl* impl) const;
+	virtual intmax_t size(const TensorImpl* impl) const;
+	virtual DType dtype(const TensorImpl* impl) const;
+
+	virtual void selfReciprocate(TensorImpl* impl);
+	virtual void selfAdd(TensorImpl* impl, float val);
+	virtual void selfMul(TensorImpl* impl, float val);
+	virtual void selfAdd(TensorImpl* impl, const TensorImpl* other);
+	virtual void selfMul(TensorImpl* impl, const TensorImpl* other);
+	virtual void selfSub(TensorImpl* impl, const TensorImpl* other);
+	virtual void selfDiv(TensorImpl* impl, const TensorImpl* other);
+
+	virtual TensorImpl* sqrt(const TensorImpl* impl);
+	virtual TensorImpl* abs(const TensorImpl* impl);
+	virtual TensorImpl* exp(const TensorImpl* impl);
+	virtual TensorImpl* log(const TensorImpl* impl);
+	virtual TensorImpl* pow(const TensorImpl* impl, float val);
+
+	virtual TensorImpl* dot(const TensorImpl* impl, const TensorImpl* other);
+
+	virtual void modDims(TensorImpl* impl, const Shape& wantedShape);
+	virtual TensorImpl* reshape(const TensorImpl* impl, const Shape& wantedShape);
+	virtual TensorImpl* transpose(const TensorImpl* impl);
+
+	virtual TensorImpl* sum(const TensorImpl* impl, intmax_t axis);
+	virtual TensorImpl* sum(const TensorImpl* impl, const std::vector<intmax_t>& axis);
+	virtual TensorImpl* stack(const TensorImpl* impl, const TensorImpl* other, int axis);
+	virtual TensorImpl* concatenate(const std::vector<TensorImpl const*>& arrs, int axis);
+	virtual TensorImpl* chunk(const TensorImpl* impl, const Shape& begin, const Shape& size);
+
+	virtual void host(const TensorImpl* impl, float* ptr) const;
+	virtual void host(const TensorImpl* impl, double* ptr) const;
+	virtual void host(const TensorImpl* impl, int32_t* ptr) const;
+	virtual void host(const TensorImpl* impl, int16_t* ptr) const;
+	virtual void host(const TensorImpl* impl, bool* ptr) const;
+
+	virtual void device(TensorImpl* impl, const float* ptr);
+	virtual void device(TensorImpl* impl, const double* ptr);
+	virtual void device(TensorImpl* impl, const int32_t* ptr);
+	virtual void device(TensorImpl* impl, const int16_t* ptr);
+	virtual void device(TensorImpl* impl, const bool* ptr);
+
+	virtual void* hostPtr(TensorImpl* impl);
+	virtual const void* hostPtr(const TensorImpl* impl);
+
+	virtual TensorImpl* greaterThan(const TensorImpl* impl,float val);
+	virtual TensorImpl* lesserThan(const TensorImpl* impl,float val);
+	virtual TensorImpl* greaterOrEqual(const TensorImpl* impl,float val);
+	virtual TensorImpl* lesserOrEqual(const TensorImpl* impl,float val);
+	virtual TensorImpl* equalTo(const TensorImpl* impl,float val);
 
 	template<typename FT>
 	inline void addAlgorithm(const std::string& name, delegate<FT> f, AlgorithmSelector selector = [](const BoxedValues& config)->bool{return true;})
