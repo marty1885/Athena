@@ -20,7 +20,7 @@ enum class DType
 };
 
 template <typename T>
-constexpr inline DType typeToDtype()
+constexpr inline DType typeToDType()
 {
 	if(std::is_same<T, float>::value)
 		return DType::float32;

@@ -69,7 +69,7 @@ public:
 	template <typename T>
 	void setInternalData(xt::xarray<T> array)
 	{
-		if(dtype() == typeToDtype<T>() && tensorPtr_ != nullptr)
+		if(dtype() == typeToDType<T>() && tensorPtr_ != nullptr)
 		{
 
 			get<T>() = array;
@@ -78,7 +78,7 @@ public:
 		release();
 
 		tensorPtr_ = new xt::xarray<T>(array);
-		dataType = typeToDtype<T>();
+		dataType = typeToDType<T>();
 	}
 	
 	void release()
@@ -117,16 +117,16 @@ public:
 	template <typename T>
 	xt::xarray<T>& get()
 	{
-		if(dtype() != typeToDtype<T>())
-			throw AtError(std::string("Requesting xarray<") + dtypeToName(typeToDtype<T>()) + "> from xarray<" + dtypeToName(dtype())+">");
+		if(dtype() != typeToDType<T>())
+			throw AtError(std::string("Requesting xarray<") + dtypeToName(typeToDType<T>()) + "> from xarray<" + dtypeToName(dtype())+">");
 		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr_);
 	}
 
 	template <typename T>
 	const xt::xarray<T>& get() const
 	{
-		if(dtype() != typeToDtype<T>())
-			throw AtError(std::string("Requesting xarray<") + dtypeToName(typeToDtype<T>()) + "> from xarray<" + dtypeToName(dtype())+">");
+		if(dtype() != typeToDType<T>())
+			throw AtError(std::string("Requesting xarray<") + dtypeToName(typeToDType<T>()) + "> from xarray<" + dtypeToName(dtype())+">");
 		return *reinterpret_cast<xt::xarray<T>*>(tensorPtr_);
 	}
 
@@ -458,8 +458,8 @@ void Xarr::operator-= (const Xarr& val)
 template <typename T>
 void copyToPtr(const Xarr& arr, T* dest)
 {
-	if(arr.dtype() != typeToDtype<T>())
-		throw AtError("Cannot copy data from xarray to pointer. Incompatible data type. " + dtypeToName(typeToDtype<T>()) + " vs " + dtypeToName(arr.dtype()));
+	if(arr.dtype() != typeToDType<T>())
+		throw AtError("Cannot copy data from xarray to pointer. Incompatible data type. " + dtypeToName(typeToDType<T>()) + " vs " + dtypeToName(arr.dtype()));
 	const auto& array = arr.get<T>();
 	std::copy(array.begin(), array.end(), dest);
 }
@@ -467,8 +467,8 @@ void copyToPtr(const Xarr& arr, T* dest)
 template <typename T>
 void copyFromPtr(Xarr& arr, const T* src)
 {
-	if(arr.dtype() != typeToDtype<T>())
-		throw AtError("Cannot copy data from pointer to xarray. Incompatible data type. " + dtypeToName(arr.dtype()) + " vs " + dtypeToName(typeToDtype<T>()));
+	if(arr.dtype() != typeToDType<T>())
+		throw AtError("Cannot copy data from pointer to xarray. Incompatible data type. " + dtypeToName(arr.dtype()) + " vs " + dtypeToName(typeToDType<T>()));
 	auto& array = arr.get<T>();
 	memcpy(&array[0], src, array.size()*sizeof(T));
 }

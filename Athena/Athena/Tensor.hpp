@@ -304,16 +304,16 @@ public:
 	template <typename T>
 	inline T* hostPtr()
 	{
-		if(typeToDtype<T>() != dtype())
-			throw AtError(std::string("Cannot get a ")  + to_string(typeToDtype<T>()) + " pointer from " + to_string(dtype()));
+		if(typeToDType<T>() != dtype())
+			throw AtError(std::string("Cannot get a ")  + to_string(typeToDType<T>()) + " pointer from " + to_string(dtype()));
 		return (T*)pimpl_->hostPtr();
 	}
 
 	template <typename T>
 	inline const T* hostPtr() const
 	{
-		if(typeToDtype<T>() != dtype())
-			throw AtError(std::string("Cannot get a ")  + to_string(typeToDtype<T>()) + " pointer from " + to_string(dtype()));
+		if(typeToDType<T>() != dtype())
+			throw AtError(std::string("Cannot get a ")  + to_string(typeToDType<T>()) + " pointer from " + to_string(dtype()));
 		return (const T*)pimpl_->hostPtr();
 	}
 

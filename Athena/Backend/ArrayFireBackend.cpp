@@ -89,7 +89,7 @@ inline size_t typeToSize(af::dtype dtype)
 template <typename T>
 inline void copyToHost(const af::array& arr, T* ptr)
 {
-	if(afTypeToDType(arr.type()) != typeToDtype<T>())
+	if(afTypeToDType(arr.type()) != typeToDType<T>())
 		throw AtError("Cannot copy data from device to host, type does not match");
 	arr.host(ptr);
 }
@@ -97,7 +97,7 @@ inline void copyToHost(const af::array& arr, T* ptr)
 template <typename T>
 inline void writeToHost(af::array& arr, const T* ptr)
 {
-	if(afTypeToDType(arr.type()) != typeToDtype<T>())
+	if(afTypeToDType(arr.type()) != typeToDType<T>())
 		throw AtError("Cannot copy write from host to device, type does not match");
 	arr.write(ptr, arr.bytes(), afHost);
 }

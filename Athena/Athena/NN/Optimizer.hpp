@@ -36,8 +36,6 @@ template <int N>
 class StatefulOptimizer : public Optimizer
 {
 public:
-	StatefulOptimizer() = default;
-
 	virtual void reset() override
 	{
 		for(auto& s : storage_)
