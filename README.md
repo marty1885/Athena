@@ -6,18 +6,20 @@
 
 `Athena` provides
 
-- A computation backend that can be easily implemented
+- The ablity to easily implement a computation backend
 - Tensor operators colsely resambles numpy's
 - High level neural netowrk API
+- Native NNPACK support
+- Integration with [xtensor](https://github.com/QuantStack/xtensor)
 
 ## Tensor and Backends
 
-`Athena` handles tensor like how a game engine handles shaders and meshes. The `Tensor` class does not creare nor operate a tensor itself. Instead it calls a `Backend` that does all the job. This design allows `Athena` to load backends at runtime and even utilize multiple backened at once.<br>
-Backends in `Athena` can do more than performing tensor operations. So called `Algoritms` can be inserted into a backend then quary at runtime to perforem specific tasks if the uderlying library has a way to do it faster then using tensor operations.
+`Athena` handles tensor like how a game engine handles shaders and meshes. The `Tensor` class does not creare nor operate a tensor itself. Instead, it calls a `Backend` that does all the job. This design allows `Athena` to load backends at runtime and even utilize multiple backened at once.<br>
+Backends in `Athena` can do more than performing tensor operations. `Algoritms` can be inserted into a backend then quary at runtime to perforem specific tasks if the uderlying library has a way to do such operation faster then using tensor operations.
 
 Currently there are 3 backends avliable. `XtensorBackend` using the `xtensor`, `NNPackBackend` using `NNPACK`, `ArrayFireBackend` using `ArrayFire`. XtensorBackend is aimed at providing full fledged tensor operators and useable algorithms. And the NNPackBackend provides fast algorithms for other backends if running on sutable machine.
 
-The ArrayFireBackend is capable of using the CPU the GPU to compute. But it have sevier limits. Like tensors created from ArrayFireBackend can only have at mose 4 dimentions. And the ArrayFireBackend suffers from performance and stablity issue within ArrayFire it self. This is under addressing now. Use it at your own risk.
+The ArrayFireBackend is capable of using the CPU the GPU to compute. But it have sevier limits. Ex: tensors created from ArrayFireBackend can only have at mose 4 dimentions. And the ArrayFireBackend suffers from performance and stablity issue within ArrayFire it self. This is under addressing now. Use it at your own risk.
 
 More backends built on faster libraries like `Eigen` and, `MIOpen` are planed.
 
