@@ -14,7 +14,7 @@ int maxElementIndex(const std::vector<float>& vec)
 	return std::distance(vec.begin(), std::max_element(vec.begin(), vec.end()));
 }
 
-At::Tensor imagesToTensor(const std::vector<std::vector<uint8_t>>& arr, At::Backend& backend)
+At::Tensor imagesToTensor(const std::vector<std::vector<uint8_t>>& arr)
 {
 	std::vector<float> res;
 	res.reserve(arr.size()*arr[0].size());
@@ -24,7 +24,7 @@ At::Tensor imagesToTensor(const std::vector<std::vector<uint8_t>>& arr, At::Back
 			res.push_back(v/255.f);
 	}
 
-	return At::Tensor(res,{(intmax_t)arr.size(),(intmax_t)arr[0].size()}, backend);
+	return At::Tensor(res,{(intmax_t)arr.size(),(intmax_t)arr[0].size()});
 }
 
 std::vector<float> onehot(int ind, int total)
@@ -35,7 +35,7 @@ std::vector<float> onehot(int ind, int total)
 	return vec;
 }
 
-At::Tensor labelsToOnehot(const std::vector<uint8_t>& labels, At::Backend& backend)
+At::Tensor labelsToOnehot(const std::vector<uint8_t>& labels)
 {
 	std::vector<float> buffer;
 	buffer.reserve(labels.size()*10);
@@ -47,24 +47,25 @@ At::Tensor labelsToOnehot(const std::vector<uint8_t>& labels, At::Backend& backe
 			buffer.push_back((float)v);
 	}
 
-	return At::Tensor(buffer, {(intmax_t)labels.size(), 10}, backend);
+	return At::Tensor(buffer, {(intmax_t)labels.size(), 10});
 }
 
 int main()
 {
 	At::XtensorBackend backend;
+	At::Tensor::setDefaultBackend(&backend);
 
 	//Use the NNPACK backend to accelerate things. Remove if NNPACK is not avliable
 	At::NNPackBackend nnpBackend;
 	backend.useAllAlgorithm(nnpBackend);
 
-	At::SequentialNetwork net(&backend);
+	At::SequentialNetwork net;
 
 	auto dataset = mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>("../mnist");
-	At::Tensor traningImage = imagesToTensor(dataset.training_images, backend);
-	At::Tensor traningLabels = labelsToOnehot(dataset.training_labels, backend);
-	At::Tensor testingImage = imagesToTensor(dataset.test_images, backend);
-	At::Tensor testingLabels = labelsToOnehot(dataset.test_labels, backend);
+	At::Tensor traningImage = imagesToTensor(dataset.training_images);
+	At::Tensor traningLabels = labelsToOnehot(dataset.training_labels);
+	At::Tensor testingImage = imagesToTensor(dataset.test_images);
+	At::Tensor testingLabels = labelsToOnehot(dataset.test_labels);
 
 	net.add(At::FullyConnectedLayer(784,50));
 	net.add(At::SigmoidLayer());

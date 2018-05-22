@@ -59,14 +59,16 @@ public:
 	virtual Tensor f(const Tensor& y, const Tensor& t) override
 	{
 		return sum(
-			-t*log(y) - (1.f-t)*log(1-y)
+			-t*log(y+epsilon_) - (1.f-t)*log(1-y+epsilon_)
 		);
 	}
 
 	virtual Tensor df(const Tensor& y, const Tensor& t) override
 	{
-		return (y-t)/(y*(1-t));
+		return (y-t)/(y*(1-y)+epsilon_);
 	}
+protected:
+	static const constexpr float epsilon_ = 1e-8f;	
 };
 
 }

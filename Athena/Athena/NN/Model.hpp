@@ -19,7 +19,7 @@ class SequentialNetwork
 public:
 	virtual ~SequentialNetwork();
 
-	SequentialNetwork(Backend* backend)
+	SequentialNetwork(Backend* backend=Tensor::defaultBackend())
 		: backend_(backend)
 	{
 	}
